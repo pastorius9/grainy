@@ -1,0 +1,57 @@
+[
+  {
+    "file": "Lensfun-README.md",
+    "source": "https://raw.githubusercontent.com/lensfun/lensfun/101c745e847a5de4a1e569a94368ce2027198598/README.md",
+    "sha256": "3bd5e107b74f51c04d621af4220cd5ed3266b8663971974f102276d641182058"
+  },
+  {
+    "file": "Lensfun-LGPL-3.txt",
+    "source": "https://www.gnu.org/licenses/lgpl-3.0.txt",
+    "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
+  },
+  {
+    "file": "Lensfun-GPL-3.txt",
+    "source": "https://www.gnu.org/licenses/gpl-3.0.txt",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  },
+  {
+    "file": "Lensfun-CC-BY-SA-3.0.txt",
+    "source": "https://raw.githubusercontent.com/creativecommons/legalcode/main/by-sa_3.0.txt",
+    "sha256": "f199af7e90e29e197a4be87b9a6d585a29ff5eae2b977503e590c4bd8fe6e8b3"
+  },
+  {
+    "file": "lensfunpy-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/letmaik/lensfunpy/v1.18.0/LICENSE",
+    "sha256": "bcf22e2bce762266d9588d2b39955930016a3892868bb9579189fe626253b947"
+  },
+  {
+    "file": "lensfunpy-build.py.txt",
+    "source": "https://raw.githubusercontent.com/letmaik/lensfunpy/v1.18.0/setup.py",
+    "sha256": "a0fb9ac2af4225f5243deb8722109fbd7b7bcbee2f393625b30439d4c0a4cd42"
+  },
+  {
+    "file": "Lensfun-source.tar.gz",
+    "source": "https://codeload.github.com/lensfun/lensfun/tar.gz/101c745e847a5de4a1e569a94368ce2027198598",
+    "sha256": "a11cbe6aeec657839540448b253217c25d20b7a45b6aebfef406f7239933c7a6"
+  },
+  {
+    "file": "GLib-LGPL-2.1.txt",
+    "source": "https://raw.githubusercontent.com/GNOME/glib/2.86.3/LICENSES/LGPL-2.1-or-later.txt",
+    "sha256": "fa6f36630bb1e0c571d34b2bbdf188d08495c9dbf58f28cac112f303fc1f58fb"
+  },
+  {
+    "file": "PCRE2-LICENCE.txt",
+    "source": "https://raw.githubusercontent.com/PCRE2Project/pcre2/pcre2-10.47/LICENCE.md",
+    "sha256": "197d8a73ffee0d6b09adba2f9c677b5f5aede24edf89258a68e48248d010d811"
+  },
+  {
+    "file": "libiconv-LGPL-2.1.txt",
+    "source": "https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  },
+  {
+    "file": "gettext-runtime-COPYING.LIB.txt",
+    "source": "https://raw.githubusercontent.com/autotools-mirror/gettext/master/gettext-runtime/intl/COPYING.LIB",
+    "sha256": "20e50fe7aae3e56378ebf0417d9de904f55a0e61e4df315333e632a4d3555d95"
+  }
+]

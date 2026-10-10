@@ -1,0 +1,10 @@
+빠른 내보내기 => Quick Export
+JPG (작은 크기 · 2048px) => JPG (Small · 2048px)
+JPG (원본 크기) => JPG (Large · Full Size)
+원본 + 설정 => Original + Settings
+원본 파일과 Grainy 보정값 XMP를 함께 복사합니다. => Copies the original file together with Grainy adjustments in an XMP sidecar.
+이전 설정으로 내보내기 => Export with Previous
+사용자 지정 설정… => Custom Settings…
+이전 저장 위치가 없습니다. 내보낼 폴더 선택 => Previous location is unavailable. Choose an export folder
+유효하지 않은 출력 이름 => Invalid output file name
+사진 {0}장 내보내는 중… => Exporting {0} photos…

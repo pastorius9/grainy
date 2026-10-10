@@ -1,0 +1,11 @@
+피드백 => Feedback
+문제점이나 개선 아이디어 보내기 => Send a problem report or an idea
+피드백 보내기 => Send Feedback
+문제점이나 개선 아이디어를 자유롭게 적어 주세요. 사진, 파일 이름과 경로는 보내지 않습니다. => Tell us about a problem or an idea in your own words. Photos, file names and paths are not sent.
+어떤 상황에서 무슨 일이 있었는지, 무엇이 있으면 좋을지 적어 주세요. => Describe what happened, or what you would like to see.
+함께 보내는 정보: Grainy {0} · {1} => Sent with it: Grainy {0} · {1}
+보내기 => Send
+내용을 입력해 주세요. => Please enter a message.
+보내는 중… => Sending…
+보내지 못했습니다 ({0}). 인터넷 연결을 확인하고 다시 시도해 주세요. => Could not send ({0}). Check the internet connection and try again.
+보냈습니다. 고맙습니다. => Sent. Thank you.

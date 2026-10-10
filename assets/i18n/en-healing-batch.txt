@@ -1,0 +1,9 @@
+힐링: 지울 곳을 여러 번 칠한 뒤 실행하세요. 붉은 표시는 아직 적용되지 않은 영역입니다. Alt+클릭으로 원본을 직접 지정할 수 있습니다. => Healing: paint multiple spots, then click Execute. Red marks are pending. Alt-click to choose a source manually.
+실행 대기: {0}개 => Pending: {0}
+실행 · 표시한 곳 제거 => Execute · Remove marked areas
+마지막 표시 취소 => Undo last mark
+표시 모두 취소 => Clear all marks
+Enter: 실행 · Esc: 현재 획 / 대기 표시 취소. 다른 사진으로 이동하면 실행 전 표시는 취소됩니다. => Enter: execute · Esc: cancel current stroke / pending marks. Switching photos discards pending marks.
+힐링 {0}개 실행 => Apply {0} healing strokes
+표시한 {0}곳에 힐링을 적용했습니다. 한 번의 실행 취소로 되돌릴 수 있습니다. => Applied healing to {0} marked areas. Undo reverts the entire batch.
+여러 곳을 칠한 뒤 실행 또는 Enter를 누르세요. Alt+클릭: 원본 지정 · [ / ]: 크기 => Paint several areas, then click Execute or press Enter. Alt-click: source · [ / ]: size

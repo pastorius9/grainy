@@ -1,0 +1,5 @@
+힐링: 바로 칠하면 주변에서 복구 원본을 자동으로 찾습니다. Alt+클릭으로 직접 지정할 수도 있습니다. 복제 도장은 먼저 Alt+클릭하세요. => Healing: paint to find a source automatically. Alt-click to choose a source manually. For Clone Stamp, Alt-click a source first.
+힐링 원본: 자동 선택 => Healing source: automatic
+힐링 원본 자동 선택으로 복귀 => Use automatic healing source
+고칠 곳을 칠하세요. 원본 자동 선택 · Alt+클릭: 직접 지정 · [ / ]: 크기 · Esc: 획 취소 => Paint over the area to repair. Automatic source · Alt-click: choose source · [ / ]: size · Esc: cancel stroke
+힐링 원본: 직접 지정 (Alt+클릭) => Healing source: manual (Alt-click)

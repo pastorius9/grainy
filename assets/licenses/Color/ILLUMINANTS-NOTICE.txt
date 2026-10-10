@@ -1,0 +1,18 @@
+CIE 2019, Colour-matching functions of CIE 1931 standard colorimetric observer.
+International Commission on Illumination (CIE), Vienna, AT.
+DOI: https://doi.org/10.25039/CIE.DS.xvudnb9b
+Source: https://cie.co.at/datatable/cie-1931-colour-matching-functions-2-degree-observer
+License: Creative Commons Attribution-ShareAlike 4.0 International
+https://creativecommons.org/licenses/by-sa/4.0/
+
+assets/color/CIE_xyz_1931_2deg.csv is redistributed unchanged, together with
+its original metadata. SHA-256:
+fa663e3535a7e0763a745993a1f0a192eb0275ac46ad2d1befd7626841e713c1
+Luma computes spectrum-derived DNG white points from this table at runtime.
+No endorsement by CIE is implied.
+
+DNG three-illuminant weighting and spectrum normalization follow the Adobe
+DNG SDK 1.7.1 build 2724, source dng_xy_coord.cpp/.h.
+Copyright 2006-2019 Adobe Systems Incorporated. All Rights Reserved.
+See DNG-SDK.txt for the accompanying Adobe license agreement.
+Source: https://www.adobe.com/go/dng_sdk

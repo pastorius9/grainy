@@ -1,0 +1,7 @@
+Robertson isotemperature numeric table checked against Colour Science.
+Reference: https://github.com/colour-science/colour/blob/develop/colour/temperature/robertson1968.py
+The conversion implementation in Luma is independent.
+
+This product includes DNG technology under license by Adobe.
+DNG specification: https://helpx.adobe.com/camera-raw/digital-negative.html
+No Adobe camera profiles are redistributed with Luma.

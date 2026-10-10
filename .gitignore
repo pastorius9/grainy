@@ -1,0 +1,15 @@
+.venv/
+data/
+__pycache__/
+.pytest_cache/
+node_modules/
+validation/
+build/
+release/
+
+# safety
+*.sqlite
+*.sqlite-*
+.env
+.env.*
+*.log

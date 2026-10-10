@@ -1,0 +1,4 @@
+흑백 사진은 흑백 파일로 저장 (sRGB) => Save black-and-white photos as grayscale files (sRGB)
+모든 픽셀이 무채색이면 1채널 흑백 파일과 흑백 ICC로 저장합니다. 화면에 보이는 밝기는 같고 파일이 작아집니다. => When every pixel is neutral, saves a one-channel grayscale file with a gray ICC profile. It looks the same and the file is smaller.
+8비트 저장 시 계단 현상 방지 (디더링) => Prevent banding in 8-bit files (dithering)
+8비트로 줄일 때 눈에 띄지 않는 고정 노이즈를 더해 하늘 같은 부드러운 영역의 띠를 막습니다. 순수한 검정·흰색은 그대로입니다. => Adds fixed, invisible noise when reducing to 8 bits so smooth areas such as skies do not show bands. Pure black and white stay unchanged.

@@ -1,0 +1,4 @@
+각도를 바꾸면 크롭 틀이 사진 안쪽에 맞게 자동으로 조정됩니다. 틀 바깥은 적용할 때 잘립니다. => Changing the angle keeps the crop frame inside the photo. What is outside the frame is cut off when you apply.
+크롭 취소 => Cancel Crop
+안쪽 이동 · 모서리 조절 · 바깥 끌어 회전   |   Enter 적용 · Esc 취소 => Drag inside to move · corners to resize · outside to rotate   |   Enter to apply · Esc to cancel
+모서리·변을 드래그해 크기를 조절하고,\n안쪽을 드래그해 위치를 옮기세요.\n틀 바깥을 드래그하면 사진이 회전합니다.\nEnter: 적용 / Esc: 취소 => Drag corners or edges to resize.\nDrag inside to reposition.\nDrag outside the frame to rotate the photo.\nEnter: apply / Esc: cancel

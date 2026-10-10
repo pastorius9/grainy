@@ -1,0 +1,7 @@
+SDR 디스플레이용 미리보기 => Preview for SDR display
+SDR 미리보기 · 하이라이트 압축 적용 => SDR preview · highlight compression applied
+HDR 출력 오류 · SDR 화면으로 표시 => HDR output unavailable · showing SDR
+HDR 화면 · +{0}스톱 · 최대 {1}니트 => HDR display · +{0} stops · peak {1} nits
+SDR 화면 · 흰색까지 표시 · HDR 계조는 유지 => SDR display · limited to white · HDR data retained
+HDR 미리보기에서는 SDR 압축을 적용하지 않습니다. SDR 화면의 흰색을 넘는 밝기는 화면에서 구분되지 않습니다. => HDR preview does not apply SDR compression. Brightness above SDR white cannot be distinguished on an SDR display.
+HDR 화면 범위 · 노랑: 표시 가능 · 빨강: 화면 한계 초과 => HDR display range · yellow: visible · red: exceeds display

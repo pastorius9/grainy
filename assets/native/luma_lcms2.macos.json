@@ -1,0 +1,11 @@
+{
+  "version": "2.19.0",
+  "source": "https://codeload.github.com/mm2/Little-CMS/zip/refs/tags/lcms2.19",
+  "floating_point": "clang",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "source_signature": "05a7742bbd371afe7545f3275e91c53bcdf5a633b8a853e5bb41bb0c24689a32",
+  "sha256": "44deb57f50dab5b6de4b8814e3088257d9c422616e89512697e73f7835e55769"
+}

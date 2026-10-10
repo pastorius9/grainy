@@ -1,0 +1,12 @@
+{
+  "abi": 1,
+  "source": "native/dcp_tables.cpp",
+  "floating_point": "clang -ffp-contract=off",
+  "source_sha256": "cc90de1f160cd44355f7a05e5a64e4a590df462caca596738d1f8010033f25b6",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "source_signature": "064b6b8140de7a13f55b869e077884ee4539978c3518ca76d4d03b5dbbf9a2bf",
+  "sha256": "01031968893336e56d3c4cfda23ebf25ca6513de214d8c8813821b323f299c1c"
+}

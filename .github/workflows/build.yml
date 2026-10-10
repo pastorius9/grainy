@@ -1,0 +1,142 @@
+# Builds the release from source on GitHub-hosted runners (Windows, macOS), so that every published
+# binary can be traced to a commit of this repository. Nothing built on a developer's PC is used:
+# the native libraries checked in under assets/native are removed and compiled again here.
+name: Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      macos_tests:
+        description: Also run the regression tests on the macOS runner (a few minutes; timing tests can be flaky there)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Create the build environment (pinned versions)
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python.exe -m pip install --upgrade pip
+          .venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+
+      - name: Remove prebuilt native libraries
+        shell: pwsh
+        run: Remove-Item assets\native\*.dll, assets\native\*.json -Force
+
+      - name: Build
+        shell: pwsh
+        run: '& ".\Build Grainy.ps1"'
+
+      - name: Self-test of the built app
+        shell: pwsh
+        env:
+          GRAINY_GPU: warp          # the runner has no graphics card: Direct3D's software device
+        run: |
+          $env:LUMA_SELF_TEST_REPORT = Join-Path $env:RUNNER_TEMP 'selftest.json'
+          $process = Start-Process -FilePath release\Grainy\Grainy.exe -ArgumentList '--self-test' -Wait -PassThru
+          if (Test-Path $env:LUMA_SELF_TEST_REPORT) { Get-Content $env:LUMA_SELF_TEST_REPORT -Raw }
+          if ($process.ExitCode -ne 0) { throw "Self-test failed with exit code $($process.ExitCode)" }
+
+      - name: Version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (.venv\Scripts\python.exe -c "import luma; print(luma.__version__)").Trim()
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Upload the unsigned build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Grainy-${{ steps.version.outputs.version }}-windows-x64
+          path: release/Grainy
+          if-no-files-found: error
+
+  # The macOS app, built the same way: from source on a GitHub-hosted Apple Silicon runner, with the
+  # checked-in native libraries compiled again. The app is signed ad hoc (no Apple developer identity).
+  macos:
+    runs-on: macos-14
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Create the build environment (pinned versions)
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --upgrade pip
+          .venv/bin/python -m pip install -r requirements-lock-macos.txt
+
+      - name: Remove prebuilt native libraries
+        run: rm -f assets/native/*.dylib assets/native/*.macos.json
+
+      - name: Build, self-test and disk image
+        run: .venv/bin/python tools/build_macos.py
+
+      - name: Regression tests (on request)
+        if: ${{ inputs.macos_tests }}
+        run: |
+          .venv/bin/python -m pip install -r requirements-test.txt
+          .venv/bin/python tools/check.py --workers 3 || { tail -n 60 validation/check-*/*.log; exit 1; }
+
+      - name: Version
+        id: version
+        run: echo "version=$(.venv/bin/python -c 'import luma; print(luma.__version__)')" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the unsigned build
+        uses: actions/upload-artifact@v4
+        with:
+          name: Grainy-${{ steps.version.outputs.version }}-macos-arm64
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  # A release is published from the Windows PC with its zip, which pushes the tag that starts this
+  # workflow. The macOS files built above from that tag are then added to the same release, where the
+  # macOS app's updater looks for them. Without a published release for the tag nothing is published;
+  # this job never creates one. Only this job may write to the repository.
+  macos-release:
+    needs: macos
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Grainy-${{ needs.macos.outputs.version }}-macos-arm64
+          path: files
+
+      - name: Add the macOS files to the release of this tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.macos.outputs.version }}
+        run: |
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Tag $TAG does not match the built version $VERSION"; exit 1
+          fi
+          if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null)" != "false" ]; then
+            echo "::notice::No published release for $TAG: the macOS files stay in this run's artifacts."; exit 0
+          fi
+          gh release upload "$TAG" "files/Grainy-$VERSION-macos-arm64.zip" "files/Grainy-$VERSION-macos-arm64.dmg" --repo "$GITHUB_REPOSITORY" --clobber

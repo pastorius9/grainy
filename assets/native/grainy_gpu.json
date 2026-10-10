@@ -1,0 +1,6 @@
+{
+  "abi": 1,
+  "source": "native/gpu_compute.cpp",
+  "source_signature": "6b5ab27ab4e88a0c5ab3cbb736e62258a23386e7df20045368e0f80f3180fd42",
+  "sha256": "62d441b49addcdec68854896b2991ddc2cdada2d9ae7d8d68208ceed4268c3f5"
+}

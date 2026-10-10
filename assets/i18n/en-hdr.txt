@@ -1,0 +1,8 @@
+HDR TIFF: HDR 모드 사진만 저장 · 선형 작업 색공간 · 32비트\nJPEG·일반 PNG/TIFF는 SDR 미리보기 설정으로 저장합니다. => HDR TIFF: HDR-enabled photos only · linear working space · 32-bit\nJPEG and standard PNG/TIFF use the SDR rendition settings.
+HDR 한계 (스톱) => HDR limit (stops)
+HDR 영역 밝기 => HDR range brightness
+HDR 영역 표시 => Visualize HDR ranges
+흰색 오른쪽: +1 / +2 / +3 / +4 스톱\n영역 색상: 파랑 / 초록 / 노랑 / 빨강\n현재 사진 창: SDR 미리보기 => Above white: +1 / +2 / +3 / +4 stops\nRange colors: blue / green / yellow / red\nCurrent photo view: SDR preview
+SDR 미리보기 노출 => SDR preview exposure
+SDR 하이라이트 압축 => SDR highlight compression
+HDR 한계 클리핑 => HDR limit clipping

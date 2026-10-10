@@ -1,0 +1,3 @@
+Grainy 정보… => About Grainy…
+Grainy 정보 => About Grainy
+원본을 건드리지 않는 사진 보정·관리 프로그램입니다.\n\nGrainy의 코드는 MIT 라이선스입니다. 함께 들어 있는 외부 부품의 라이선스 고지는 배포본의 THIRD_PARTY_LICENSES 폴더에 있습니다.\n\nAdobe, Lightroom, Photoshop은 Adobe Inc.의 상표입니다. Grainy는 Adobe가 만들거나 후원·보증한 프로그램이 아니며 Adobe와 관련이 없습니다. 그 밖의 상표는 각 소유자의 것입니다. => A non-destructive photo editor and library.\n\nGrainy's own code is under the MIT License. Notices for the third-party components shipped with it are in the THIRD_PARTY_LICENSES folder of the release.\n\nAdobe, Lightroom and Photoshop are trademarks of Adobe Inc. Grainy is an independent project: it is not made, sponsored or endorsed by Adobe and is not affiliated with it. All other trademarks belong to their owners.

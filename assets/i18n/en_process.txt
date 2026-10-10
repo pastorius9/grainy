@@ -1,0 +1,3 @@
+최신 처리 방식으로 업데이트 (선택한 사진) => Update to Current Process (Selected Photos)
+선택한 사진은 이미 최신 처리 방식입니다. => The selected photos already use the current process.
+최신 처리 방식으로 업데이트 => Update to current process

@@ -1,0 +1,8 @@
+자동 색 => Auto Color
+자동 색 세기 => Auto color strength
+자동 색 (선택한 사진) => Auto Color (Selected Photos)
+어두운 곳·중간·밝은 곳의 무채색 영역을 각각 찾아 색 틀어짐(녹색 끼 등)을 채널 커브로 바로잡습니다. 밝기는 그대로 둡니다. 강한 색 조명만 있는 영역은 건드리지 않습니다. => Finds the near-neutral areas of the shadows, midtones and highlights separately and corrects a colour cast (a green tint, for example) with channel curves. Brightness is kept. Areas lit only by strongly coloured light are left alone.
+흑백 사진에는 자동 색을 쓰지 않습니다. => Auto color is not used on black-and-white photos.
+색 틀어짐을 찾지 못했습니다. 바꾼 것이 없습니다. => No colour cast was found. Nothing was changed.
+색을 판단할 영역이 부족해 자동 색을 적용하지 않았습니다. => There is too little to judge the colour from, so auto color was not applied.
+자동 색 적용 · 세기 {0}% · 채널 커브에서 다듬을 수 있습니다. => Auto color applied · strength {0}% · refine it in the channel curves.

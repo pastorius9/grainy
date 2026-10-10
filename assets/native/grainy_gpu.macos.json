@@ -1,0 +1,10 @@
+{
+  "abi": 16,
+  "source": "native/gpu_compute_metal.mm",
+  "architectures": [
+    "arm64",
+    "x86_64"
+  ],
+  "source_signature": "79bf820df1f82931df1733f7e3289635088129204de0327afcba0158d8c0372a",
+  "sha256": "248856d6eefed4f12b906f0fc0d945c0768e891afc8ae680a20cb19e77eba597"
+}

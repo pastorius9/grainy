@@ -1,0 +1,5 @@
+텅스텐 → 데이라이트 => Tungsten → Daylight
+데이라이트 → 텅스텐 => Daylight → Tungsten
+필름 색온도 변환 해제 => Film balance conversion off
+텅스텐 필름(500T 등, 3200K)을 낮 빛에서 찍어 푸르게 나온 색을 바로잡습니다. 85 필터와 같은 방향입니다. 다시 누르면 해제합니다. => Corrects the blue cast of tungsten film (500T etc., 3200K) shot in daylight, in the direction of an 85 filter. Click again to turn it off.
+데이라이트 필름(250D 등, 5500K)을 전구 빛에서 찍어 누렇게 나온 색을 바로잡습니다. 80A 필터와 같은 방향입니다. 다시 누르면 해제합니다. => Corrects the yellow cast of daylight film (250D etc., 5500K) shot under tungsten light, in the direction of an 80A filter. Click again to turn it off.

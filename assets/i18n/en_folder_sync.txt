@@ -1,0 +1,2 @@
+등록한 폴더의 새 사진 자동으로 가져오기 => Import new photos in registered folders automatically
+등록한 폴더에서 새 사진 {0}장을 찾았습니다. => Found {0} new photos in registered folders.

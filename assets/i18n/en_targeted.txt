@@ -1,0 +1,13 @@
+사진에서 드래그로 조정 => Drag in Photo to Adjust
+사진의 한 곳을 누른 채 위아래로 끌면 그 밝기의 커브가 올라가거나 내려갑니다. => Press on the photo and drag up or down to raise or lower the curve at that tone.
+사진의 한 곳을 누른 채 위아래로 끌면 그 색에 해당하는 색상 혼합 값이 바뀝니다. => Press on the photo and drag up or down to change the mixer values of that colour.
+사진에서 조정할 항목 => Property to adjust in the photo
+더블클릭하면 기본값으로 돌아갑니다. Shift+더블클릭하면 이 값만 자동으로 맞춥니다. => Double-click to reset. Shift+double-click sets only this slider automatically.
+이 사진에서는 자동 값을 찾지 못했습니다. => No automatic value could be found for this photo.
+HDR 모드에서는 사진 위 커브 조정을 쓸 수 없습니다. => Adjusting the curve in the photo is not available in HDR mode.
+사진을 누른 채 위아래로 끌어 그 부분을 조정하세요. 버튼을 다시 누르면 끝납니다. => Press on the photo and drag up or down to adjust that area. Click the button again to finish.
+사진에서 톤 커브 조정 => Tone curve adjusted in the photo
+사진에서 색상 혼합 조정 => Mixer adjusted in the photo
+자동 노출 => Auto exposure
+자동 흰색 계열 => Auto whites
+자동 검정 계열 => Auto blacks

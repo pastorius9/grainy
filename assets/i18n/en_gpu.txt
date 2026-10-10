@@ -1,0 +1,5 @@
+GPU 가속 사용 => Use GPU Acceleration
+GPU: {0} => GPU: {0}
+GPU 가속: {0} => GPU acceleration: {0}
+GPU 설정을 저장하지 못했습니다. => Could not save the GPU setting.
+꺼짐 => Off

@@ -1,0 +1,8 @@
+이름이 바뀐 폴더 자동 찾기 => Auto-find renamed folders
+폴더 자동 찾기 중단 => Cancel folder search
+이름이 바뀐 폴더를 사진 정보·저장된 미리보기로 찾는 중… => Finding renamed folders using photo information and saved previews…
+검색 중 폴더 정보가 바뀌어 다시 확인합니다. => Folder information changed during the search. Checking again.
+이름이 바뀐 폴더 {0}개 · 사진 {1}개를 자동으로 다시 연결했습니다. => Automatically reconnected {0} renamed folders and {1} photos.
+자동 연결할 폴더를 찾지 못했습니다. 후보가 중복되거나 사진 일치 근거가 부족합니다. => No folders could be reconnected automatically. Matches are ambiguous or there is not enough photo evidence.
+폴더 자동 찾기를 완료하지 못했습니다. 우클릭 메뉴에서 다시 시도하세요. => Could not complete the folder search. Try again from the folder context menu.
+원본 위치를 찾고 있습니다. 폴더 우클릭에서 자동 찾기나 위치 지정을 사용할 수 있습니다. => Looking for the original location. Right-click a folder to search automatically or update its location.

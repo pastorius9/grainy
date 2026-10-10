@@ -1,0 +1,9 @@
+스캔 테두리 자동 자르기 => Auto-Crop Scan Border
+필름 스캔 가장자리의 검은 필름 테두리를 찾아 크롭합니다. 크롭 초기화나 실행 취소로 되돌릴 수 있습니다. => Finds the black film edge around a film scan and crops it. Reset Crop or Undo restores it.
+자를 스캔 테두리를 찾지 못했습니다. => No scan border to crop was found.
+스캔 테두리를 잘랐습니다. 크롭 편집으로 조정할 수 있습니다. => Cropped the scan border. You can adjust it with Edit Crop.
+스캔 테두리를 분석하지 못했습니다. => Could not analyse the scan border.
+스캔 테두리 자동 자르기 (선택한 사진) => Auto-Crop Scan Border (Selected Photos)
+스캔 테두리 분석 중… => Analysing scan borders…
+스캔 테두리: {0}장 자름 · {1}장은 테두리를 찾지 못함 => Scan border: cropped {0} · no border found in {1}
+자동 톤 (선택한 사진) => Auto Tone (Selected Photos)

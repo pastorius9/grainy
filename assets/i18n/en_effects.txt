@@ -1,0 +1,12 @@
+중간점 => Midpoint
+둥글기 => Roundness
+페더 => Feather
+하이라이트 보호 => Highlights
+거칠기 => Roughness
+비네팅 중간점 => Vignette midpoint
+비네팅 둥글기 => Vignette roundness
+비네팅 페더 => Vignette feather
+비네팅 하이라이트 보호 => Vignette highlights
+그레인 크기 => Grain size
+그레인 거칠기 => Grain roughness
+밝게 하는 비네팅은 지원하지 않습니다. => Lightening vignettes are not supported.

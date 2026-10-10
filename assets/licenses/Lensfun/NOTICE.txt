@@ -1,0 +1,35 @@
+Luma uses lensfunpy 1.18.0 (MIT), Copyright (c) 2014 Maik Riechert.
+https://github.com/letmaik/lensfunpy/tree/v1.18.0
+
+The bundled dynamically linked Lensfun library is LGPL-3.0.
+Copyright Andrew Zabolotny and Lensfun contributors; see Lensfun-README.md.
+Source revision: 101c745e847a5de4a1e569a94368ce2027198598 (reports version 0.3.4).
+The complete upstream source archive is included as Lensfun-source.tar.gz.
+The wheel's Windows build and its patches are recorded in lensfunpy-build.py.txt.
+Luma makes no changes to the bundled binaries or calibration XML files.
+Dynamic libraries in _internal/lensfunpy may be replaced with ABI-compatible
+builds. Reverse engineering for debugging modifications to the LGPL libraries
+is permitted. These libraries have no warranty; see their license texts.
+
+Lensfun calibration database: Creative Commons Attribution-ShareAlike 3.0.
+https://github.com/lensfun/lensfun/tree/101c745e847a5de4a1e569a94368ce2027198598/data/db
+Credit: Lensfun contributors; original open-source PTLens data by Tom Niemann.
+License: https://creativecommons.org/licenses/by-sa/3.0/
+Individual XML profiles contain additional contributor/measurement comments.
+Luma retains them, and embeds the selected calibration with each edit so that
+the correction remains reproducible. Embedded profiles retain this license.
+No endorsement by Lensfun, PTLens, Adobe, or any camera maker is implied.
+
+The official lensfunpy Windows wheel builds GLib and dependent libraries using
+vcpkg 2026.01.16. That build manifest selects:
+  GLib 2.86.3: LGPL-2.1-or-later, https://gitlab.gnome.org/GNOME/glib/-/tree/2.86.3
+  GNU libiconv 1.18 / libcharset: LGPL-2.1-or-later, https://ftp.gnu.org/gnu/libiconv/libiconv-1.18.tar.gz
+  GNU gettext libintl 0.22.5: LGPL-2.1-or-later, https://ftp.gnu.org/gnu/gettext/gettext-0.22.5.tar.gz
+  PCRE2 10.47: BSD-3-Clause, https://github.com/PCRE2Project/pcre2/tree/pcre2-10.47
+Build scripts, patches and source download locations:
+https://github.com/microsoft/vcpkg/tree/2026.01.16/ports/glib
+https://github.com/microsoft/vcpkg/tree/2026.01.16/ports/libiconv
+https://github.com/microsoft/vcpkg/tree/2026.01.16/ports/gettext-libintl
+https://github.com/microsoft/vcpkg/tree/2026.01.16/ports/pcre2
+
+See sources.json for exact notice/source URLs and SHA-256 checksums.
