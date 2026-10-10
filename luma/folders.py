@@ -33,6 +33,13 @@ def contains_folder(parent,child):
     return in_folder(Path(child)/'__folder_probe__',parent,True)
 
 
+def left_out(path,registered,removed):
+    """True when the nearest folder at or above path that the user decided about is one they removed
+    from the catalog, not one they registered."""
+    depth=lambda folders:max((len(Path(f).parts) for f in folders if contains_folder(f,path)),default=0)
+    return depth(removed)>depth(registered)
+
+
 def below(path,folder):
     """path relative to a folder it is in, compared the way the catalog compares paths.
     Path.relative_to follows the system's rule for names instead: exact on macOS, where a saved

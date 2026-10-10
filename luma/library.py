@@ -8,7 +8,7 @@ import shutil
 import sqlite3
 import xml.etree.ElementTree as ET
 from .engine import normalized
-from .folders import below, stored_path
+from .folders import below, contains_folder, stored_path
 
 
 def matches(photo,rules,*,now=None):
@@ -114,6 +114,7 @@ def move_folder(catalog,source,destination):
     for root in catalog.folder_roots():
         try:roots.append((root,stored_path(dst/below(Path(root).resolve(),src))))
         except ValueError:pass
+    removed=[stored_path(dst/below(p,src)) if contains_folder(src,p) else p for p in catalog.removed_folders()]
     shutil.move(str(src),str(dst))
     try:
         with catalog.db:
@@ -121,6 +122,7 @@ def move_folder(catalog,source,destination):
             for old,new in roots:
                 catalog.db.execute('DELETE FROM folder_roots WHERE path=?',(old,))
                 catalog.db.execute('INSERT OR IGNORE INTO folder_roots VALUES(?)',(new,))
+            catalog.db.execute('INSERT OR REPLACE INTO preferences VALUES(?,?)',('removed_folders',json.dumps(removed,ensure_ascii=False)))
     except Exception:
         shutil.move(str(dst),str(src));raise
 

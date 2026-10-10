@@ -105,6 +105,7 @@ def apply_relinks(catalog,plans):
     panel=catalog.preference('folder_panel',{})
     watches=catalog.preference('watch_folders',[])
     identities=catalog.preference('folder_identities',{})
+    removed=catalog.removed_folders()
     with catalog.db:
         for plan in plans:
             # A location found by listing the disk arrives as the disk spells it (decomposed on macOS).
@@ -122,6 +123,8 @@ def apply_relinks(catalog,plans):
             panel['expanded']=[rebase(p,source,destination) for p in panel.get('expanded',[])]
             watches=[rebase(p,source,destination) for p in watches]
             identities={k:v for k,v in identities.items() if not contains_folder(source,k)}
-        for key,value in [('folder_panel',panel),('watch_folders',watches),('folder_identities',identities)]:
+            # Removed folders move along with their parent; a folder that receives photos is in use again.
+            removed=[p for p in (rebase(p,source,destination) for p in removed) if not contains_folder(p,destination)]
+        for key,value in [('folder_panel',panel),('watch_folders',watches),('folder_identities',identities),('removed_folders',removed)]:
             catalog.db.execute('INSERT OR REPLACE INTO preferences VALUES(?,?)',(key,json.dumps(value,ensure_ascii=False)))
     return sum(len(plan['updates']) for plan in plans)

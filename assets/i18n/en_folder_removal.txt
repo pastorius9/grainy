@@ -1,0 +1,5 @@
+폴더 제거 => Remove folder
+카탈로그에서 폴더 제거… => Remove folder from catalog…
+선택한 폴더를 카탈로그에서 제거 · 원본 파일은 그대로 둡니다 => Remove the selected folder from the catalog · Original files stay where they are
+"{0}" 폴더를 카탈로그에서 제거합니다.\n이 폴더와 하위 폴더의 사진 {1}장이 카탈로그에서 빠지고, 그 사진의 보정·별점·컬렉션 정보도 함께 지워집니다.\n\n원본 파일과 폴더는 그대로 남습니다. 제거 전 카탈로그는 자동으로 백업합니다. => Remove the folder "{0}" from the catalog.\nThe {1} photos in this folder and its subfolders leave the catalog, and their edits, ratings and collection entries are deleted with them.\n\nThe original files and folders stay where they are. The catalog is backed up automatically first.
+폴더를 카탈로그에서 제거했습니다 · 사진 {0}장 · 원본 파일은 그대로입니다. => Folder removed from the catalog · {0} photos · Original files are untouched.

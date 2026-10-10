@@ -12,6 +12,10 @@ on:
         description: Also run the regression tests on the macOS runner (a few minutes; timing tests can be flaky there)
         type: boolean
         default: false
+      windows_tests:
+        description: Also run the regression tests on a Windows runner (no graphics card there; timing tests can be flaky)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +69,43 @@ jobs:
           name: Grainy-${{ steps.version.outputs.version }}-windows-x64
           path: release/Grainy
           if-no-files-found: error
+
+  # The regression tests on Windows, on request: for a change made on a Mac, before it is released.
+  # The runner has no graphics card, so Direct3D's software device stands in for it. The native
+  # libraries are used as checked in. The logs are kept with the run whether the tests pass or not.
+  windows-tests:
+    if: ${{ inputs.windows_tests }}
+    runs-on: windows-2022
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Create the test environment (pinned versions)
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .venv\Scripts\python.exe -m pip install --upgrade pip
+          .venv\Scripts\python.exe -m pip install -r requirements-lock.txt
+          .venv\Scripts\python.exe -m pip install -r requirements-test.txt
+
+      - name: Regression tests
+        shell: pwsh
+        env:
+          GRAINY_GPU: warp
+        run: |
+          .venv\Scripts\python.exe tools\check.py --workers 3 --output validation\check-windows
+          if ($LASTEXITCODE -ne 0) { Get-ChildItem validation\check-windows\*.log | ForEach-Object { Get-Content $_ -Tail 80 }; exit 1 }
+
+      - name: Keep the test logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-test-logs
+          path: validation/check-windows
 
   # The macOS app, built the same way: from source on a GitHub-hosted Apple Silicon runner, with the
   # checked-in native libraries compiled again. The app is signed ad hoc (no Apple developer identity).

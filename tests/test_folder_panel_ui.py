@@ -76,7 +76,7 @@ def test_manual_location_cancel_and_backup_failure_are_non_destructive(window,mo
     assert w.catalog.photo(ident)['path']==str(new/'one.jpg')
 
 
-def test_context_menu_offers_refresh_and_location_without_removal(window):
+def test_context_menu_offers_refresh_location_and_removal_from_the_catalog_only(window):
     w,root,_=window;captured=[]
     def inspect():
         menu=QApplication.activePopupWidget()
@@ -86,4 +86,8 @@ def test_context_menu_offers_refresh_and_location_without_removal(window):
     item=w.folder_items[path_key(root)];w.folder_tree.scrollToItem(item)
     w.folder_context_menu(w.folder_tree.visualItemRect(item).center())
     assert '폴더 목록 새로 고침' in captured and '폴더 위치 다시 지정…' in captured
-    assert not any('제거' in text or '삭제' in text for text in captured)
+    assert [text for text in captured if '제거' in text]==['카탈로그에서 폴더 제거…']
+    assert not any('삭제' in text for text in captured)
+    drive=w.folder_items[path_key(root.anchor)];captured.clear();QTimer.singleShot(100,inspect)
+    w.folder_context_menu(w.folder_tree.visualItemRect(drive).center())
+    assert '폴더 목록 새로 고침' in captured and not any('제거' in text for text in captured)   # never a whole drive

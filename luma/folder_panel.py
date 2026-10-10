@@ -5,7 +5,7 @@ from threading import Event
 from uuid import uuid4
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication,QFileDialog,QMessageBox
-from .folders import folder_nodes,path_key,contains_folder
+from .folders import folder_nodes,path_key,contains_folder,left_out
 from .folder_locations import scan_folders,directory_identity,relink_plan,apply_relinks,rebase
 from .i18n import tr
 
@@ -28,7 +28,8 @@ class FolderPanel:
         self.photos,self.roots,self.signature=photos,list(roots),signature
         if changed:QTimer.singleShot(0,self.refresh)
         # Extra folders remain underneath registered roots; no automatic imports.
-        extra=[p for p in self.children if any(contains_folder(root,p) for root in self.roots)]
+        removed=self.w.catalog.removed_folders()
+        extra=[p for p in self.children if any(contains_folder(root,p) for root in self.roots) and not left_out(p,self.roots,removed)]
         nodes=folder_nodes(photos,self.roots+extra)
         for node in nodes:
             node['missing']=node['key'] in self.missing
@@ -141,6 +142,34 @@ class FolderPanel:
             if QMessageBox.question(w,tr('폴더 위치 다시 지정'),text,QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
             count=self.apply(plan)
             w.statusBar().showMessage(tr('{0}개 원본 참조를 다시 연결했습니다.',count),10000)
+        finally:
+            w.maintenance_running=False
+            QTimer.singleShot(0,self.refresh)
+
+    def remove(self,path):
+        """Take a folder and the photos below it out of the catalog. Nothing on disk changes."""
+        w=self.w
+        if Path(path).parent==Path(path):return
+        if self.busy():
+            QMessageBox.information(w,tr('폴더 제거'),tr('사진 가져오기·내보내기와 카탈로그 작업을 마친 뒤 다시 시도하세요.'));return
+        w.maintenance_running=True
+        try:
+            ids=set(w.catalog.folder_photo_ids(path))
+            text=tr('"{0}" 폴더를 카탈로그에서 제거합니다.\n이 폴더와 하위 폴더의 사진 {1}장이 카탈로그에서 빠지고, 그 사진의 보정·별점·컬렉션 정보도 함께 지워집니다.\n\n원본 파일과 폴더는 그대로 남습니다. 제거 전 카탈로그는 자동으로 백업합니다.',Path(path).name,len(ids))
+            if QMessageBox.question(w,tr('폴더 제거'),text,QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+            w.commit();w.save_keywords()
+            backup=w.catalog.directory/'backups'/f'folder-removal-{datetime.now():%Y%m%d-%H%M%S}-{uuid4().hex[:8]}.sqlite'
+            w.catalog.backup(backup)
+            if w.current_id in ids:w.clear_active_photo()
+            self.cancel.set();self.recovery_cancel.set();self.recovery_signature=None
+            count=len(w.catalog.remove_folder(path))
+            w.folder_sync.folder_removed()
+            w.extras.watch_paths=w.catalog.preference('watch_folders',[])
+            if w.folder_filter and contains_folder(path,w.folder_filter):w.folder_filter=None
+            w.expanded_folders={key for key in w.expanded_folders if not contains_folder(path,key)}
+            self.signature=None
+            w.save_folder_state();w.refresh_lists(ensure_current=True)
+            w.statusBar().showMessage(tr('폴더를 카탈로그에서 제거했습니다 · 사진 {0}장 · 원본 파일은 그대로입니다.',count),10000)
         finally:
             w.maintenance_running=False
             QTimer.singleShot(0,self.refresh)

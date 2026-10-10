@@ -6,7 +6,7 @@ from contextlib import closing, contextmanager
 from pathlib import Path
 from datetime import datetime, timezone
 from .engine import defaults, normalized
-from .folders import contains_folder, stored_path
+from .folders import contains_folder, in_folder, path_key, stored_path
 
 
 class Catalog:
@@ -188,7 +188,40 @@ class Catalog:
         path=stored_path(Path(path).resolve())
         self.db.execute('INSERT OR IGNORE INTO folder_roots VALUES(?)',(path,))
         self.db.commit()
+        removed=self.removed_folders()
+        if any(path_key(p)==path_key(path) for p in removed):
+            self.save_preference('removed_folders',[p for p in removed if path_key(p)!=path_key(path)])
         return path
+
+    def removed_folders(self):
+        """Folders the user took out of the catalog. Inside a registered folder they are neither
+        listed nor imported automatically, until one is imported again on request."""
+        return self.preference('removed_folders',[]) or []
+
+    def folder_photo_ids(self,folder):
+        return [r['id'] for r in self.db.execute('SELECT id,path FROM photos') if in_folder(r['path'],folder)]
+
+    def remove_folder(self,folder):
+        """Take a folder out of the catalog in one step: the photos in it and in its sub-folders
+        (with their edits), the registered folders at or below it and their automatic-import
+        entries. No file is touched. Returns the ids of the removed photos."""
+        folder=stored_path(Path(folder))
+        ids=self.folder_photo_ids(folder)
+        removed=[p for p in self.removed_folders() if not contains_folder(folder,p)]+[folder]
+        watches=[p for p in self.preference('watch_folders',[]) or [] if not contains_folder(folder,p)]
+        with self.db:
+            self._delete_photos(ids)
+            for root in self.folder_roots():
+                if contains_folder(folder,root):self.db.execute('DELETE FROM folder_roots WHERE path=?',(root,))
+            for key,value in [('removed_folders',removed),('watch_folders',watches)]:
+                self.db.execute('INSERT OR REPLACE INTO preferences VALUES(?,?)',(key,json.dumps(value,ensure_ascii=False)))
+        return ids
+
+    def restore_folder(self,folder):
+        """The user imports this folder: whatever was removed at or below it is wanted again."""
+        removed=self.removed_folders()
+        kept=[p for p in removed if not contains_folder(folder,p)]
+        if len(kept)!=len(removed):self.save_preference('removed_folders',kept)
 
     def preference(self,key,default=None):
         row=self.db.execute('SELECT value FROM preferences WHERE key=?',(key,)).fetchone()
@@ -282,11 +315,15 @@ class Catalog:
             self.db.execute('DELETE FROM collections WHERE id=?',(ident,))
 
     def remove_photos(self,ids):
-        with self.db:
-            for ident in ids:
-                for table in ('history','snapshots','collection_members'):self.db.execute(f'DELETE FROM {table} WHERE photo_id=?',(ident,))
-                self.db.execute('DELETE FROM preferences WHERE key=?',(f'undo:{ident}',))
-                self.db.execute('DELETE FROM photos WHERE id=?',(ident,))
+        with self.db:self._delete_photos(ids)
+
+    def _delete_photos(self,ids):
+        ids=list(ids)
+        for start in range(0,len(ids),500):                 # a whole folder at once: few passes over each table
+            part=ids[start:start+500];marks=','.join('?'*len(part))
+            for table in ('history','snapshots','collection_members'):self.db.execute(f'DELETE FROM {table} WHERE photo_id IN ({marks})',part)
+            self.db.execute(f'DELETE FROM preferences WHERE key IN ({marks})',[f'undo:{ident}' for ident in part])
+            self.db.execute(f'DELETE FROM photos WHERE id IN ({marks})',part)
 
     def stack(self,ids):
         if not ids:return

@@ -97,6 +97,7 @@ class ExtraTools:
     def watch(self):
         folder=self.w.folder_filter or QFileDialog.getExistingDirectory(self.w,tr('자동으로 새 사진을 가져올 폴더'))
         if folder and folder not in self.watch_paths:
+            self.w.catalog.restore_folder(folder)
             self.watch_paths.append(folder);self.w.catalog.save_preference('watch_folders',self.watch_paths)
             self.timer.start();self.watch_scan()
 
@@ -106,7 +107,7 @@ class ExtraTools:
     def watch_scan(self):
         if self.w.import_busy or self.w.import_scans or self.w.export_running or getattr(self.w,'maintenance_running',False):return
         paths=[p for p in self.watch_paths if Path(p).is_dir()]
-        if paths:self.w.import_paths(paths)
+        if paths:self.w.import_paths(paths,restore=False)
 
     def map(self):
         photos=[self.w.catalog.photo(i) for i in self.w.visible_ids]

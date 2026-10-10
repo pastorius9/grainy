@@ -25,7 +25,7 @@ from .catalog import Catalog
 from .engine import defaults, normalized, load_image, develop, resize_float, to_srgb, thumbnail, export_image, auto_tone_settings, PRESETS, IMAGE_EXTENSIONS
 from .widgets import Adjustment, Histogram, ToneCurve, PhotoView, qimage, histogram_bins, clipping_channels
 from .render_cache import DevelopmentCache
-from .folders import folder_nodes, in_folder, path_key
+from .folders import folder_nodes, in_folder, path_key, contains_folder
 from .auth import CodexAuth
 from .auth_dialog import AuthDialog
 from .command_dialog import CommandDialog
@@ -450,6 +450,11 @@ class MainWindow(QMainWindow):
             sidebar.addWidget(b)
         folder_header=QHBoxLayout()
         folder_header.addWidget(section(tr('폴더')),1)
+        self.remove_folder_button=button('−',lambda:self.remove_folder())
+        self.remove_folder_button.setFixedWidth(30)
+        self.remove_folder_button.setToolTip(tr('선택한 폴더를 카탈로그에서 제거 · 원본 파일은 그대로 둡니다'))
+        self.remove_folder_button.setEnabled(False)
+        folder_header.addWidget(self.remove_folder_button)
         add_folder=button('+',self.import_folder)
         add_folder.setFixedWidth(30)
         add_folder.setToolTip(tr('사진 폴더 가져오기'))
@@ -1021,6 +1026,7 @@ class MainWindow(QMainWindow):
             item.setText(1,str(node['total'] if self.include_subfolders.isChecked() or node['drive'] else node['direct']))
             item.setToolTip(1,f'이 폴더 {node["direct"]}장 · 하위 폴더 포함 {node["total"]}장')
         self.folder_empty.setVisible(not nodes)
+        self.remove_folder_button.setEnabled(self.removable_folder() is not None)
         self.filter_folder_tree()
 
     def filter_folder_tree(self,*args):
@@ -1092,6 +1098,14 @@ class MainWindow(QMainWindow):
             item.setExpanded(True)
         self.save_folder_state()
 
+    def removable_folder(self):
+        path=self.folder_filter
+        return path if path and Path(path).parent!=Path(path) else None
+
+    def remove_folder(self,path=None):
+        path=path or self.removable_folder()
+        if path:self.manager.run(lambda:self.folder_panel.remove(path))
+
     def sync_folder(self,path):
         if not Path(path).is_dir():
             self.statusBar().showMessage(tr('폴더를 찾을 수 없습니다. 드라이브 연결이나 원본 위치를 확인해 주세요.'))
@@ -1113,6 +1127,8 @@ class MainWindow(QMainWindow):
             if Path(path).parent!=Path(path):
                 menu.addAction(tr('상위 폴더 표시'),lambda:self.show_parent_folder(path))
                 menu.addAction(tr('폴더 위치 다시 지정…'),lambda:self.manager.run(lambda:self.folder_panel.locate(path)))
+                menu.addSeparator()
+                menu.addAction(tr('카탈로그에서 폴더 제거…'),lambda:self.remove_folder(path))
         menu.exec(self.folder_tree.viewport().mapToGlobal(position))
 
     def active_list(self):
@@ -2041,12 +2057,15 @@ class MainWindow(QMainWindow):
         if folder:
             self.import_paths([folder])
 
-    def import_paths(self,paths):
+    def import_paths(self,paths,restore=True):
+        """restore: the user chose these paths, so folders removed from the catalog below them come
+        back. An automatic re-read of a watched folder passes False and leaves them out."""
         if self.import_cancel.is_set():
             if self.import_busy or self.import_scans:
                 self.statusBar().showMessage(tr('현재 파일 처리가 멈추면 다시 가져올 수 있습니다.'));return
             self.import_cancel=Event()
         cancelled=self.import_cancel
+        skipped=() if restore else tuple(path_key(folder)+os.sep for folder in self.catalog.removed_folders() if any(contains_folder(p,folder) for p in paths))
         def scan():
             result=[]
             roots=[]
@@ -2056,7 +2075,7 @@ class MainWindow(QMainWindow):
                     roots.append(str(path.resolve()))
                     for p in path.rglob('*'):
                         if cancelled.is_set():return [],[]
-                        if p.suffix.lower() in IMAGE_EXTENSIONS and p.is_file():result.append(str(p))
+                        if p.suffix.lower() in IMAGE_EXTENSIONS and p.is_file() and not path_key(p).startswith(skipped):result.append(str(p))
                 elif path.suffix.lower() in IMAGE_EXTENSIONS:
                     roots.append(str(path.resolve().parent))
                     result.append(str(path))
@@ -2069,6 +2088,7 @@ class MainWindow(QMainWindow):
             files,roots=result
             for root in roots:
                 self.catalog.register_folder(root)
+                if restore:self.catalog.restore_folder(root)
             known={path_key(p) for p in self.catalog.paths()} | self.import_pending_paths
             for file in files:
                 key=path_key(str(Path(file).resolve()))

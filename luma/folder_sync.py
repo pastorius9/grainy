@@ -1,8 +1,8 @@
 """Automatic import of new photos that appear in registered folders: checked shortly after start,
 whenever Grainy becomes the active application, and every two minutes. Only adds catalog entries;
-never touches the files. Photos the user removed from the catalog are not imported again, files
-still being written are left for the next check, and unreadable files are skipped quietly until
-they change."""
+never touches the files. Photos and folders the user removed from the catalog are not imported
+again, files still being written are left for the next check, and unreadable files are skipped
+quietly until they change."""
 import os
 import time
 from pathlib import Path
@@ -23,16 +23,20 @@ def note_output(path):
     OUTPUTS.add(path_key(str(Path(path).resolve())))
 
 
-def new_files(roots, known, skipped=None, cancel=None, settle=SETTLE, now=None):
+def new_files(roots, known, skipped=None, cancel=None, settle=SETTLE, now=None, removed=()):
     """Image files under roots whose path_key is not in known, oldest first. skipped maps a key to the
-    (mtime, size) of a file that failed to import; it is offered again only after it changes."""
+    (mtime, size) of a file that failed to import; it is offered again only after it changes.
+    removed lists folders taken out of the catalog: they are not entered. A root inside one of them
+    was registered after the removal and is read like any other root."""
     from .engine import IMAGE_EXTENSIONS
     skipped = skipped or {}; now = time.time() if now is None else now
+    removed = {path_key(p) for p in removed}
     found = {}
     for root in roots:
         if not os.path.isdir(root):continue
-        for folder, _, names in os.walk(root):
+        for folder, below, names in os.walk(root):
             if cancel is not None and cancel.is_set():return []
+            if removed:below[:] = [name for name in below if path_key(os.path.join(folder, name)) not in removed]
             for name in names:
                 if os.path.splitext(name)[1].lower() not in IMAGE_EXTENSIONS:continue
                 path = os.path.join(folder, name)
@@ -51,6 +55,7 @@ class FolderSync:
         from PySide6.QtCore import QTimer, QThreadPool
         from PySide6.QtWidgets import QApplication
         self.w = w; self.running = False; self.cancel = Event(); self.last = 0.
+        self.revision = 0                               # raised when a folder leaves the catalog
         self.auto = set()                               # keys queued here: their import errors stay quiet
         self.skipped = {}
         self.excluded = set(w.catalog.preference(EXCLUDED, []) or [])
@@ -80,19 +85,21 @@ class FolderSync:
         if self.running or not self.idle() or not self.enabled():return False
         w = self.w
         self.keep_outputs()
-        roots = w.catalog.folder_roots()
+        roots = w.catalog.folder_roots(); removed = w.catalog.removed_folders()
         known = {path_key(p) for p in w.catalog.paths()} | self.excluded
-        skipped = dict(self.skipped); cancel = self.cancel
+        skipped = dict(self.skipped); cancel = self.cancel; revision = self.revision
         self.running = True; self.last = time.monotonic()
-        w.spawn(lambda: new_files(roots, known, skipped, cancel), self.found, self.failed, self.pool)
+        w.spawn(lambda: new_files(roots, known, skipped, cancel, removed=removed),
+                lambda files: self.found(files, revision), self.failed, self.pool)
         return True
 
     def failed(self, error):
         self.running = False
 
-    def found(self, files):
+    def found(self, files, revision=None):
         self.running = False
         w = self.w
+        if revision is not None and revision != self.revision:return   # listed before a folder was removed
         if not files or not self.idle() or not self.enabled():return
         known = {path_key(p) for p in w.catalog.paths()} | w.import_pending_paths | self.excluded
         self.auto &= w.import_pending_paths
@@ -128,6 +135,10 @@ class FolderSync:
         """Photos removed from the catalog while the files stay: do not bring them back automatically."""
         self.excluded |= {path_key(str(Path(p).resolve())) for p in paths}
         self.w.catalog.save_preference(EXCLUDED, sorted(self.excluded))
+
+    def folder_removed(self):
+        """A check that is still running lists the removed folder's files as new: its result is dropped."""
+        self.revision += 1
 
     def release(self):
         """Closing the window: drop an import that only this class queued (found again at the next start)."""
