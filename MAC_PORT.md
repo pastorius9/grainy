@@ -222,3 +222,29 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
 - 먼지 제거 화면은 넣지 못했다. 공개할 수 있는 필름 스캔이 없다.
 - 영어 화면에서 한글로 남던 두 곳(사진 목록의 "불러오는 중…", 새 마스크의 기본 이름)은 `mac` 브랜치에서 고쳤다(코드 변경이라 `main`에는 올리지 않았다). 0.5.85 소스로 다시 빌드한 Metal 라이브러리도 그 커밋에 있다. 0.5.85는 M1 Pro에서 전체 검사 1,251개(5개 건너뜀)와 GPU 검사를 통과한다.
 - **실수 기록**: 위의 "이력을 새로 시작함" 안내를 읽기 전에 예전 `mac` 위에서 만든 커밋을 `mac`에 push해, 지운 이력이 몇 분 동안 `mac` 브랜치에 다시 연결됐다. 새 `main`에서 다시 만든 `mac`으로 강제로 덮어써 되돌렸다. 예전 태그는 push하지 않았다.
+
+## 2026-10-10 — 0.5.86: 가져온 폴더를 카탈로그에서 제거 (맥 쪽에서, 릴리스까지)
+
+- 소유자의 지시로 이 기능은 맥 쪽에서 만들어 `main`에 올리고 릴리스(Windows·macOS)까지 했다. **Windows 작업 폴더는 다음 작업 전에 `main`을 받아야 한다**(`git fetch origin` 뒤 `git merge --ff-only origin/main`. 올리지 않은 작업이 있으면 받은 `main` 위에 다시 얹는다). `mac` 브랜치와 `main`은 같은 커밋이다.
+- 기능: 폴더 우클릭 `카탈로그에서 폴더 제거…`, 폴더 목록 위 `−` 버튼. 0.5.39의 "폴더 삭제·제거 기능은 추가하지 않는다"는 결정을 소유자가 바꿨다. 원본 파일과 폴더는 건드리지 않는다(이 기능의 코드에는 파일을 지우거나 옮기는 호출이 없다).
+- 구조
+  - `Catalog.remove_folder(folder)`: 그 폴더 아래 사진(가상 사본 포함), 그 아래 등록 폴더(`folder_roots`), 그 아래 자동 가져오기 폴더(`watch_folders`)를 한 트랜잭션에서 지우고, 제거한 폴더를 설정값 `removed_folders`에 적는다. 화면 쪽은 `FolderPanel.remove`(확인 창, 제거 전 `backups/folder-removal-*.sqlite` 백업).
+  - `removed_folders`를 보는 곳은 세 군데다: `folder_sync.new_files`(그 폴더에 들어가지 않는다), `FolderPanel.nodes`(디스크에 남아 있는 그 폴더를 목록에 넣지 않는다, `folders.left_out`), `MainWindow.import_paths(paths, restore=False)`(자동 가져오기 폴더가 20초마다 다시 읽을 때).
+  - 기록이 지워지는 때는 둘이다: 사용자가 그 폴더나 그 위 폴더를 직접 가져올 때(`import_paths`의 기본값 `restore=True` → `Catalog.restore_folder`), 그 폴더가 등록 폴더가 될 때(`Catalog.register_folder`).
+  - 제거한 폴더 안의 폴더를 나중에 따로 가져오면 그 폴더는 등록 폴더로서 따로 읽힌다. 제거 기록과 등록 폴더 중 그 경로에 더 가까운 쪽을 따른다.
+  - 폴더 위치 다시 지정(`apply_relinks`)과 폴더 이동(`library.move_folder`)은 `removed_folders`도 새 위치로 옮긴다.
+  - 제거하는 순간 돌고 있던 자동 검사의 결과는 버린다(`FolderSync.revision`). 버리지 않으면 방금 제거한 폴더의 새 파일이 다시 들어오고 등록 폴더도 다시 생긴다.
+  - `Catalog.remove_photos`는 500장씩 묶어 지운다(`_delete_photos`).
+- 이번에 바꾸지 않았지만 알아 둘 동작: "상위 폴더 표시"는 상위 폴더를 등록 폴더로 넣으므로, 새 사진 자동 가져오기가 그 상위 폴더 전체를 읽는다. 제거한 폴더는 이때도 빠진다.
+- 빌드 설정에 선택 작업 `windows-tests`를 넣었다(실행할 때 `windows_tests`를 켠다). GitHub의 Windows 빌드 서버에서 `tools/check.py`를 돌리고, 첫 단계가 실패해도 조작 시험(`test_interaction.py`, `test_studio_ui.py`)까지 돌린 뒤 로그를 실행 기록에 남긴다. 그래픽카드가 없어 `GRAINY_GPU=warp`로 돈다.
+  - 결과(두 번 돌려 같았다): 1,247개 통과, 9개 건너뜀(macOS 전용), **2개 실패**. 폴더 시험은 39개 통과, 1개 건너뜀.
+  - 실패한 둘은 이번에 바꾼 코드를 불러오지 않는다(`luma.engine`, `luma.optics`, `luma.processing` 등만 쓴다). 0.5.85와 같은 코드이므로 그 서버에서는 0.5.85도 같은 결과일 것이다(0.5.85로 돌려 보지는 않았다).
+    - `test_optics.py::test_bounded_maps_use_native_coordinates_and_have_continuous_boundaries`: 띠 경계의 좌표 차이 최댓값이 0.039로 한계 0.02를 넘는다.
+    - `test_processing.py::test_mask_follows_crop_rotation_and_perspective`: 마스크 최대점이 (85, 49), 보정 차이의 최대점이 (85, 51)로 2픽셀 어긋난다.
+  - 두 시험은 macOS(M1 Pro, GitHub의 macOS 빌드 서버)에서는 통과한다. Windows 개발 PC에서의 결과는 맥 쪽에서 알 수 없다. 거기서 통과한다면 같은 Windows라도 컴퓨터에 따라 계산 결과가 조금 다르다는 뜻이다. 원인은 보지 않았다. Windows 쪽에서 확인이 필요하다.
+- **0.5.86의 Windows 파일은 개발 PC가 아니라 GitHub 빌드 서버가 만든 것이다.** `v0.5.86` 태그 빌드의 결과물(`release/Grainy`의 내용 그대로)을 맥에서 최상위 폴더 `Grainy/` 하나로 압축해 릴리스에 올렸다. macOS 파일도 같은 태그 빌드의 결과물이다. 순서는 태그 push → 태그 빌드 → 결과물 세 개로 릴리스 생성이다(그래서 `macos-release` 작업은 올릴 릴리스가 없어 아무것도 하지 않고 끝난다). 태그는 `3e4f2d6`에 있고, 이 메모는 그 뒤의 문서 커밋이다.
+  - 릴리스에 올라간 세 파일의 SHA-256은 맥에서 계산한 값과 깃헙이 표시하는 값이 같다. macOS 앱은 M1 Pro에서 서명 검증과 자가 점검(133개 항목, Metal 결과 일치)을 통과했고 최소 macOS 버전은 14.0으로 적혀 있다.
+  - 릴리스 뒤 `luma.updater.latest()`가 두 운영체제 모두 0.5.86 파일을 돌려준다.
+  - 0.5.85로 비교하면 PC에서 만든 배포 파일과 빌드 서버의 결과물은 파일 681개의 이름이 모두 같다. 내용이 다른 35개는 Python 실행 환경(3.13의 패치 버전 차이), 새로 컴파일한 네이티브 라이브러리 4개와 그 기록, 실행 파일이다.
+  - 압축 파일은 `luma/updater.py`의 `stage()`가 하는 검사(모든 항목이 `Grainy/` 아래, `Grainy.exe`와 `_internal` 있음)를 통과하는지 확인하고 올렸다.
+- 확인하지 못한 것: Windows PC에서 사람이 0.5.86을 실행해 본 것, 그래픽카드가 있는 PC에서 빌드 서버가 만든 실행 파일이 도는지, 0.5.85 → 0.5.86 앱 안 업데이트(Windows·macOS 모두).
