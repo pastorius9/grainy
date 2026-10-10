@@ -98,7 +98,12 @@ jobs:
           GRAINY_GPU: warp
         run: |
           .venv\Scripts\python.exe tools\check.py --workers 3 --output validation\check-windows
-          if ($LASTEXITCODE -ne 0) { Get-ChildItem validation\check-windows\*.log | ForEach-Object { Get-Content $_ -Tail 80 }; exit 1 }
+          $failed = $LASTEXITCODE -ne 0
+          if ($failed -and -not (Test-Path validation\check-windows\interaction.xml)) {
+            # check.py stops at the first phase that fails. The interaction tests run anyway, so that one run tells everything.
+            .venv\Scripts\python.exe -m pytest -q -W error::UserWarning tests/test_interaction.py tests/test_studio_ui.py --junitxml=validation\check-windows\interaction.xml *> validation\check-windows\interaction.log
+          }
+          if ($failed) { Get-ChildItem validation\check-windows\*.log | ForEach-Object { Get-Content $_ -Tail 80 }; exit 1 }
 
       - name: Keep the test logs
         if: ${{ always() }}
