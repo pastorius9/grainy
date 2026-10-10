@@ -1032,8 +1032,10 @@ class PhotoView(QGraphicsView):
         font=painter.font()
         font.setPixelSize(12)
         painter.setFont(font)
-        label=QRectF(rect.center().x()-210,max(8,rect.top()-31),420,24)
+        hint=tr('안쪽 이동 · 모서리 조절 · 바깥 끌어 회전   |   Enter 적용 · Esc 취소')
+        width=max(420,painter.fontMetrics().horizontalAdvance(hint)+28)      # the English hint is longer
+        label=QRectF(rect.center().x()-width/2,max(8,rect.top()-31),width,24)
         painter.fillRect(label,QColor(20,23,27,225))
         painter.setPen(QColor('#f7dfbc'))
-        painter.drawText(label,Qt.AlignmentFlag.AlignCenter,tr('안쪽 이동 · 모서리 조절 · 바깥 끌어 회전   |   Enter 적용 · Esc 취소'))
+        painter.drawText(label,Qt.AlignmentFlag.AlignCenter,hint)
         painter.restore()

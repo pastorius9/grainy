@@ -1,19 +1,51 @@
-# Grainy
+<p align="center">
+  <img alt="Grainy" src="assets/brand/grainy-icon-256.png" width="96">
+</p>
 
-[![release](https://img.shields.io/github/v/release/pastorius9/grainy)](https://github.com/pastorius9/grainy/releases/latest)
-[![downloads](https://img.shields.io/github/downloads/pastorius9/grainy/total)](https://github.com/pastorius9/grainy/releases)
-[![license](https://img.shields.io/github/license/pastorius9/grainy)](LICENSE)
+<h1 align="center">Grainy</h1>
 
-**English** · [한국어](README.ko.md)
+<h3 align="center">A free photo editor and library, made for film scans.</h3>
 
-A photo editor and library for Windows and macOS. Your originals are never modified; edits are kept separately in a local catalog.
+<p align="center">
+  Fix a scan's colour cast with one button, clean up dust, crop and straighten, and keep every roll in one library.<br>
+  RAW files too. No account, no subscription, and your photos never leave your computer.
+</p>
 
-![The Develop view of Grainy](docs/screenshots/en/develop.jpg)
+<p align="center">
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/pastorius9/grainy?style=flat-square&color=c9a36b"></a>
+  <a href="https://github.com/pastorius9/grainy/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/pastorius9/grainy/total?style=flat-square&color=8a6a3b"></a>
+  <img alt="Windows and macOS" src="https://img.shields.io/badge/Windows%20%C2%B7%20macOS-8a6a3b?style=flat-square">
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/pastorius9/grainy?style=flat-square&color=8a6a3b"></a>
+</p>
 
-- **Free and local.** No account, no subscription, no usage statistics. Photos and edits stay on your computer.
+<p align="center">
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="Download for Windows" src="https://img.shields.io/badge/Download%20for%20Windows-1f2328?style=for-the-badge&logo=windows11&logoColor=white" height="38"></a>
+  &nbsp;
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="Download for macOS" src="https://img.shields.io/badge/Download%20for%20macOS-1f2328?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
+</p>
+
+<p align="center"><b>English</b> · <a href="README.ko.md">한국어</a></p>
+
+![The Develop view of Grainy with a film scan](docs/screenshots/en/develop.jpg)
+
+## One button for colour casts
+
+Lab scans often come back yellow, green or blue. **Auto Colour** looks at the shadows, the midtones and the highlights separately and corrects each with channel curves, because a film scan is rarely off by the same amount everywhere. One white balance value cannot do that.
+
+![Two film scans before and after Auto Colour](docs/screenshots/film-auto-color.jpg)
+
+Left: the scans as they came from the lab. Right: after one press of Auto Colour, with no other adjustment.
+
+- Photos lit by coloured light (a concert, a neon sign) are left alone.
+- A strength slider sets how far the correction goes. A very strong cast does not come back completely.
+- Tungsten film shot in daylight, or the other way round, has its own one-button conversion.
+
+## Why Grainy
+
+- **Free and local.** No account, no subscription, no usage statistics. Photos and edits stay on your computer, and your originals are never modified.
+- **Made for film scans.** Auto Colour, automatic detection of dust and scratches that you review before anything is removed, cropping of scan borders, grain.
 - **RAW development.** 14 of 15 public RAW samples open: Canon, Nikon, Fujifilm (X-Trans), Leica, Sony, Panasonic, Olympus, Pentax, Ricoh. Nikon's High Efficiency (HE) compressed NEF does not.
 - **GPU acceleration.** Direct3D 11 on Windows, Metal on macOS. On an M1 Pro, fully developing a 24 MP photo (with noise reduction and sharpening) took 8.2 s on the CPU alone and 1.6 s with acceleration (measured once). The accelerated result is within one 8-bit step of the CPU result.
-- **Tools for film scans.** Automatic detection and removal of dust and scratches, and tungsten ↔ daylight conversion.
 - **Lightroom catalogs.** Imports Lightroom catalogs (ratings, flags, collections, develop settings) and presets.
 
 ## Screens
@@ -23,6 +55,12 @@ A photo editor and library for Windows and macOS. Your originals are never modif
 Register a folder and new photos are imported as they appear. Organise with ratings, flags, colour labels, keywords, collections and smart collections.
 
 ![Library](docs/screenshots/en/library.jpg)
+
+### Crop and straighten
+
+Auto straighten finds the angle and puts it on the slider. Drag outside the frame to turn the photo; the crop frame follows so that no empty corner is left.
+
+![The crop tool with a turned photo](docs/screenshots/en/crop.jpg)
 
 ### Tone and colour
 
@@ -36,13 +74,13 @@ Select areas with a brush, linear and radial gradients, or colour and luminance 
 
 ![A linear gradient mask on the sky](docs/screenshots/en/mask.jpg)
 
-### As imported, and developed
+### RAW, as imported and developed
 
 ![Before and after](docs/screenshots/before-after.jpg)
 
 Left: the RAW file as imported. Right: with basic adjustments and the sky mask above.
 
-The photos on this page are CC0 samples from [raw.pixls.us](https://raw.pixls.us) (Leica M (Typ 240), Ricoh GR III, Canon EOS R5 and others). The screenshots were taken by driving the real program automatically.
+The film scans on this page are the author's own. The other photos are CC0 samples from [raw.pixls.us](https://raw.pixls.us) (Leica M (Typ 240), Ricoh GR III, Canon EOS R5 and others). The screenshots were taken by driving the real program automatically.
 
 ## Download and run
 

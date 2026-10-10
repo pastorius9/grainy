@@ -1,19 +1,51 @@
-# Grainy
+<p align="center">
+  <img alt="Grainy" src="assets/brand/grainy-icon-256.png" width="96">
+</p>
 
-[![release](https://img.shields.io/github/v/release/pastorius9/grainy)](https://github.com/pastorius9/grainy/releases/latest)
-[![downloads](https://img.shields.io/github/downloads/pastorius9/grainy/total)](https://github.com/pastorius9/grainy/releases)
-[![license](https://img.shields.io/github/license/pastorius9/grainy)](LICENSE)
+<h1 align="center">Grainy</h1>
 
-[English](README.md) · **한국어**
+<h3 align="center">필름 스캔을 위해 만든 무료 사진 보정·관리 프로그램</h3>
 
-Windows와 macOS용 사진 보정·관리 프로그램입니다. 원본 사진은 건드리지 않고, 보정 내용을 보관함(카탈로그)에 따로 저장합니다.
+<p align="center">
+  스캔의 색 틀어짐을 버튼 한 번으로 잡고, 먼지를 지우고, 수평을 맞추고, 모든 롤을 한 보관함에서 관리합니다.<br>
+  RAW 파일도 됩니다. 계정도 구독도 없고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.
+</p>
 
-![Grainy의 현상 화면](docs/screenshots/ko/develop.jpg)
+<p align="center">
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/pastorius9/grainy?style=flat-square&color=c9a36b"></a>
+  <a href="https://github.com/pastorius9/grainy/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/pastorius9/grainy/total?style=flat-square&color=8a6a3b"></a>
+  <img alt="Windows and macOS" src="https://img.shields.io/badge/Windows%20%C2%B7%20macOS-8a6a3b?style=flat-square">
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/github/license/pastorius9/grainy?style=flat-square&color=8a6a3b"></a>
+</p>
 
-- **무료, 로컬.** 계정도 구독도 없고 사용 통계를 수집하지 않습니다. 사진과 보정 기록은 내 컴퓨터에만 있습니다.
+<p align="center">
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="Windows용 받기" src="https://img.shields.io/badge/Windows%EC%9A%A9%20%EB%B0%9B%EA%B8%B0-1f2328?style=for-the-badge&logo=windows11&logoColor=white" height="38"></a>
+  &nbsp;
+  <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="macOS용 받기" src="https://img.shields.io/badge/macOS%EC%9A%A9%20%EB%B0%9B%EA%B8%B0-1f2328?style=for-the-badge&logo=apple&logoColor=white" height="38"></a>
+</p>
+
+<p align="center"><a href="README.md">English</a> · <b>한국어</b></p>
+
+![필름 스캔을 연 Grainy의 현상 화면](docs/screenshots/ko/develop.jpg)
+
+## 색 틀어짐을 버튼 한 번으로
+
+현상소에서 받은 스캔은 누렇거나 푸르거나 초록빛으로 틀어져 있을 때가 많습니다. **자동 색**은 어두운 곳, 중간, 밝은 곳을 따로 보고 채널 커브로 각각 바로잡습니다. 필름 스캔은 밝기에 따라 틀어진 정도가 다른 경우가 많아서, 화이트밸런스 값 하나로는 잡히지 않기 때문입니다.
+
+![자동 색 전후의 필름 스캔 두 장](docs/screenshots/film-auto-color.jpg)
+
+왼쪽은 현상소에서 받은 그대로, 오른쪽은 자동 색 버튼을 한 번 누른 결과입니다. 다른 보정은 하지 않았습니다.
+
+- 공연장 조명이나 네온처럼 원래 색이 있는 빛으로 찍은 사진은 건드리지 않습니다.
+- 강도 슬라이더로 보정 정도를 조절합니다. 아주 심하게 틀어진 사진은 완전히 돌아오지 않습니다.
+- 텅스텐 필름을 낮에 찍었거나 그 반대인 경우를 위한 변환 버튼이 따로 있습니다.
+
+## 왜 Grainy인가
+
+- **무료, 로컬.** 계정도 구독도 없고 사용 통계를 수집하지 않습니다. 사진과 보정 기록은 내 컴퓨터에만 있고, 원본은 절대 건드리지 않습니다.
+- **필름 스캔을 위한 도구.** 자동 색, 먼지·스크래치 자동 감지(지우기 전에 직접 확인), 스캔 테두리 자르기, 그레인.
 - **RAW 현상.** 공개 RAW 샘플 15종 중 14종이 열립니다: Canon, Nikon, Fujifilm(X-Trans), Leica, Sony, Panasonic, Olympus, Pentax, Ricoh. Nikon의 고효율(HE) 압축 NEF는 열리지 않습니다.
-- **그래픽카드 가속.** Windows는 Direct3D 11, macOS는 Metal을 씁니다. M1 Pro에서 2,400만 화소 사진의 전체 현상(노이즈 제거·선명도 포함)이 CPU만으로 8.2초, 가속을 켜면 1.6초였습니다(1회 측정). 가속 결과와 CPU 결과의 차이는 8비트 한 단계 이하입니다.
-- **필름 스캔을 위한 도구.** 먼지·스크래치 자동 감지와 제거, 텅스텐↔데이라이트 색온도 변환.
+- **그래픽카드 가속.** Windows는 Direct3D 11, macOS는 Metal을 씁니다. M1 Pro에서 2,400만 화소 사진의 전체 현상(노이즈 제거·선명도 포함)이 CPU만으로 8.2초, 가속을 켜면 1.6초였습니다(한 번 잰 값). 가속 결과는 CPU 결과와 8비트 한 단계 이내로 같습니다.
 - **Lightroom에서 옮겨 오기.** 카탈로그(별점·플래그·컬렉션·보정값)와 프리셋을 가져옵니다.
 
 ## 화면
@@ -23,6 +55,12 @@ Windows와 macOS용 사진 보정·관리 프로그램입니다. 원본 사진�
 폴더를 등록하면 새 사진을 알아서 가져옵니다. 별점, 플래그, 색 라벨, 키워드, 컬렉션과 스마트 컬렉션으로 정리합니다.
 
 ![보관함](docs/screenshots/ko/library.jpg)
+
+### 크롭과 수평 맞추기
+
+자동 수평 맞추기가 각도를 찾아 슬라이더에 넣어 줍니다. 틀 바깥을 끌면 사진이 돌아가고, 빈 모서리가 생기지 않게 크롭 틀이 따라옵니다.
+
+![사진을 돌린 크롭 화면](docs/screenshots/ko/crop.jpg)
 
 ### 톤과 색
 
@@ -36,13 +74,13 @@ Windows와 macOS용 사진 보정·관리 프로그램입니다. 원본 사진�
 
 ![하늘에 건 선형 그레이디언트 마스크](docs/screenshots/ko/mask.jpg)
 
-### 가져온 그대로와 보정 후
+### RAW, 가져온 그대로와 보정 후
 
 ![보정 전과 후](docs/screenshots/before-after.jpg)
 
 왼쪽은 RAW를 가져온 그대로, 오른쪽은 기본 보정과 위의 하늘 마스크를 적용한 결과입니다.
 
-화면의 사진은 모두 [raw.pixls.us](https://raw.pixls.us)의 CC0 공개 샘플입니다(Leica M (Typ 240), Ricoh GR III, Canon EOS R5 등). 화면은 실제 프로그램을 자동으로 조작해 찍었습니다.
+이 문서의 필름 스캔은 만든 사람이 직접 찍은 것입니다. 나머지 사진은 [raw.pixls.us](https://raw.pixls.us)의 CC0 공개 샘플입니다(Leica M (Typ 240), Ricoh GR III, Canon EOS R5 등). 화면은 실제 프로그램을 자동으로 조작해 찍었습니다.
 
 ## 받기와 실행
 
