@@ -615,7 +615,7 @@ class StudioTools:
 
     def new_layer(self):
         self.w.commit()
-        layers=deepcopy(self.w.settings['masks']);layers.append({'name':f'마스크 {len(layers)+1}','enabled':True,'opacity':1,'components':[],'adjustments':{}})
+        layers=deepcopy(self.w.settings['masks']);layers.append({'name':tr('마스크 {0}',len(layers)+1),'enabled':True,'opacity':1,'components':[],'adjustments':{}})
         self.w.set_setting('masks',layers);self.layer_index=len(layers)-1;self.component_index=-1;self.load_layers()
 
     def add_component(self,component):
@@ -685,7 +685,7 @@ class StudioTools:
                 if not self.w.closing and self.color_pick_token==token:self.range_pick_note.setText(tr('대상이 바뀌어 선택을 취소했습니다. 다시 선택하세요.'))
                 return
             layers=deepcopy(settings['masks']);target=layer
-            if target is None:target=len(layers);layers.append(dict(name=f'마스크 {target+1}',enabled=True,opacity=1,components=[],adjustments={}))
+            if target is None:target=len(layers);layers.append(dict(name=tr('마스크 {0}',target+1),enabled=True,opacity=1,components=[],adjustments={}))
             if color:
                 colors=deepcopy(samples)
                 for rgb in result['colors']:

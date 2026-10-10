@@ -364,3 +364,4 @@ Lightroom 카탈로그 가져오기 => Import Lightroom catalog
 언어 설정을 저장하지 못했습니다. => Could not save the language setting.
 이 압축 방식은 지원하지 않습니다. 니콘의 고효율(HE) RAW라면 카메라에서 "무손실 압축"으로 찍거나 DNG로 변환해 주세요. => This compression is not supported. For a Nikon High Efficiency (HE) RAW, set the camera to "Lossless compression" or convert the file to DNG.
 지원하지 않는 RAW 형식입니다. => This RAW format is not supported.
+마스크 {0} => Mask {0}

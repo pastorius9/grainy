@@ -1,4 +1,5 @@
 """Sparse Qt photo views: visible rows and a shared, bounded thumbnail cache."""
+from .i18n import tr
 from collections import OrderedDict
 from pathlib import Path
 import time
@@ -32,7 +33,7 @@ class PhotoModel(QAbstractListModel):
         if not index.isValid() or not 0<=index.row()<len(self.ids):return None
         if role==Qt.ItemDataRole.UserRole:return self.ids[index.row()]
         row=self.entry(index.row(),request=False)
-        if role==Qt.ItemDataRole.DisplayRole:return self.caption(row) if row else '불러오는 중…'
+        if role==Qt.ItemDataRole.DisplayRole:return self.caption(row) if row else tr('불러오는 중…')
         if role==Qt.ItemDataRole.ToolTipRole:return row['path']+'\n'+self.thumb_status.get(self.ids[index.row()],'') if row else None
         return None
 
@@ -158,7 +159,7 @@ class PhotoDelegate(QStyledItemDelegate):
             painter.drawText(badge,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(status,Qt.TextElideMode.ElideRight,badge.width()))
         colour={'빨강':'#ec998c','노랑':'#eed08e','초록':'#95c9aa','파랑':'#95bce9','보라':'#c6a2e2'}
         painter.setPen(QColor(colour.get(row['label'],'#f4e7d4' if selected else '#aeb6bf') if row else '#89929d'))
-        caption=model.caption(row).split('\n') if row else ['불러오는 중…','']
+        caption=model.caption(row).split('\n') if row else [tr('불러오는 중…'),'']
         label=QRect(rect.left()+5,rect.bottom()-33,rect.width()-10,17)
         painter.drawText(label,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(caption[0],Qt.TextElideMode.ElideMiddle,label.width()))
         label.translate(0,16);painter.drawText(label,Qt.AlignmentFlag.AlignCenter,caption[1]);painter.restore()
