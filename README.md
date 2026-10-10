@@ -1,53 +1,96 @@
 # Grainy
 
-Windows와 macOS용 사진 보정·관리 프로그램입니다. 원본 사진은 건드리지 않고, 보정 내용을 보관함(카탈로그)에 따로 저장합니다.
+[![release](https://img.shields.io/github/v/release/pastorius9/grainy)](https://github.com/pastorius9/grainy/releases/latest)
+[![downloads](https://img.shields.io/github/downloads/pastorius9/grainy/total)](https://github.com/pastorius9/grainy/releases)
+[![license](https://img.shields.io/github/license/pastorius9/grainy)](LICENSE)
 
-*A non-destructive photo editor and library for Windows and macOS (Korean and English UI). Originals are never modified; edits live in a local catalog.*
+**English** · [한국어](README.ko.md)
 
-## 받기와 실행
+A photo editor and library for Windows and macOS. Your originals are never modified; edits are kept separately in a local catalog.
 
-1. Releases에서 `Grainy-<버전>-windows-x64.zip`을 받아 원하는 폴더에 풉니다.
-2. `Grainy.exe`를 실행합니다.
-3. 코드 서명이 없어 처음 실행할 때 Windows가 "알 수 없는 게시자" 경고를 보여 줍니다.
+![The Develop view of Grainy](docs/screenshots/en/develop.jpg)
 
-- Windows 10/11 64비트가 필요합니다.
-- 보관함은 `%LOCALAPPDATA%\Luma\Library`에 만들어집니다.
+- **Free and local.** No account, no subscription, no usage statistics. Photos and edits stay on your computer.
+- **RAW development.** 14 of 15 public RAW samples open: Canon, Nikon, Fujifilm (X-Trans), Leica, Sony, Panasonic, Olympus, Pentax, Ricoh. Nikon's High Efficiency (HE) compressed NEF does not.
+- **GPU acceleration.** Direct3D 11 on Windows, Metal on macOS. On an M1 Pro, fully developing a 24 MP photo (with noise reduction and sharpening) took 8.2 s on the CPU alone and 1.6 s with acceleration (measured once). The accelerated result is within one 8-bit step of the CPU result.
+- **Tools for film scans.** Automatic detection and removal of dust and scratches, and tungsten ↔ daylight conversion.
+- **Lightroom catalogs.** Imports Lightroom catalogs (ratings, flags, collections, develop settings) and presets.
+
+## Screens
+
+### Library
+
+Register a folder and new photos are imported as they appear. Organise with ratings, flags, colour labels, keywords, collections and smart collections.
+
+![Library](docs/screenshots/en/library.jpg)
+
+### Tone and colour
+
+Exposure, tone and channel curves, an eight-colour mixer, colour grading, camera profiles (DCP) and lens corrections (Lensfun). Edits are recorded as you make them, with no Save button, and every step can be undone.
+
+![Color mixer](docs/screenshots/en/mixer.jpg)
+
+### Local adjustments
+
+Select areas with a brush, linear and radial gradients, or colour and luminance ranges, and combine them by adding, subtracting and intersecting. Below, a linear gradient on the sky only.
+
+![A linear gradient mask on the sky](docs/screenshots/en/mask.jpg)
+
+### As imported, and developed
+
+![Before and after](docs/screenshots/before-after.jpg)
+
+Left: the RAW file as imported. Right: with basic adjustments and the sky mask above.
+
+The photos on this page are CC0 samples from [raw.pixls.us](https://raw.pixls.us) (Leica M (Typ 240), Ricoh GR III, Canon EOS R5 and others). The screenshots were taken by driving the real program automatically.
+
+## Download and run
+
+### Windows
+
+1. Download `Grainy-<version>-windows-x64.zip` from Releases and unpack it wherever you like.
+2. Run `Grainy.exe`.
+3. The program is not code-signed, so Windows shows an "unknown publisher" warning the first time.
+
+- Windows 10/11, 64-bit.
+- The library is created in `%LOCALAPPDATA%\Luma\Library`.
 
 ### macOS (Apple Silicon)
 
-1. Releases에서 `Grainy-<버전>-macos-arm64.dmg`를 받아 열고, Grainy를 응용 프로그램 폴더로 끌어다 놓습니다.
-2. 처음 실행하면 macOS가 확인되지 않은 개발자의 앱이라며 막습니다. `시스템 설정 → 개인정보 보호 및 보안`에서 "그래도 열기"를 한 번 누르면 됩니다. Apple 개발자 서명과 공증이 없기 때문입니다.
+1. Download `Grainy-<version>-macos-arm64.dmg` from Releases, open it and drag Grainy to the Applications folder.
+2. On first start macOS blocks the app as coming from an unidentified developer. Press "Open Anyway" once in `System Settings → Privacy & Security`. The app has no Apple developer signature or notarization.
 
-- Apple Silicon(M1 이후) Mac과 macOS 14 이상이 필요합니다. Intel Mac은 지원하지 않습니다.
-- 보관함과 설정은 `~/Library/Application Support/Grainy/`에 만들어집니다.
-- macOS 버전은 0.5.84가 첫 배포입니다. 자동 시험은 통과했지만 여러 사람의 Mac에서 써 본 것은 아닙니다. 문제는 피드백 버튼으로 알려 주세요.
+- An Apple Silicon Mac (M1 or later) and macOS 14 or later. Intel Macs are not supported.
+- The library and settings are created in `~/Library/Application Support/Grainy/`.
+- 0.5.84 is the first macOS release. It passes the automated tests but has not been used on many people's Macs. Please report problems with the Feedback button.
 
-## 삭제
+## Uninstall
 
-- 압축을 푼 Grainy 폴더를 지우면 프로그램이 삭제됩니다. 레지스트리나 시스템 설정은 건드리지 않습니다.
-- 보정 기록까지 지우려면 `%LOCALAPPDATA%\Luma`(보관함)와 `%LOCALAPPDATA%\Grainy`(설정) 폴더도 지웁니다. 사진 원본은 이 폴더들에 없습니다.
+- Windows: delete the unpacked Grainy folder. Nothing is written to the registry or system settings.
+- To remove the edits as well, delete `%LOCALAPPDATA%\Luma` (library) and `%LOCALAPPDATA%\Grainy` (settings). Your original photos are not in these folders.
+- macOS: move Grainy from the Applications folder to the Trash. To remove the edits as well, delete `~/Library/Application Support/Grainy`.
 
-## 기능
+## Features
 
-- **보관함**: 폴더 가져오기, 등록한 폴더의 새 사진 자동 가져오기, 별점·색 라벨·키워드, 컬렉션과 스마트 컬렉션, 폴더 위치 복구
-- **RAW 현상**: 주요 카메라 RAW, 카메라 프로파일(DCP), 렌즈 보정(Lensfun)
-- **보정**: 노출·톤 커브·채널 커브·색상 혼합·컬러 그레이딩, 자동 톤, 자동 색(색 틀어짐 보정), 필름 색온도 변환(텅스텐↔데이라이트)
-- **디테일**: 선명도, 노이즈 제거, 그레인, 비네팅
-- **부분 보정**: 마스크(브러시, 선형·방사형 그레이디언트, 색상·광도 범위, 추가·빼기·교차), 힐링, 먼지 제거
-- **내보내기**: JPEG, PNG, TIFF, AVIF, JPEG XL
-- **피드백**: 화면 위쪽 버튼으로 문제점이나 개선 아이디어를 바로 보낼 수 있습니다
-- **업데이트**: 프로그램 안에서 새 버전을 확인하고 바로 교체합니다
-- **기타**: 편집 이력과 실행 취소, Lightroom 카탈로그·프리셋 가져오기, 카탈로그 백업(Google Drive 폴더 포함), GPS 지도
+- **Library**: import folders, automatic import of new photos in registered folders, ratings, colour labels and keywords, collections and smart collections, recovery of moved folders
+- **RAW development**: RAW files of the major camera makers, camera profiles (DCP), lens corrections (Lensfun)
+- **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight)
+- **Detail**: sharpening, noise reduction, grain, vignette
+- **Local adjustments**: masks (brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal
+- **Export**: JPEG, PNG, TIFF, AVIF, JPEG XL
+- **Feedback**: a button at the top of the window sends a problem report or an idea
+- **Updates**: the program checks for a new version and replaces itself
+- **Also**: edit history and undo, Lightroom catalog and preset import, catalog backup (including a Google Drive folder), a GPS map
 
-자세한 사용법은 프로그램에 들어 있는 도움말(`README.html`)에 있습니다.
+The full manual ships with the program (`README.html`, in Korean).
 
-## 개인정보
+## Privacy
 
-- 사용 통계를 수집하지 않습니다. 인터넷으로 나가는 것은 아래 두 가지뿐이고, 둘 다 직접 요청했을 때만 동작합니다.
-- **피드백 보내기**: 보내기를 누를 때만 입력한 글, Grainy 버전, PC 사양 한 줄(Windows 버전, 그래픽카드 이름)이 전송됩니다. 사진, 파일 이름과 경로, 사용자 이름은 보내지 않습니다.
-- **업데이트**: "업데이트 확인"을 누르거나 "새 버전 자동 확인"을 켰을 때만 GitHub에서 최신 버전 정보를 읽습니다(자동 확인은 처음 실행할 때 켤지 묻고, 설정에서 끌 수 있습니다). 사용자에 관한 정보는 보내지 않습니다.
+- No usage statistics are collected. Only two things go to the internet, and both only when you ask.
+- **Feedback**: pressing Send transmits the text you typed, the Grainy version and a one-line system description (operating system version and graphics adapter name). Photos, file names and paths, and user names are not sent.
+- **Updates**: the latest version information is read from GitHub only when you press "Check for Updates" or have switched on the automatic check (you are asked at first start, and it can be switched off in Settings). Nothing about you is sent.
 
-## 소스에서 실행
+## Run from source
 
 ```bash
 python -m venv .venv
@@ -55,17 +98,15 @@ python -m venv .venv
 .venv\Scripts\python main.py
 ```
 
-그래픽카드 가속과 색 변환용 C++ 모듈은 `tools/build_native_*.py`로 빌드합니다(Visual Studio C++ 도구 필요). 테스트는 `python tools/check.py`입니다.
+The C++ modules for GPU acceleration and colour conversion are built with `tools/build_native_*.py` (Visual Studio C++ tools on Windows; `tools/build_native_macos.py` with the Xcode command line tools on macOS). Run the tests with `python tools/check.py`: more than 1,200 of them.
 
-## 라이선스
+## License
 
-Grainy 자체의 코드는 [MIT 라이선스](LICENSE)입니다. 사용·수정·재배포·상업적 이용이 자유롭고, 저작권 표시와 라이선스 문구만 유지하면 됩니다. "Grainy" 이름과 로고는 라이선스 대상이 아닙니다.
+Grainy's own code is under the [MIT License](LICENSE). You may use, modify, redistribute and sell it, keeping the copyright notice and the license text. The name "Grainy" and the logo are not covered by the license.
 
-함께 배포되는 외부 부품은 각자의 라이선스를 따릅니다. Qt/PySide6(LGPL-3.0), LibRaw, OpenCV, Lensfun 등을 사용합니다. 전체 목록과 조건은 [DISTRIBUTION.md](DISTRIBUTION.md)에, 고지문은 배포본의 `THIRD_PARTY_LICENSES` 폴더에 있습니다.
+Third-party components keep their own licenses: Qt/PySide6 (LGPL-3.0), LibRaw, OpenCV, Lensfun and others. The full list and terms are in [DISTRIBUTION.md](DISTRIBUTION.md) (Korean); the notices are in the `THIRD_PARTY_LICENSES` folder of a release.
 
-Adobe, Lightroom, Photoshop은 Adobe Inc.의 상표입니다. Grainy는 Adobe가 만들거나 후원·보증한 프로그램이 아니며 Adobe와 관련이 없습니다.
-
-*Adobe, Lightroom and Photoshop are trademarks of Adobe Inc. Grainy is an independent project: it is not made, sponsored or endorsed by Adobe and is not affiliated with it.*
+Adobe, Lightroom and Photoshop are trademarks of Adobe Inc. Grainy is an independent project: it is not made, sponsored or endorsed by Adobe and is not affiliated with it.
 
 ## Code signing policy
 
@@ -78,4 +119,4 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 - Only binaries built from this repository are signed. Third-party libraries shipped with Grainy keep their own publishers' signatures.
 - Signed releases are built from source by GitHub Actions ([build.yml](.github/workflows/build.yml)) on a GitHub-hosted runner; the native libraries are compiled there as well.
 
-**Privacy policy:** This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. There are two such requests. The Feedback dialog: pressing Send transmits the text you typed, the Grainy version and a one-line system description (Windows version and graphics adapter name). Updates: "Check for Updates" and, only if you switch it on when asked at first start (it can be switched off in Settings), a once-a-day check at start-up read the latest release information from GitHub; installing an update downloads the release file from GitHub. Photos, file names, paths and user names are never transmitted.
+**Privacy policy:** This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. There are two such requests. The Feedback dialog: pressing Send transmits the text you typed, the Grainy version and a one-line system description (operating system version and graphics adapter name). Updates: "Check for Updates" and, only if you switch it on when asked at first start (it can be switched off in Settings), a once-a-day check at start-up read the latest release information from GitHub; installing an update downloads the release file from GitHub. Photos, file names, paths and user names are never transmitted.
