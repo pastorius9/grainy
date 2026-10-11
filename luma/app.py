@@ -622,6 +622,24 @@ class MainWindow(QMainWindow):
         self.auto_color_slider.sliderReleased.connect(lambda:self.auto_color(remember=True))
         for item in (QLabel(tr('자동 색 세기')),self.auto_color_slider,self.auto_color_value):amount_row.addWidget(item)
         self.auto_color_row.hide();edits.addWidget(self.auto_color_row)
+        # Film negatives: one button turns the scan into a positive (luma/negative.py); its two sliders and
+        # the film-base picker show while it is on. Every other control then works on the positive.
+        self.negative_button=button(tr('네거티브 반전'),self.toggle_negative,True)
+        self.negative_button.setToolTip(tr('스캔한 네거티브 필름을 사진으로 바꿉니다. 필름 베이스 색(컬러 네거티브의 주황색)을 빼고 채널별로 뒤집습니다. 다른 보정은 반전한 사진에 그대로 적용됩니다.'))
+        edits.addWidget(self.negative_button)
+        self.negative_panel=QWidget();negative_box=QVBoxLayout(self.negative_panel);negative_box.setContentsMargins(0,0,0,0)
+        self.add_adjustment(negative_box,'negative_density','필름 농도',-3,3,100)
+        self.add_adjustment(negative_box,'negative_range','필름 대비',3,10,10)
+        negative_row=QHBoxLayout()
+        self.negative_base_button=button(tr('필름 베이스 찍기'),self.toggle_negative_base,True)
+        self.negative_base_button.setToolTip(tr('사진 가장자리의 촬영되지 않은 빈 필름을 클릭하면 그 색을 필름 베이스로 씁니다. 자동으로 잡은 색이 맞지 않을 때 쓰세요.'))
+        self.view.sampleCancelled.connect(lambda:self.negative_base_button.setChecked(False))
+        negative_row.addWidget(self.negative_base_button)
+        self.negative_measure_button=button(tr('다시 분석'),self.measure_negative_again)
+        self.negative_measure_button.setToolTip(tr('필름 베이스와 가장 밝은 부분을 현재 사진에서 다시 잽니다.'))
+        negative_row.addWidget(self.negative_measure_button)
+        negative_box.addLayout(negative_row)
+        self.negative_panel.hide();edits.addWidget(self.negative_panel)
         self.auto_tone_note=QLabel(tr('자동톤: 검정·흰색 양끝 3% 여유\n목표 밝기 약 8–247 / 255'))
         self.auto_tone_note.setObjectName('muted')
         self.auto_tone_note.setWordWrap(True)
@@ -1245,6 +1263,9 @@ class MainWindow(QMainWindow):
         if hasattr(self,'studio'):self.studio.load_settings()
         for key,control in self.adjustments.items():
             control.set_value(self.settings[key])
+        if hasattr(self,'negative_button'):
+            self.negative_button.blockSignals(True);self.negative_button.setChecked(bool(self.settings['negative']));self.negative_button.blockSignals(False)
+            self.negative_panel.setVisible(bool(self.settings['negative']))
         self.sync_crop_limit()
         if hasattr(self,'studio'):self.studio.display_raw_white()
         self.bw.blockSignals(True)
@@ -1832,7 +1853,59 @@ class MainWindow(QMainWindow):
         self.view.sample_mode=checked
         if checked:self.view.setFocus()
 
+    def measure_negative(self):
+        """Film base and densest part of the current scan, into the settings (luma/negative.analyse)."""
+        from . import negative
+        from .engine import resize_float
+        measured=negative.converted(resize_float(self.source,1200),self.settings)
+        self.settings['negative_base'],self.settings['negative_peak']=measured['negative_base'],measured['negative_peak']
+
+    def toggle_negative(self,checked):
+        """Turn the scanned negative into a positive, or back. The scan is measured the first time only."""
+        if self.source is None:
+            self.negative_button.setChecked(False);return
+        self.commit()
+        if checked and (self.settings['negative_base'] is None or self.settings['negative_peak'] is None):self.measure_negative()
+        self.settings['negative']=bool(checked)
+        self.commit('네거티브 반전' if checked else '네거티브 반전 해제')
+        self.load_controls();self.before_button.setChecked(False)
+        if checked:self.statusBar().showMessage(tr('네거티브 반전 적용 · 필름 농도와 필름 대비로 다듬고, 자동 톤·자동 색을 이어서 쓸 수 있습니다.'),8000)
+        self.render_version+=1;self.render()
+
+    def measure_negative_again(self):
+        if self.source is None or not self.settings['negative']:return
+        self.commit();self.measure_negative();self.commit('네거티브 다시 분석')
+        self.render_version+=1;self.render()
+
+    def toggle_negative_base(self,checked):
+        if self.source is None or not self.settings['negative']:
+            self.negative_base_button.setChecked(False);self.view.sample_mode=False;return
+        if checked:
+            self.set_mode(0)
+            if self.view.crop_mode:self.cancel_crop()
+            self.view.set_tool('');self.wb_button.setChecked(False)
+            self.statusBar().showMessage(tr('사진 가장자리의 촬영되지 않은 빈 필름을 클릭하세요.'))
+        self.view.sample_mode=checked
+        if checked:self.view.setFocus()
+
+    def sample_negative_base(self,x,y):
+        """The clicked spot of the scan (before the conversion) becomes the film base."""
+        from . import negative
+        from .rawcolor import develop_camera
+        point=self.studio.source_point([x,y])
+        self.negative_base_button.setChecked(False);self.view.sample_mode=False
+        if point is None:return
+        scan=develop_camera(self.source,self.settings)
+        px=min(scan.shape[1]-1,int(point[0]*scan.shape[1]));py=min(scan.shape[0]-1,int(point[1]*scan.shape[0]))
+        base=negative.base_from(scan[max(0,py-4):py+5,max(0,px-4):px+5])
+        peak=self.settings['negative_peak']
+        if peak is None or any(b<=p*1.1 for b,p in zip(base,peak)):
+            self.statusBar().showMessage(tr('빈 필름으로 보기에는 너무 어두운 곳입니다. 촬영되지 않은 가장 밝은 부분을 클릭하세요.'),8000);return
+        self.commit();self.settings['negative_base']=base;self.commit('필름 베이스 지정')
+        self.render_version+=1;self.render()
+
     def sample_wb(self,x,y):
+        if self.negative_base_button.isChecked():return self.sample_negative_base(x,y)
         from .rawcolor import CameraSource,neutral_white,default_profile
         if isinstance(self.source,CameraSource):
             point=self.studio.source_point([x,y])

@@ -67,10 +67,10 @@ def auto_color_settings(source, settings, amount=1.):
     else, including the crop used for the analysis, stays as it is."""
     from .engine import normalized, geometry, resize_float, _develop_tone_pixels, _develop_color_mix
     from .optics import lens_shading
-    from .rawcolor import develop_camera
+    from .rawcolor import linear_frame
     s = normalized(settings)
     if s['monochrome']:return s, {'status': 'monochrome'}
-    image = geometry(lens_shading(develop_camera(resize_float(source, 720), s), s), s)
+    image = geometry(lens_shading(linear_frame(resize_float(source, 720), s), s), s)
     image = _develop_tone_pixels(np.array(image, np.float32, copy=True), s)
     curves, report = channel_points(_develop_color_mix(np.clip(image, 0, 1), s), amount)
     if curves is None:return s, report

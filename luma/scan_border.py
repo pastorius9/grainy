@@ -64,6 +64,6 @@ def crop_for(source, settings, longest=1200):
     """detect() on the photo's uncropped geometry frame at preview size; the crop for settings['crop'] or None."""
     from .engine import geometry, resize_float, to_srgb
     from .optics import lens_shading
-    from .rawcolor import develop_camera
-    frame = geometry(lens_shading(develop_camera(resize_float(source, longest), settings), settings), settings, False)
+    from .rawcolor import linear_frame
+    frame = geometry(lens_shading(linear_frame(resize_float(source, longest), settings), settings), settings, False)
     return detect(to_srgb(frame))[0]

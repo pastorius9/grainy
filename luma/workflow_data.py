@@ -10,8 +10,8 @@ import numpy as np
 
 def automatic_white_balance(source,settings):
     from .engine import geometry,resize_float
-    from .rawcolor import develop_camera
-    a=geometry(develop_camera(resize_float(source,640),settings),settings)
+    from .rawcolor import linear_frame
+    a=geometry(linear_frame(resize_float(source,640),settings),settings)
     rgb=np.maximum(a.reshape(-1,3),0)
     peak=rgb.max(axis=1);floor=rgb.min(axis=1)
     valid=np.isfinite(rgb).all(axis=1)&(floor>.005)&(peak<.98)

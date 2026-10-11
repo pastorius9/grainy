@@ -43,6 +43,8 @@ DEFAULTS = dict(exposure=0., contrast=0., highlights=0., shadows=0., whites=0., 
                 # Stored edits without the key keep the version that renders them unchanged.
                 detail_version=3)
 DEFAULTS.update(deepcopy(EXTRA_DEFAULTS))
+from . import negative
+DEFAULTS.update(deepcopy(negative.DEFAULTS))
 SHOULDER_KNEE = .5   # linear light; values below are never changed by the highlight roll-off
 ROLLOFF_WHITE = 4.   # at most two stops of highlights are rolled off; stronger gains still clip (and warn)
 
@@ -686,7 +688,12 @@ def develop(source, settings, use_crop=True,output_space='sRGB', *, cache=None,o
     from .rawcolor import CameraSource,develop_camera,RAW_KEYS
     raw_key=settings_key(s,RAW_KEYS) if cache and isinstance(source,CameraSource) else None
     linear=(cache.evaluate('raw',raw_key,lambda:develop_camera(source,s)) if cache else develop_camera(source,s)) if isinstance(source,CameraSource) else source
-    key = (raw_key,use_crop, settings_key(s, GEOMETRY_KEYS)) if cache else None
+    negative_key=settings_key(s,negative.KEYS) if s['negative'] else None
+    if negative_key is not None:
+        # Film negative: turned into a positive before anything else, so every later stage is unchanged.
+        scanned=linear
+        linear=cache.evaluate('negative',(raw_key,negative_key),lambda:negative.apply(scanned,s)) if cache else negative.apply(scanned,s)
+    key = (raw_key,negative_key,use_crop, settings_key(s, GEOMETRY_KEYS)) if cache else None
     geometry_key = key
     from .optics import lens_shading
     make_geometry = lambda: geometry(lens_shading(apply_retouch(linear,s['retouch']),s),s,use_crop,copy=False)
@@ -697,7 +704,7 @@ def develop(source, settings, use_crop=True,output_space='sRGB', *, cache=None,o
             ('detail',DETAIL_KEYS,lambda a,s:_develop_detail(a,s,pixel_scale))]
     color_source=None
     if s['masks'] and any(c.get('auto_mask') for layer in s['masks'] for c in layer.get('components',[])):
-        color_source=cache.evaluate('mask-source',raw_key,lambda:to_srgb(linear)) if cache else to_srgb(linear)
+        color_source=cache.evaluate('mask-source',(raw_key,negative_key),lambda:to_srgb(linear)) if cache else to_srgb(linear)
     finished=False
     if cache and on_point is None:
         # Previews: stage results stay on the GPU. With shape masks only (or none), grain, local edits and the
@@ -894,8 +901,8 @@ def auto_tone_settings(source, settings):
     """
     s=normalized(settings)
     from .optics import lens_shading
-    from .rawcolor import develop_camera
-    image=geometry(lens_shading(develop_camera(resize_float(source,720),s),s),s)
+    from .rawcolor import linear_frame
+    image=geometry(lens_shading(linear_frame(resize_float(source,720),s),s),s)
     image*=white_balance(s)
     weights=np.array([.2126,.7152,.0722],np.float32)
     low_linear,high_linear=np.percentile(image@weights,[.1,99.9])

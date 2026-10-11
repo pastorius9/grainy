@@ -16,6 +16,7 @@ class WorkflowTools:
         menu=w.menuBar().addMenu(tr('사진 작업'))
         for title,method in [
             ('자동 톤 (선택한 사진)',self.auto_tone),('자동 색 (선택한 사진)',self.auto_color),('자동 화이트 밸런스',self.auto_white),
+            ('네거티브 반전 (선택한 사진)',self.invert_negatives),
             ('스캔 테두리 자동 자르기 (선택한 사진)',self.border_crop),
             ('최신 처리 방식으로 업데이트 (선택한 사진)',self.update_process),
             ('현재 사진에 총노출 맞추기',self.match_exposure),
@@ -85,6 +86,14 @@ class WorkflowTools:
         amount=float(self.w.catalog.preference('auto_color_amount',100))/100
         values=self.w.command_auto_values(records,lambda source,settings:auto_color_settings(source,settings,amount)[0],'자동 색')
         self.apply_edits(records,values,'자동 색')
+
+    def invert_negatives(self):
+        """The develop panel's negative conversion for every selected photo, each measured on its own; one undo step each."""
+        records=self.records()
+        if not records:return
+        from .negative import converted
+        values=self.w.command_auto_values(records,converted,'네거티브 반전')
+        self.apply_edits(records,values,'네거티브 반전')
 
     def update_process(self):
         """Switch selected photos to the current processes (highlight roll-off, luminance sharpening, wavelet noise reduction); undoable per photo."""

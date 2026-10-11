@@ -43,7 +43,7 @@ Left: the scans as they came from the lab. Right: after one press of Auto Colour
 ## Why Grainy
 
 - **Free and local.** No account, no subscription, no usage statistics. Photos and edits stay on your computer, and your originals are never modified.
-- **Made for film scans.** Auto Colour, automatic detection of dust and scratches that you review before anything is removed, cropping of scan borders, grain.
+- **Made for film scans.** Negative conversion, Auto Colour, automatic detection of dust and scratches that you review before anything is removed, cropping of scan borders, grain.
 - **RAW development.** 14 of 15 public RAW samples open: Canon, Nikon, Fujifilm (X-Trans), Leica, Sony, Panasonic, Olympus, Pentax, Ricoh. Nikon's High Efficiency (HE) compressed NEF does not.
 - **GPU acceleration.** Direct3D 11 on Windows, Metal on macOS. On an M1 Pro, fully developing a 24 MP photo (with noise reduction and sharpening) took 8.2 s on the CPU alone and 1.6 s with acceleration (measured once). The accelerated result is within one 8-bit step of the CPU result.
 - **Lightroom catalogs.** Imports Lightroom catalogs (ratings, flags, collections, develop settings) and presets.
@@ -112,6 +112,7 @@ The film scans on this page are the author's own. The other photos are CC0 sampl
 
 - **Library**: import folders, automatic import of new photos in registered folders, ratings, colour labels and keywords, collections and smart collections, recovery of moved folders
 - **RAW development**: RAW files of the major camera makers, camera profiles (DCP), lens corrections (Lensfun)
+- **Film negatives**: one button turns a scanned negative into a positive (film base removed per channel); every other tool then works on the positive
 - **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight)
 - **Detail**: sharpening, noise reduction, grain, vignette
 - **Local adjustments**: masks (brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal

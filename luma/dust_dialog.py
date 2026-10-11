@@ -27,8 +27,8 @@ def prepare_source(path,settings,cancel):
     """One source at a time; shared by individual and folder detection."""
     checkpoint(cancel);source,_=load_image(path,working_space=settings['working_space'],raw_options=settings)
     checkpoint(cancel)
-    from .rawcolor import develop_camera
-    linear=apply_retouch(develop_camera(source,settings),settings['retouch']);del source
+    from .rawcolor import linear_frame
+    linear=apply_retouch(linear_frame(source,settings),settings['retouch']);del source
     rgb=output_rgb(to_srgb(linear),settings['working_space'])
     gray=cv2.cvtColor(rgb,cv2.COLOR_RGB2GRAY)
     checkpoint(cancel)

@@ -137,6 +137,12 @@ def resolve_white(profile,info,settings,with_white=False):
     return (*values,xyz) if with_white else values
 
 
+def linear_frame(source,settings):
+    """The frame every tool starts from: develop_camera, then the film negative conversion when it is on."""
+    from .negative import apply
+    return apply(develop_camera(source,settings),settings)
+
+
 def develop_camera(source,settings):
     if not isinstance(source,CameraSource):return np.asarray(source)
     info=source.raw_info;record=settings.get('dcp_profile')
