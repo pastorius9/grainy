@@ -5,7 +5,7 @@
 필름 베이스 찍기 => Pick Film Base
 사진 가장자리의 촬영되지 않은 빈 필름을 클릭하면 그 색을 필름 베이스로 씁니다. 자동으로 잡은 색이 맞지 않을 때 쓰세요. => Click the unexposed, clear film at the edge of the photo to use its colour as the film base. Use this when the automatic choice is off.
 다시 분석 => Analyse Again
-필름 베이스와 가장 밝은 부분을 현재 사진에서 다시 잽니다. => Measures the film base and the brightest part of this photo again.
+필름 베이스와 가장 밝은 부분을 현재 크롭 영역에서 다시 잽니다. 스캔에 필름 바깥(라이트 박스, 홀더)이 보이면 필름만 남게 크롭한 뒤 누르세요. => Measures the film base and the brightest part again, inside the current crop. If the scan shows more than the film (a light table, the holder), crop to the film first.
 네거티브 반전 적용 · 필름 농도와 필름 대비로 다듬고, 자동 톤·자동 색을 이어서 쓸 수 있습니다. => Negative inverted · refine with Film density and Film contrast, then Auto tone and Auto Color.
 사진 가장자리의 촬영되지 않은 빈 필름을 클릭하세요. => Click the unexposed, clear film at the edge of the photo.
 빈 필름으로 보기에는 너무 어두운 곳입니다. 촬영되지 않은 가장 밝은 부분을 클릭하세요. => That spot is too dark to be clear film. Click the brightest, unexposed part.

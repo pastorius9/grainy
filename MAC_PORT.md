@@ -265,3 +265,10 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
 - `engine.develop`은 RAW 현상 바로 뒤에서 `negative.apply`를 부르고 결과를 `negative` 단계로 캐시한다. 자동 톤·자동 색·먼지 감지·스캔 테두리·자동 화이트밸런스처럼 원본에서 바로 시작하던 곳은 `rawcolor.linear_frame`을 쓴다(새로 이런 곳을 만들면 `develop_camera` 대신 이것을 쓸 것).
 - 화면: `보정` 탭의 `네거티브 반전` 버튼, `필름 농도`·`필름 대비` 슬라이더, `필름 베이스 찍기`, `다시 분석`. `사진 작업 › 네거티브 반전 (선택한 사진)`.
 - 시험 `tests/test_negative.py`. Windows에서 전체 검사를 통과했다. Mac에서는 돌려 보지 못했다.
+
+## 2026-10-11 — 0.5.88: 네거티브 반전 다듬기 (Windows 쪽에서)
+
+- `negative.converted`가 크롭 영역 안에서 재고(`geometry`를 거친 화면), 사진의 중간 밝기가 중간 회색에 오도록 `negative_density`도 정한다. RAW 가져오기 기본 노출·검정은 0으로 돌린다.
+- `negative.apply`는 가장 짙은 부분보다 더 짙은 값을 그 밝기에서 멈춘다(먼지·홀더가 자동 톤의 기준이 되지 않게).
+- 공개 샘플 세 장(흑백 TIFF, 스캐너 DNG, X-T2 RAF)으로 시험했다. 샘플 파일은 저장소에 넣지 않았다.
+- 카메라 RAW 네거티브: `rawcolor.enabled()`가 `negative`일 때도 참이라 모든 로더가 센서 색(CameraSource)으로 읽고, `develop_camera`는 그때 색 변환을 건너뛴다. 화면에서 버튼을 켜면 `activate(force=True)`로 다시 읽은 뒤 도착 시점에 잰다(`MainWindow.toggle_negative`, `activate`의 `ready`). 기준값은 같은 픽셀에서 읽는다(`negative.analyse`).

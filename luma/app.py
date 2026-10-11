@@ -636,7 +636,7 @@ class MainWindow(QMainWindow):
         self.view.sampleCancelled.connect(lambda:self.negative_base_button.setChecked(False))
         negative_row.addWidget(self.negative_base_button)
         self.negative_measure_button=button(tr('다시 분석'),self.measure_negative_again)
-        self.negative_measure_button.setToolTip(tr('필름 베이스와 가장 밝은 부분을 현재 사진에서 다시 잽니다.'))
+        self.negative_measure_button.setToolTip(tr('필름 베이스와 가장 밝은 부분을 현재 크롭 영역에서 다시 잽니다. 스캔에 필름 바깥(라이트 박스, 홀더)이 보이면 필름만 남게 크롭한 뒤 누르세요.'))
         negative_row.addWidget(self.negative_measure_button)
         negative_box.addLayout(negative_row)
         self.negative_panel.hide();edits.addWidget(self.negative_panel)
@@ -1214,6 +1214,9 @@ class MainWindow(QMainWindow):
             self.original_size=(info['width'],info['height'])
             self.catalog.update(photo_id,metadata=json.dumps(info))
             self.tabs.setEnabled(True)
+            if self.settings['negative'] and self.settings['negative_base'] is None:
+                # Switched on for a camera RAW file: it was loaded again in the camera's colours and is measured now.
+                self.measure_negative();self.commit('네거티브 반전')
             self.load_controls()
             self.info_label.setText(f'{info["width"]:,} × {info["height"]:,}  ·  {info["format"]}  ·  {info["size_mb"]} MB')
             self.file_info.setText(photo['path']+'\n\n'+'\n'.join(f'{k}: {v}' for k,v in info.items() if k not in ('file_fingerprint','offline_fingerprint')))
@@ -1858,14 +1861,20 @@ class MainWindow(QMainWindow):
         from . import negative
         from .engine import resize_float
         measured=negative.converted(resize_float(self.source,1200),self.settings)
-        self.settings['negative_base'],self.settings['negative_peak']=measured['negative_base'],measured['negative_peak']
+        for key in ('negative_base','negative_peak','negative_density','exposure','blacks'):self.settings[key]=measured[key]
 
     def toggle_negative(self,checked):
         """Turn the scanned negative into a positive, or back. The scan is measured the first time only."""
         if self.source is None:
             self.negative_button.setChecked(False);return
         self.commit()
-        if checked and (self.settings['negative_base'] is None or self.settings['negative_peak'] is None):self.measure_negative()
+        if checked and (self.settings['negative_base'] is None or self.settings['negative_peak'] is None):
+            from .rawcolor import CameraSource
+            from .engine import RAW_EXTENSIONS
+            if Path(self.catalog.photo(self.current_id)['path']).suffix.lower() in RAW_EXTENSIONS and not isinstance(self.source,CameraSource):
+                # A camera RAW file is read again in the camera's own colours first; activate() measures it on arrival.
+                self.settings['negative']=True;self.commit('네거티브 반전');self.activate(self.current_id,force=True);return
+            self.measure_negative()
         self.settings['negative']=bool(checked)
         self.commit('네거티브 반전' if checked else '네거티브 반전 해제')
         self.load_controls();self.before_button.setChecked(False)
@@ -1907,7 +1916,7 @@ class MainWindow(QMainWindow):
     def sample_wb(self,x,y):
         if self.negative_base_button.isChecked():return self.sample_negative_base(x,y)
         from .rawcolor import CameraSource,neutral_white,default_profile
-        if isinstance(self.source,CameraSource):
+        if isinstance(self.source,CameraSource) and not self.settings['negative']:      # a negative has no camera white balance
             point=self.studio.source_point([x,y])
             if point is None:return
             px=min(self.source.shape[1]-1,int(point[0]*self.source.shape[1]))

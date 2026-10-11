@@ -53,6 +53,36 @@ def test_the_positive_is_the_scene_that_was_photographed():
     assert np.array_equal(negative.apply(alpha, settings())[..., 3], alpha[..., 3])
 
 
+def test_spots_denser_than_the_picture_stop_at_its_white():
+    light = scene(); frame = scanned(light); frame[10:14, 10:14] = 0; frame[20:24, 20:24] = np.float32(PEAK)*np.float32(.2)      # dust, the holder
+    positive = negative.apply(frame, settings())
+    assert positive.max() == pytest.approx(1., rel=1e-4) and positive[11, 11, 0] == positive.max()
+    assert negative.apply(frame, settings(negative_density=1.)).max() == pytest.approx(2., rel=1e-4)
+    tone, report = auto_tone_settings(frame, settings())
+    clean, _ = auto_tone_settings(scanned(light), settings())
+    assert report['status'] == 'applied' and tone['exposure'] == pytest.approx(clean['exposure'], abs=.02)      # the specks change nothing
+
+
+def test_the_scan_is_measured_inside_the_crop():
+    light = scene(300, 450); frame = np.ones((400, 650, 3), np.float32)                     # a light table around the film
+    frame[50:350, 100:550] = scanned(light)
+    whole = negative.converted(frame, normalized({}))
+    assert whole['negative_base'] == pytest.approx([1., 1., 1.], rel=1e-3)                  # the bare light, not the film
+    crop = [100/650, 50/400, 550/650, 350/400]
+    cropped = negative.converted(frame, normalized({'crop': crop}))
+    np.testing.assert_allclose(cropped['negative_base'], BASE, rtol=.05); np.testing.assert_allclose(cropped['negative_peak'], PEAK, rtol=.25)
+    assert cropped['crop'] == crop and cropped['negative'] is True
+    # The measured density puts the picture's median at middle grey (within the allowed range).
+    inside = frame[50:350, 100:550][18:-18, 27:-27]
+    median = float(np.median(negative.apply(inside, cropped) @ np.float32([.2126, .7152, .0722])))
+    assert median == pytest.approx(negative.MIDDLE, rel=.06) and negative.DENSITY_RANGE[0] <= cropped['negative_density'] <= negative.DENSITY_RANGE[1]
+    assert negative.converted(np.full((60, 60, 3), .3, np.float32), normalized({}))['negative_density'] in negative.DENSITY_RANGE      # nothing to place: a limit
+    # A camera RAW file's import brightening is taken back; an exposure the user chose is kept.
+    from luma.raw_defaults import BUILTIN_RAW
+    assert negative.converted(frame, normalized({**BUILTIN_RAW, 'crop': crop}))['exposure'] == 0. and negative.converted(frame, normalized({**BUILTIN_RAW, 'crop': crop}))['blacks'] == 0.
+    assert negative.converted(frame, normalized({'exposure': .4, 'crop': crop}))['exposure'] == .4
+
+
 def test_a_gamma_encoded_scan_gives_the_same_positive():
     light = scene(); frame = scanned(light); encoded = frame**np.float32(1/2.2)
     s = settings(negative_base=[v**(1/2.2) for v in BASE], negative_peak=[v**(1/2.2) for v in PEAK])
@@ -70,6 +100,32 @@ def test_analysis_finds_the_film_base_and_ignores_the_edge_of_the_scan():
     flat = negative.analyse(np.full((50, 50, 3), .3, np.float32))                         # no density range at all
     assert all(p < b for b, p in zip(*flat)) and np.isfinite(negative.apply(np.full((4, 4, 3), .3, np.float32), settings(negative_base=flat[0], negative_peak=flat[1]))).all()
     assert np.isfinite(negative.apply(np.zeros((4, 4, 3), np.float32), settings())).all()
+
+
+def test_a_photographed_negative_is_read_in_the_cameras_own_colours():
+    from luma import rawcolor
+    from luma.source_cache import DecodedSourceCache
+    assert not rawcolor.enabled(normalized({})) and rawcolor.enabled(normalized({'negative': True}))        # loaders decode it natively
+    assert DecodedSourceCache.decode_options(normalized({})) != DecodedSourceCache.decode_options(normalized({'negative': True}))
+    cm = np.array([[.88, -.24, -.07], [-.48, 1.26, .25], [-.06, .15, .75]])
+    info = dict(camera='Test Camera', format='NEF', xyz_to_camera=cm.tolist(), neutral=[.45, 1, .7], daylight_neutral=[.5, 1, .85])
+    light = scene(); source = rawcolor.CameraSource(scanned(light), info)
+    plain = rawcolor.develop_camera(source, normalized({}))
+    assert np.abs(plain-np.asarray(source)).max() > .01                                     # an ordinary RAW gets the camera's colour transform
+    untouched = rawcolor.develop_camera(source, normalized({'negative': True}))
+    assert np.array_equal(untouched, np.asarray(source))                                    # a negative does not
+    s = negative.converted(source, normalized({}))
+    np.testing.assert_allclose(s['negative_base'], BASE, rtol=.05)
+    was = native_gpu.enabled()
+    try:
+        native_gpu.set_enabled(False)
+        cache = DevelopmentCache(64*1024*1024)
+        out = develop(source, s, cache=cache)
+        np.testing.assert_allclose(out, develop(scanned(light), s), atol=1e-6)              # the same as the bare scan values
+        assert np.abs(develop(source, {**s, 'negative': False}, cache=cache)-develop(source, {**s, 'negative': False})).max() < 1e-6
+        assert np.abs(develop(source, s, cache=cache)-out).max() < 1e-6                     # the cache tells the two apart
+    finally:
+        native_gpu.set_enabled(was)
 
 
 def test_develop_starts_from_the_positive_with_and_without_cache_and_gpu():
@@ -122,16 +178,16 @@ def test_button_inverts_measures_once_and_undoes(window, tmp_path):
     shown = w.view.on_screen
     assert shown[100, 10].mean() < shown[100, -10].mean() and before[100, 10].mean() > before[100, -10].mean()
     np.testing.assert_allclose(shown, develop(w.source, s), atol=2e-3)
-    measured = (s['negative_base'], s['negative_peak'])
-    w.adjustments['negative_density'].changed.emit('negative_density', .8); w.finish_interaction(); idle(w)
-    assert w.settings['negative_density'] == .8 and w.view.on_screen.mean() > shown.mean()
+    measured = (s['negative_base'], s['negative_peak']); first = s['negative_density']
+    w.adjustments['negative_density'].changed.emit('negative_density', first+.8); w.finish_interaction(); idle(w)
+    assert w.settings['negative_density'] == first+.8 and w.view.on_screen.mean() > shown.mean()
     w.negative_button.click(); idle(w)                                                    # off: the scan again
     assert not w.settings['negative'] and w.negative_panel.isHidden()
     np.testing.assert_allclose(w.view.on_screen, before, atol=2e-3)
     w.negative_button.click(); idle(w)                                                    # on again: the first measurement is kept
-    assert (w.settings['negative_base'], w.settings['negative_peak']) == measured and w.settings['negative_density'] == .8
+    assert (w.settings['negative_base'], w.settings['negative_peak']) == measured and w.settings['negative_density'] == first+.8
     w.settings['negative_base'] = [v*.5 for v in measured[0]]; w.measure_negative_again(); idle(w)
-    assert w.settings['negative_base'] == measured[0]
+    assert w.settings['negative_base'] == measured[0] and w.settings['negative_density'] == first      # measured again, density too
     for _ in range(3):w.undo(); idle(w)                                                  # the re-measure, the changed base, switching on
     assert not w.settings['negative'] and not w.negative_button.isChecked() and w.negative_panel.isHidden()
 

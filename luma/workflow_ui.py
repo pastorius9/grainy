@@ -92,7 +92,9 @@ class WorkflowTools:
         records=self.records()
         if not records:return
         from .negative import converted
-        values=self.w.command_auto_values(records,converted,'네거티브 반전')
+        # Loaded as negatives, so camera RAW files arrive in the camera's own colours for the measurement.
+        asked=[{**r,'settings':{**r['settings'],'negative':True}} for r in records]
+        values=self.w.command_auto_values(asked,converted,'네거티브 반전')
         self.apply_edits(records,values,'네거티브 반전')
 
     def update_process(self):

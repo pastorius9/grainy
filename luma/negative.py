@@ -9,8 +9,12 @@ takes the orange mask of colour negative film out, per channel. The densest part
 of light, the way a negative records exposure: light = 2^(range*(d/d_peak - 1) + density). Dividing by
 the peak density makes the result the same whether the scan stored linear or gamma-encoded values.
 
+A photographed negative (a camera RAW file) is read in the camera's own colours while the conversion is
+on: rawcolor.enabled() makes every loader decode it that way and develop_camera leaves it alone.
+
 `base` and `peak` are measured once (analyse) and stored with the edit, so previews, crops and exports
-of one photo all use the same conversion.
+of one photo all use the same conversion. They are measured inside the photo's crop: when the scan shows
+more than the film (a light table, the holder), crop to the frame first and measure again.
 """
 import numpy as np
 
@@ -20,6 +24,8 @@ FLOOR = 1e-5          # scan values below this are treated as this (no light thr
 BORDER = .06          # share of each side left out of the analysis: film rebate, holder, scanner light
 BASE_PERCENT = 99.7   # clear film: the brightest part of the frame
 PEAK_PERCENT = .3     # densest part of the frame
+MIDDLE = .18          # the measured density setting puts the picture's median brightness here (middle grey)
+DENSITY_RANGE = (-1., 2.5)
 
 
 def analyse(source):
@@ -29,16 +35,38 @@ def analyse(source):
     height, width = a.shape[:2]
     top, left = int(height*BORDER), int(width*BORDER)
     inner = a[top:height-top or None, left:width-left or None].reshape(-1, 3)
-    base = np.percentile(inner, BASE_PERCENT, axis=0); peak = np.percentile(inner, PEAK_PERCENT, axis=0)
+    # Both ends are read from the same pixels in every channel: the clearest and the densest parts by
+    # overall density. Channels are not ranked one by one, and pixels where a channel has no reading
+    # (clipped to black, as the blue of a camera-scanned colour negative can be) are left out.
+    usable = (inner > FLOOR*20).all(axis=1)
+    if usable.sum() < 100:usable = np.ones(len(inner), bool)
+    logs = np.log(np.maximum(inner[usable], FLOOR)); overall = logs.mean(axis=1)
+    clear, dense = np.percentile(overall, [BASE_PERCENT, PEAK_PERCENT])
+    base = np.exp(np.median(logs[overall >= clear], axis=0)); peak = np.exp(np.median(logs[overall <= dense], axis=0))
     base = np.maximum(base, FLOOR*10); peak = np.clip(peak, FLOOR, base*.9)      # always some density range
     return [float(v) for v in base], [float(v) for v in peak]
 
 
 def converted(source, settings):
-    """Settings with the conversion switched on, measured from `source` (the frame as loaded, any size)."""
+    """Settings with the conversion switched on, measured from `source` (the frame as loaded, any size)
+    inside the crop of `settings`."""
+    from .engine import geometry, normalized
+    from .optics import lens_shading
     from .rawcolor import develop_camera
-    base, peak = analyse(develop_camera(source, settings))
-    return {**settings, 'negative': True, 'negative_base': base, 'negative_peak': peak}
+    plain = {**normalized(settings), 'negative': True}        # a camera RAW source stays in the camera's colours
+    frame = geometry(lens_shading(develop_camera(source, plain), plain), plain)
+    base, peak = analyse(frame)
+    result = {**settings, 'negative': True, 'negative_base': base, 'negative_peak': peak, 'negative_density': 0.}
+    # A first brightness: the median of the picture at middle grey. The densest part alone (often a small
+    # highlight) would leave most pictures dark.
+    height, width = frame.shape[:2]; top, left = int(height*BORDER), int(width*BORDER)
+    light = apply(frame[top:height-top or None, left:width-left or None], result)[..., :3] @ np.float32([.2126, .7152, .0722])
+    result['negative_density'] = round(float(np.clip(np.log2(MIDDLE/max(float(np.median(light)), 1e-4)), *DENSITY_RANGE))*20)/20
+    # The import defaults of a camera RAW file brighten a dark RAW; the positive is already placed.
+    from .raw_defaults import BUILTIN_RAW, BUILTIN_LINEAR_RAW
+    if any(all(settings.get(key) == value for key, value in builtin.items() if key in ('exposure', 'blacks')) for builtin in (BUILTIN_RAW, BUILTIN_LINEAR_RAW)):
+        result['exposure'] = 0.; result['blacks'] = 0.
+    return result
 
 
 def base_from(sample):
@@ -61,6 +89,9 @@ def apply(a, settings):
     np.maximum(a[..., :3], np.float32(FLOOR), out=out[..., :3])
     np.log(out[..., :3], out=out[..., :3])
     out[..., :3] = (np.log(base)-out[..., :3])*scale+offset
+    # Spots denser than the densest part of the picture (dust, the edge of the holder) are not scene light:
+    # they stop at that part's brightness, so a few specks do not become the picture's white point.
+    np.minimum(out[..., :3], np.float32(settings.get('negative_density', 0.)*np.log(2)), out=out[..., :3])
     np.exp(out[..., :3], out=out[..., :3])
     if a.shape[-1] > 3:out[..., 3:] = a[..., 3:]
     return out

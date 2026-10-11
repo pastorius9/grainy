@@ -39,7 +39,9 @@ class CameraSource(np.ndarray):
 
 
 def enabled(settings):
-    return settings.get('raw_mode','legacy')!='legacy' or bool(settings.get('dcp_profile'))
+    """Whether a RAW file is decoded to the camera's own colours (a CameraSource) instead of developed RGB.
+    A film negative always is: it is inverted in the camera's colours (see develop_camera)."""
+    return settings.get('raw_mode','legacy')!='legacy' or bool(settings.get('dcp_profile')) or bool(settings.get('negative'))
 
 
 def xyz_temperature(xyz):
@@ -145,6 +147,10 @@ def linear_frame(source,settings):
 
 def develop_camera(source,settings):
     if not isinstance(source,CameraSource):return np.asarray(source)
+    # A photographed film negative stays in the camera's own colours: the conversion (luma/negative.py)
+    # reads each channel as film density, and a colour matrix applied first would mix the channels and
+    # clip the weakest one (the blue of an orange negative) to nothing.
+    if settings.get('negative'):return np.asarray(source)
     info=source.raw_info;record=settings.get('dcp_profile')
     profile=dcp.compiled(record) if record else default_profile(info)
     if record and not dcp.camera_matches(profile,info):raise ValueError('DCP 카메라 모델이 현재 RAW와 다릅니다.')

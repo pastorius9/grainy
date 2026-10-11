@@ -686,7 +686,7 @@ def develop(source, settings, use_crop=True,output_space='sRGB', *, cache=None,o
         if source.nbytes * 2 > cache.max_bytes:
             cache = None
     from .rawcolor import CameraSource,develop_camera,RAW_KEYS
-    raw_key=settings_key(s,RAW_KEYS) if cache and isinstance(source,CameraSource) else None
+    raw_key=settings_key(s,RAW_KEYS+('negative',)) if cache and isinstance(source,CameraSource) else None
     linear=(cache.evaluate('raw',raw_key,lambda:develop_camera(source,s)) if cache else develop_camera(source,s)) if isinstance(source,CameraSource) else source
     negative_key=settings_key(s,negative.KEYS) if s['negative'] else None
     if negative_key is not None:
