@@ -28,13 +28,13 @@
 
 ![The Develop view of Grainy with a film scan](docs/screenshots/en/develop.jpg)
 
-## One button for colour casts
+## Auto tone and Auto Colour
 
-Lab scans often come back yellow, green or blue. **Auto Colour** looks at the shadows, the midtones and the highlights separately and corrects each with channel curves, because a film scan is rarely off by the same amount everywhere. One white balance value cannot do that.
+Lab scans often come back flat, and yellow, green or blue. **Auto tone** sets the black and white points of the picture. **Auto Colour** looks at the shadows, the midtones and the highlights separately and corrects each with channel curves, because a film scan is rarely off by the same amount everywhere. One white balance value cannot do that.
 
-![Two film scans before and after Auto Colour](docs/screenshots/film-auto-color.jpg)
+![Two film scans before and after Auto tone and Auto Colour](docs/screenshots/film-auto.jpg)
 
-Left: the scans as they came from the lab. Right: after one press of Auto Colour, with no other adjustment.
+Left: the scans as they came from the lab. Right: after one press of Auto tone and one of Auto Colour, with no other adjustment.
 
 - Photos lit by coloured light (a concert, a neon sign) are left alone.
 - A strength slider sets how far the correction goes. A very strong cast does not come back completely.

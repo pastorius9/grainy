@@ -272,3 +272,7 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
 - `negative.apply`는 가장 짙은 부분보다 더 짙은 값을 그 밝기에서 멈춘다(먼지·홀더가 자동 톤의 기준이 되지 않게).
 - 공개 샘플 세 장(흑백 TIFF, 스캐너 DNG, X-T2 RAF)으로 시험했다. 샘플 파일은 저장소에 넣지 않았다.
 - 카메라 RAW 네거티브: `rawcolor.enabled()`가 `negative`일 때도 참이라 모든 로더가 센서 색(CameraSource)으로 읽고, `develop_camera`는 그때 색 변환을 건너뛴다. 화면에서 버튼을 켜면 `activate(force=True)`로 다시 읽은 뒤 도착 시점에 잰다(`MainWindow.toggle_negative`, `activate`의 `ready`). 기준값은 같은 픽셀에서 읽는다(`negative.analyse`).
+
+## 2026-10-11 — README의 자동 보정 예시 사진 교체 (Windows 쪽에서, main에 직접)
+
+- 소유자가 고른 필름 스캔 두 장으로 `docs/screenshots/film-auto.jpg`를 만들었다(자동 톤 + 자동 색 전후). 이전의 `film-auto-color.jpg`는 뺐다. README 두 문서의 해당 절 제목과 설명도 "자동 톤과 자동 색"으로 바꿨다. 코드 변경과 릴리스는 없다.
