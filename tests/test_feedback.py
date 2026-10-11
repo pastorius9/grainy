@@ -57,6 +57,11 @@ def test_shipped_form_is_configured_and_buttons_follow_the_switches(app, tmp_pat
     try:
         w.show()
         assert not w.feedback_button.isHidden() and w.command_button.isHidden()      # the public build
+        app.processEvents()      # beside the name, apart from the buttons that switch screens
+        assert w.feedback_button.objectName() == 'feedback' and w.feedback_button.x() < w.width()/2 < w.library_button.x()
+        w.update_button.setText('9.9.9'); w.update_button.show(); app.processEvents()      # the update notice follows it, a little apart
+        assert 8 <= w.update_button.x()-w.feedback_button.geometry().right() and w.update_button.geometry().right() < w.width()/2
+        w.update_button.hide()
         w.show_commands(); assert getattr(w, 'command_dialog', None) is None and w.auth_dialog is None
     finally:
         w.close()

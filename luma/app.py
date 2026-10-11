@@ -52,6 +52,9 @@ QPushButton:pressed, QPushButton:checked { background:#4d453a; border-color:#b89
 QPushButton:disabled { color:#59616a; border-color:#2c3239; }
 QPushButton#primary { background:#dec49f; color:#211d17; border:none; font-weight:600; padding:9px 17px; }
 QPushButton#primary:hover { background:#f0d8b5; }
+QPushButton#feedback { background:transparent; border:1px solid #3f7f86; color:#8fd3d6; padding:5px 12px; }
+QPushButton#feedback:hover { background:#1f3a3f; border-color:#6fc0c6; color:#c9f1f2; }
+QPushButton#feedback:pressed { background:#2a4f55; border-color:#6fc0c6; color:#e2fbfb; }
 QPushButton#nav { text-align:left; padding:10px; }
 QLineEdit, QComboBox, QSpinBox { background:#15191e; border:1px solid #39414b; border-radius:0px; padding:6px; }
 QDoubleSpinBox#adjustmentValue { background:transparent; border:1px solid transparent; border-radius:0px; padding:0px 2px; color:#aeb6bf; }
@@ -407,13 +410,14 @@ class MainWindow(QMainWindow):
         subtitle.setObjectName('muted')
         header.addSpacing(15)
         header.addWidget(subtitle)
-        header.addStretch()
         from . import features,feedback
-        # Shown by the update controller when a newer release exists.
-        self.update_button=button('',lambda:None,primary=True);header.addWidget(self.update_button);self.update_button.hide()
-        self.feedback_button=button(tr('피드백'),lambda:feedback.show(self))
+        # Beside the name and in its own colour, away from the buttons that switch screens.
+        self.feedback_button=button(tr('피드백'),lambda:feedback.show(self));self.feedback_button.setObjectName('feedback')
         self.feedback_button.setToolTip(tr('문제점이나 개선 아이디어 보내기'))
-        header.addWidget(self.feedback_button);self.feedback_button.setVisible(feedback.configured())
+        header.addSpacing(18);header.addWidget(self.feedback_button);self.feedback_button.setVisible(feedback.configured())
+        # Shown by the update controller when a newer release exists.
+        self.update_button=button('',lambda:None,primary=True);header.addSpacing(12);header.addWidget(self.update_button);self.update_button.hide()
+        header.addStretch()
         self.command_button=button('Codex',self.show_commands)
         header.addWidget(self.command_button);self.command_button.setVisible(features.codex())
         self.library_button = button(tr('라이브러리'), lambda: self.set_mode(1), True)
