@@ -13,3 +13,6 @@
 네거티브 다시 분석 => Negative analysed again
 필름 베이스 지정 => Film base picked
 네거티브 반전 (선택한 사진) => Invert Negatives (Selected Photos)
+네거티브 반전 · 한 롤로 맞춤 (선택한 사진) => Invert Negatives as One Roll (Selected Photos)
+한 롤로 맞추려면 같은 롤의 사진을 두 장 이상 선택하세요. => Select two or more photos of the same roll to convert them as one roll.
+네거티브 반전 (한 롤) => Negatives inverted (one roll)

@@ -112,7 +112,7 @@ The film scans on this page are the author's own. The other photos are CC0 sampl
 
 - **Library**: import folders, automatic import of new photos in registered folders, ratings, colour labels and keywords, collections and smart collections, recovery of moved folders
 - **RAW development**: RAW files of the major camera makers, camera profiles (DCP), lens corrections (Lensfun)
-- **Film negatives**: one button turns a scanned negative into a positive (film base removed per channel); every other tool then works on the positive
+- **Film negatives**: one button turns a scanned negative into a positive (film base removed per channel); every other tool then works on the positive. A roll scanned with the same settings can be measured as one, so every frame is converted with the same colour reference
 - **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight)
 - **Detail**: sharpening, noise reduction, grain, vignette
 - **Local adjustments**: masks (brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal

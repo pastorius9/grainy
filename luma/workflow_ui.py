@@ -17,6 +17,7 @@ class WorkflowTools:
         for title,method in [
             ('자동 톤 (선택한 사진)',self.auto_tone),('자동 색 (선택한 사진)',self.auto_color),('자동 화이트 밸런스',self.auto_white),
             ('네거티브 반전 (선택한 사진)',self.invert_negatives),
+            ('네거티브 반전 · 한 롤로 맞춤 (선택한 사진)',self.invert_roll),
             ('스캔 테두리 자동 자르기 (선택한 사진)',self.border_crop),
             ('최신 처리 방식으로 업데이트 (선택한 사진)',self.update_process),
             ('현재 사진에 총노출 맞추기',self.match_exposure),
@@ -96,6 +97,17 @@ class WorkflowTools:
         asked=[{**r,'settings':{**r['settings'],'negative':True}} for r in records]
         values=self.w.command_auto_values(asked,converted,'네거티브 반전')
         self.apply_edits(records,values,'네거티브 반전')
+
+    def invert_roll(self):
+        """One conversion for all selected photos (a roll scanned with the same settings): the clear film and the densest
+        part are measured over all of them together, brightness photo by photo; one undo step each."""
+        records=self.records()
+        if len(records)<2:
+            self.w.statusBar().showMessage(tr('한 롤로 맞추려면 같은 롤의 사진을 두 장 이상 선택하세요.'),5000);return
+        from . import negative
+        asked=[{**r,'settings':{**r['settings'],'negative':True}} for r in records]
+        samples=self.w.command_auto_values(asked,negative.sample,'네거티브 반전')
+        self.apply_edits(records,negative.converted_together(samples,[r['settings'] for r in records]),'네거티브 반전 (한 롤)')
 
     def update_process(self):
         """Switch selected photos to the current processes (highlight roll-off, luminance sharpening, wavelet noise reduction); undoable per photo."""

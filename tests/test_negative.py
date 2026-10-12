@@ -220,3 +220,54 @@ def test_selected_photos_are_inverted_each_on_its_own(window, tmp_path):
     values = [negative.converted(np.asarray(Image.open(r['path']).convert('RGB'), np.float32)/255, normalized(r['settings'])) for r in records]
     assert all(v['negative'] for v in values) and values[0]['negative_base'] != values[1]['negative_base']
     assert hasattr(w.workflow, 'invert_negatives')
+
+
+def uneven():
+    """A frame of the same roll without black or white of its own: grey between a bright orange and a dark blue."""
+    light = np.full((120, 180, 3), .18, np.float32)
+    light[:, :60] = np.float32([.6, .25, .05]); light[:, 120:] = np.float32([.01, .02, .05])
+    return light
+
+
+def test_photos_of_one_roll_share_one_measurement():
+    full, part = scanned(scene()), scanned(uneven()); plain = normalized(defaults())
+    alone = negative.converted(part, plain)                                               # its orange is taken for white, its blue for clear film
+    grey = negative.apply(part, alone)[60, 90]
+    assert max(grey)/min(grey) > 1.15
+    samples = [negative.sample(full, plain), negative.sample(part, plain)]
+    first, second = negative.converted_together(samples, [plain, plain])
+    assert first['negative_base'] == second['negative_base'] and first['negative_peak'] == second['negative_peak']
+    assert first['negative_base'] == pytest.approx(negative.converted(full, plain)['negative_base'], rel=.02)      # the roll's film base
+    assert second['negative'] and first['negative_density'] != second['negative_density']                         # brightness photo by photo
+    grey = negative.apply(part, second)[60, 90]
+    assert max(grey)/min(grey) < 1.01                                                     # grey is grey in every frame of the roll
+    assert grey[1] == pytest.approx(.18*2**second['negative_density'], rel=.03)
+
+
+def test_a_photo_adds_a_bounded_sample_from_inside_its_crop():
+    frame = np.ones((400, 650, 3), np.float32); frame[50:350, 100:550] = scanned(scene(300, 450))      # a light table around the film
+    whole = negative.sample(frame, normalized({}))
+    assert whole.shape[1] == 3 and len(whole) <= negative.SAMPLE and whole.max() == 1.
+    cropped = negative.sample(frame, normalized({'crop': [100/650, 50/400, 550/650, 350/400]}))
+    assert len(cropped) > 1000 and cropped.max() < .7                                     # the bare light is outside
+    large = negative.sample(np.full((900, 1300, 3), .2, np.float32), normalized({}))
+    assert negative.SAMPLE/4 < len(large) <= negative.SAMPLE
+
+
+def test_menu_converts_the_selected_roll_alike(window, tmp_path, monkeypatch):
+    w = window; ids = []
+    for index, light in enumerate((scene(), uneven())):
+        path = tmp_path/f'roll-{index}.png'; Image.fromarray(np.uint8(np.clip(to_srgb(scanned(light)), 0, 1)*255+.5)).save(path)
+        ids.append(w.catalog.add(path))
+    w.refresh_lists(); w.activate(ids[1]); wait(lambda: w.source is not None); idle(w)
+    w.workflow.invert_roll()                                                              # one photo: nothing to share
+    assert not w.catalog.photo(ids[1])['settings']['negative']
+    monkeypatch.setattr(w, 'selected_ids', lambda: ids)
+    history = [len(w.catalog.histories(i)) for i in ids]
+    w.workflow.invert_roll(); idle(w)
+    first, second = [w.catalog.photo(i)['settings'] for i in ids]
+    assert first['negative'] and second['negative'] and first['negative_base'] == second['negative_base'] and first['negative_peak'] == second['negative_peak']
+    assert [len(w.catalog.histories(i)) for i in ids] == [n+1 for n in history] and w.catalog.histories(ids[1])[0]['label'] == '네거티브 반전 (한 롤)'
+    assert w.settings['negative'] and w.negative_button.isChecked()                       # the open photo follows
+    shown = w.view.on_screen[60, 90, :3]
+    assert max(shown)-min(shown) < .02

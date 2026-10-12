@@ -15,6 +15,11 @@ on: rawcolor.enabled() makes every loader decode it that way and develop_camera 
 `base` and `peak` are measured once (analyse) and stored with the edit, so previews, crops and exports
 of one photo all use the same conversion. They are measured inside the photo's crop: when the scan shows
 more than the film (a light table, the holder), crop to the frame first and measure again.
+
+Photos of one roll can be measured together (converted_together): one `base` and one `peak` for all of
+them, read from all their pixels at once, so every frame gets the same colours and a frame whose own
+brightest or darkest part is coloured no longer bends its conversion. Brightness stays per photo. This
+needs scans made with the same settings: with a different exposure per frame the film base differs too.
 """
 import numpy as np
 
@@ -26,15 +31,25 @@ BASE_PERCENT = 99.7   # clear film: the brightest part of the frame
 PEAK_PERCENT = .3     # densest part of the frame
 MIDDLE = .18          # the measured density setting puts the picture's median brightness here (middle grey)
 DENSITY_RANGE = (-1., 2.5)
+SAMPLE = 40000        # pixels kept of each photo when several are measured together
+
+
+def inside(frame):
+    """The frame without its border (three channels)."""
+    a = np.asarray(frame, np.float32)[..., :3]
+    height, width = a.shape[:2]
+    top, left = int(height*BORDER), int(width*BORDER)
+    return a[top:height-top or None, left:width-left or None]
 
 
 def analyse(source):
     """(base, peak): scan values of the clear film and of the densest part, per channel, as lists.
     `source` is the linear frame as loaded (any size; a reduced copy is enough)."""
-    a = np.asarray(source, np.float32)[..., :3]
-    height, width = a.shape[:2]
-    top, left = int(height*BORDER), int(width*BORDER)
-    inner = a[top:height-top or None, left:width-left or None].reshape(-1, 3)
+    return ends(inside(source).reshape(-1, 3))
+
+
+def ends(inner):
+    """analyse for rows of pixels that are already inside the picture."""
     # Both ends are read from the same pixels in every channel: the clearest and the densest parts by
     # overall density. Channels are not ranked one by one, and pixels where a channel has no reading
     # (clipped to black, as the blue of a camera-scanned colour negative can be) are left out.
@@ -47,20 +62,43 @@ def analyse(source):
     return [float(v) for v in base], [float(v) for v in peak]
 
 
-def converted(source, settings):
-    """Settings with the conversion switched on, measured from `source` (the frame as loaded, any size)
-    inside the crop of `settings`."""
+def measured(source, settings):
+    """The part of `source` (the frame as loaded, any size) a measurement is made from: inside the crop of
+    `settings`, without the border."""
     from .engine import geometry, normalized
     from .optics import lens_shading
     from .rawcolor import develop_camera
     plain = {**normalized(settings), 'negative': True}        # a camera RAW source stays in the camera's colours
-    frame = geometry(lens_shading(develop_camera(source, plain), plain), plain)
-    base, peak = analyse(frame)
-    result = {**settings, 'negative': True, 'negative_base': base, 'negative_peak': peak, 'negative_density': 0.}
+    return inside(geometry(lens_shading(develop_camera(source, plain), plain), plain))
+
+
+def sample(source, settings):
+    """measured() as at most SAMPLE rows of pixels spread evenly over the picture: what one photo adds to
+    a measurement shared by several."""
+    part = measured(source, settings); step = max(1, int(np.ceil(np.sqrt(part.shape[0]*part.shape[1]/SAMPLE))))
+    return np.ascontiguousarray(part[::step, ::step]).reshape(-1, 3)
+
+
+def converted(source, settings):
+    """Settings with the conversion switched on, measured from `source` (the frame as loaded, any size)
+    inside the crop of `settings`."""
+    pixels = measured(source, settings).reshape(-1, 3)
+    return placed(settings, pixels, *ends(pixels))
+
+
+def converted_together(samples, settings):
+    """converted for the photos of one roll: `samples` (sample() of each photo) are measured as one, so all
+    photos share the clear film and the densest part; brightness is still placed photo by photo."""
+    base, peak = ends(np.concatenate(samples))
+    return [placed(one, pixels, base, peak) for pixels, one in zip(samples, settings)]
+
+
+def placed(settings, pixels, base, peak):
+    """`settings` converted with `base` and `peak`, with a first brightness from the photo's own `pixels`."""
+    result = {**settings, 'negative': True, 'negative_base': list(base), 'negative_peak': list(peak), 'negative_density': 0.}
     # A first brightness: the median of the picture at middle grey. The densest part alone (often a small
     # highlight) would leave most pictures dark.
-    height, width = frame.shape[:2]; top, left = int(height*BORDER), int(width*BORDER)
-    light = apply(frame[top:height-top or None, left:width-left or None], result)[..., :3] @ np.float32([.2126, .7152, .0722])
+    light = apply(pixels, result)[..., :3] @ np.float32([.2126, .7152, .0722])
     result['negative_density'] = round(float(np.clip(np.log2(MIDDLE/max(float(np.median(light)), 1e-4)), *DENSITY_RANGE))*20)/20
     # The import defaults of a camera RAW file brighten a dark RAW; the positive is already placed.
     from .raw_defaults import BUILTIN_RAW, BUILTIN_LINEAR_RAW
