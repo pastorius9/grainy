@@ -449,7 +449,7 @@ class PhotoView(QGraphicsView):
     @sample_mode.setter
     def sample_mode(self,enabled):
         self._sample_mode=bool(enabled)
-        self.sync_cursor()
+        self.sync_cursor();self.viewport().update()
 
     def sync_cursor(self):
         active=self.sample_mode or self.crop_mode or self.tool_mode
@@ -811,6 +811,10 @@ class PhotoView(QGraphicsView):
         if self.zoom_press is not None and (event.position().toPoint()-self.zoom_press).manhattanLength()>=QApplication.startDragDistance():
             self.zoom_press=None
         self.brush_position=self.mapToScene(event.position().toPoint())
+        if self.sample_mode:
+            # Over the photo the magnifier marks the spot, so the pointer itself is hidden there.
+            over=self.has_photo and self.image_rect.contains(self.brush_position)
+            self.viewport().setCursor(Qt.CursorShape.BlankCursor if over else self.eyedropper_cursor);self.viewport().update()
         if self.tool_mode=='adjust':
             if getattr(self,'adjust_origin',None) is not None and event.buttons() & Qt.MouseButton.LeftButton:
                 self.adjustDragged.emit(float(self.adjust_origin-event.position().y()))
@@ -984,6 +988,8 @@ class PhotoView(QGraphicsView):
                 painter.restore()
             if self.crop_mode:
                 self.draw_crop(painter)
+            if self.sample_mode and self.brush_position is not None and self.image_rect.contains(self.brush_position):
+                self.draw_loupe(painter)
             return
         if self.loading_photo:return
         painter.save()
@@ -1004,6 +1010,41 @@ class PhotoView(QGraphicsView):
         painter.setFont(font)
         painter.setPen(QColor('#8c939b'))
         painter.drawText(QRectF(20,h/2+28,w-40,30), Qt.AlignmentFlag.AlignCenter, tr('사진이나 폴더를 끌어 놓거나, 사진 가져오기를 누르세요.'))
+        painter.restore()
+
+    LOUPE_RADIUS=72          # screen pixels
+    LOUPE_ZOOM=6             # times the size the photo has on screen
+
+    def draw_loupe(self,painter):
+        """Eyedropper: the surroundings of the pointer enlarged in a circle, the picked spot marked in its middle,
+        and the colour there as it is shown."""
+        pixmap=self.photo_item.pixmap()
+        if pixmap.isNull() or not self.image_rect.width():return
+        spot=self.brush_position;centre=QPointF(self.mapFromScene(spot));radius=self.LOUPE_RADIUS
+        painter.save();painter.resetTransform();painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        circle=QPainterPath();circle.addEllipse(centre,radius,radius)
+        painter.save();painter.setClipPath(circle);painter.fillPath(circle,QColor('#101215'))
+        across=pixmap.width()/self.image_rect.width()                    # pixmap pixels per unit of the photo
+        size=self.transform().m11()/across*self.LOUPE_ZOOM               # screen pixels per pixmap pixel in the circle
+        painter.translate(centre);painter.scale(size,size)
+        painter.drawPixmap(QPointF(-spot.x()*across,-spot.y()*pixmap.height()/self.image_rect.height()),pixmap)
+        painter.restore()
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor(0,0,0,150),4));painter.drawEllipse(centre,radius,radius)
+        painter.setPen(QPen(QColor('#f2f2f2'),2));painter.drawEllipse(centre,radius,radius)
+        mark=QRectF(centre.x()-4.5,centre.y()-4.5,9,9)
+        painter.setPen(QPen(QColor(0,0,0,200),3));painter.drawRect(mark)
+        painter.setPen(QPen(QColor('#ffffff'),1));painter.drawRect(mark)
+        if self.on_screen is not None:
+            height,width=self.on_screen.shape[:2]
+            x=min(width-1,max(0,int(spot.x()/self.image_rect.width()*width)));y=min(height-1,max(0,int(spot.y()/self.image_rect.height()*height)))
+            r,g,b=(int(round(float(v)*255)) for v in np.clip(self.on_screen[y,x,:3],0,1))
+            text=f'R {r}   G {g}   B {b}';font=painter.font();font.setPixelSize(12);painter.setFont(font)
+            wide=painter.fontMetrics().horizontalAdvance(text)+18
+            below=centre.y()+radius+30<self.viewport().height()
+            label=QRectF(centre.x()-wide/2,centre.y()+radius+8 if below else centre.y()-radius-30,wide,22)
+            painter.setPen(Qt.PenStyle.NoPen);painter.setBrush(QColor(16,18,21,220));painter.drawRect(label)
+            painter.setPen(QColor('#f2f2f2'));painter.drawText(label,Qt.AlignmentFlag.AlignCenter,text)
         painter.restore()
 
     def draw_crop(self,painter):

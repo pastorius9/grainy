@@ -271,3 +271,19 @@ def test_menu_converts_the_selected_roll_alike(window, tmp_path, monkeypatch):
     assert w.settings['negative'] and w.negative_button.isChecked()                       # the open photo follows
     shown = w.view.on_screen[60, 90, :3]
     assert max(shown)-min(shown) < .02
+
+
+def test_copying_edits_to_other_photos_carries_the_conversion(window, tmp_path, monkeypatch):
+    from luma.manager import EDIT_GROUPS
+    assert set(EDIT_GROUPS['네거티브 반전']) == set(negative.KEYS)                       # its own entry among the items to copy
+    w = window; ids = []
+    for index, light in enumerate((scene(), uneven())):
+        path = tmp_path/f'strip-{index}.png'; Image.fromarray(np.uint8(np.clip(to_srgb(scanned(light)), 0, 1)*255+.5)).save(path)
+        ids.append(w.catalog.add(path))
+    w.refresh_lists(); w.activate(ids[0]); wait(lambda: w.source is not None); idle(w)
+    w.negative_button.click(); idle(w)
+    w.manager.copy_keys = {key for keys in EDIT_GROUPS.values() for key in keys}             # as after choosing the items to copy
+    monkeypatch.setattr(w, 'selected_ids', lambda: ids)
+    w.manager.sync_selected()
+    first, second = [w.catalog.photo(i)['settings'] for i in ids]
+    assert second['negative'] and all(second[key] == first[key] for key in negative.KEYS)

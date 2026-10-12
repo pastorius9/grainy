@@ -26,7 +26,8 @@ EDIT_GROUPS={
  '컬러 필터':('photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity'),
  '커브':('curve','rgb_curves','parametric'),
  '디테일':('clarity','texture','dehaze','sharpen','sharpen_radius','sharpen_detail','sharpen_mask','noise_luma','noise_color'),
- '효과':('grain','vignette'),
+ '효과':('grain','grain_size','grain_roughness','vignette','vignette_midpoint','vignette_roundness','vignette_feather','vignette_highlights'),
+ '네거티브 반전':('negative','negative_base','negative_peak','negative_range','negative_density'),
  '렌즈·원근':('distortion','distortion_k2','distortion_k3','lens_vignette','ca_red','ca_blue','defringe','lens_profile','perspective_v','perspective_h','aspect_scale','shift_x','shift_y','transform_scale','guides',
              'lensfun','lensfun_enabled','lensfun_distortion','lensfun_tca','lensfun_vignette','lensfun_scale','upright','upright_crop'),
  '크롭·회전':('crop','rotation','straighten','flip'), '마스크':('masks',),'복구':('retouch',)}
@@ -122,8 +123,8 @@ class LibraryManager:
         labels=library.addMenu(tr('색 라벨'))
         for name in ['','빨강','노랑','초록','파랑','보라']:self.add(labels,name or '해제',lambda n=name:self.set_label(n))
         view=bar.addMenu(tr('보기·필터'))
-        for text,fn in [('상세 필터',self.filter_dialog),('필터·컬렉션 해제',self.clear_filter),('선택 사진 비교',lambda:self.compare(2)),
-            ('선택 사진 모아보기',lambda:self.compare(12)),('현재 사진 전·후 비교',lambda:self.compare(2,before=True))]:self.add(view,text,fn)
+        for text,fn in [('상세 필터',self.filter_dialog),('필터·컬렉션 해제',self.clear_filter),('선택 사진 비교',lambda:self.w.compare.start('photos')),
+            ('선택 사진 모아보기',lambda:self.compare(12)),('현재 사진 전·후 비교',lambda:self.w.compare.start('before'))]:self.add(view,text,fn)
         self.stack_action=self.add(view,'스택 접어서 보기',self.toggle_stacks);self.stack_action.setCheckable(True)
         self.add(view,'화면 색상 관리…',self.w.display_color.show_dialog)
         self.add(view,'모니터 색상 자동 감지',lambda:self.w.display_color.configure('auto'))

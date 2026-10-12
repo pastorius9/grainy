@@ -42,6 +42,14 @@ STYLE = '''
 QWidget { background:#1b1f24; color:#dce0e4; font-family:"Malgun Gothic"; font-size:12px; }
 QToolButton, QDoubleSpinBox, QPlainTextEdit, QTextEdit, QTextBrowser, QGroupBox, QMenu, QTabBar::tab { border-radius:0px; }
 QMainWindow { background:#101215; }
+QMenu { background:#20252b; border:1px solid #39414b; padding:4px 0px; }
+QMenu::item { background:transparent; padding:6px 26px 6px 24px; }
+QMenu::item:selected { background:#4d453a; color:#ffe7c8; }
+QMenu::item:disabled { color:#5f6770; }
+QMenu::item:disabled:selected { background:transparent; color:#5f6770; }
+QMenu::separator { height:1px; background:#373e47; margin:4px 8px; }
+QMenuBar::item { background:transparent; padding:4px 9px; }
+QMenuBar::item:selected, QMenuBar::item:pressed { background:#4d453a; color:#ffe7c8; }
 QLabel { background:transparent; }
 QLabel#brand { color:#f4e7d4; font-size:28px; font-weight:600; letter-spacing:3px; }
 QLabel#muted { color:#89929d; }
@@ -560,7 +568,9 @@ class MainWindow(QMainWindow):
         self.view.straightenFinished.connect(self.finish_interaction)
         self.view.sampled.connect(self.sample_wb)
         self.view.fullResolutionRequested.connect(self.load_full_resolution)
-        self.stack.addWidget(self.view)
+        from .compare_view import CompareLayout
+        self.compare = CompareLayout(self)      # the view, and a second picture beside it when comparing
+        self.stack.addWidget(self.compare.area)
         self.grid = self.photo_list(grid=True)
         self.grid.photoClicked.connect(self.open_library_photo)
         self.stack.addWidget(self.grid)
@@ -576,6 +586,9 @@ class MainWindow(QMainWindow):
         self.view.zoomChanged.connect(self.zoom_label.setText)
         tools.addWidget(self.zoom_label)
         tools.addStretch()
+        self.compare_button = button(tr('비교'), lambda: self.compare.toggle(), True)
+        self.compare_button.setToolTip(tr('두 장을 나란히 봅니다: 보정 전·후 또는 다른 사진과. 단축키: C'))
+        tools.addWidget(self.compare_button)
         self.before_button = button(tr('원본 비교'), self.toggle_before, True)
         self.before_button.setToolTip(tr('단축키: \\'))
         tools.addWidget(self.before_button)
@@ -874,7 +887,7 @@ class MainWindow(QMainWindow):
     def shortcuts(self):
         quick=QShortcut(QKeySequence('Ctrl+E'),self)
         quick.activated.connect(lambda:self.safe_shortcut(lambda:self.quick_export('previous')))
-        for key,action in [('Ctrl+O',self.import_files),('Ctrl+Shift+E',self.export_dialog),('Ctrl+Z',self.undo),('Ctrl+Shift+Z',self.redo),('Ctrl+Y',self.redo),('Ctrl+Shift+C',self.copy_edits),('Ctrl+Shift+V',self.paste_edits),('\\',lambda:self.before_button.click()),('G',lambda:self.set_mode(1)),('D',lambda:self.set_mode(0)),('R',lambda:self.crop_button.click()),('P',lambda:self.set_flag(1)),('X',lambda:self.set_flag(-1)),('U',lambda:self.set_flag(0)),
+        for key,action in [('Ctrl+O',self.import_files),('Ctrl+Shift+E',self.export_dialog),('Ctrl+Z',self.undo),('Ctrl+Shift+Z',self.redo),('Ctrl+Y',self.redo),('Ctrl+Shift+C',self.copy_edits),('Ctrl+Shift+V',self.paste_edits),('\\',lambda:self.before_button.click()),('C',lambda:self.compare_button.click()),('G',lambda:self.set_mode(1)),('D',lambda:self.set_mode(0)),('R',lambda:self.crop_button.click()),('P',lambda:self.set_flag(1)),('X',lambda:self.set_flag(-1)),('U',lambda:self.set_flag(0)),
                 ('B',lambda:self.manager.run(self.workflow.quick_toggle)),('Ctrl+Alt+V',lambda:self.manager.run(self.workflow.previous_edits))]:
             shortcut = QShortcut(QKeySequence(key),self)
             shortcut.activated.connect(lambda fn=action:self.safe_shortcut(fn))

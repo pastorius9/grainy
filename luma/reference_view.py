@@ -8,11 +8,11 @@ from .widgets import PhotoView
 PREVIEW_SIZE=1800
 
 
-def render_photo(record):
+def render_photo(record,size=PREVIEW_SIZE):
     """Develop a preview in a worker thread; returns display RGB and the wide-gamut source."""
     from .engine import load_image,develop,output_rgb
     s=record['settings']
-    source,info=load_image(record['path'],PREVIEW_SIZE,s['working_space'],raw_options=s)
+    source,info=load_image(record['path'],size,s['working_space'],raw_options=s)
     working=develop(source,s,output_space=None,original_size=(info['width'],info['height']))
     return output_rgb(working,s['working_space']),(working,s['working_space']) if s['working_space']=='ProPhoto' else None
 
