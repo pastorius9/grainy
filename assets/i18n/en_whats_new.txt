@@ -1,0 +1,4 @@
+Grainy {0}의 달라진 점 => What's new in Grainy {0}
+Grainy가 {0} 버전으로 업데이트되었습니다. => Grainy has been updated to version {0}.
+이 버전의 변경 기록을 찾지 못했습니다. => The change notes for this version were not found.
+이번 버전의 달라진 점… => What's new in this version…

@@ -65,6 +65,14 @@ QPushButton#feedback:hover { background:#1f3a3f; border-color:#6fc0c6; color:#c9
 QPushButton#feedback:pressed { background:#2a4f55; border-color:#6fc0c6; color:#e2fbfb; }
 QPushButton#nav { text-align:left; padding:10px; }
 QLineEdit, QComboBox, QSpinBox { background:#15191e; border:1px solid #39414b; border-radius:0px; padding:6px; }
+QSpinBox::up-button { subcontrol-origin:border; subcontrol-position:top right; width:20px; border-left:1px solid #39414b; border-bottom:1px solid #39414b; background:#1d2228; }
+QSpinBox::down-button { subcontrol-origin:border; subcontrol-position:bottom right; width:20px; border-left:1px solid #39414b; background:#1d2228; }
+QSpinBox::up-button:hover, QSpinBox::down-button:hover { background:#363e47; }
+QSpinBox::up-button:pressed, QSpinBox::down-button:pressed { background:#4d453a; }
+QSpinBox::up-arrow { image:url("{UI}/spin-up.png"); width:9px; height:6px; }
+QSpinBox::down-arrow { image:url("{UI}/spin-down.png"); width:9px; height:6px; }
+QSpinBox::up-arrow:off, QSpinBox::up-arrow:disabled { image:url("{UI}/spin-up-off.png"); }
+QSpinBox::down-arrow:off, QSpinBox::down-arrow:disabled { image:url("{UI}/spin-down-off.png"); }
 QDoubleSpinBox#adjustmentValue { background:transparent; border:1px solid transparent; border-radius:0px; padding:0px 2px; color:#aeb6bf; }
 QDoubleSpinBox#adjustmentValue:focus { background:#15191e; border-color:#b89c76; color:#f4e7d4; }
 QLineEdit:focus { border-color:#dec49f; }
@@ -120,7 +128,10 @@ def configure_application(app):
     if icon.is_file():
         from PySide6.QtGui import QIcon
         app.setWindowIcon(QIcon(str(icon)))
-    app.setStyleSheet(STYLE.replace('"Malgun Gothic"',f'"{UI_FONT}"'))
+    # The spin box buttons are drawn by the stylesheet: left to the Windows 11 style they sit side by side
+    # and the number field covers all but a sliver of the up button. tools/make_ui_assets.py
+    ui=(Path(__file__).resolve().parents[1]/'assets'/'ui').as_posix()
+    app.setStyleSheet(STYLE.replace('"Malgun Gothic"',f'"{UI_FONT}"').replace('{UI}',ui))
     app.setProperty('lumaConfigured',True)
 
 

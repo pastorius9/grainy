@@ -32,6 +32,7 @@ class DesktopSession:
 
     def start(self):
         selected = self.preferences.language
+        first_run = selected is None
         if selected is None:
             dialog = LanguageDialog(first_run=True)
             if dialog.exec() != QDialog.DialogCode.Accepted:
@@ -47,8 +48,16 @@ class DesktopSession:
         native_gpu.set_enabled(self.preferences.use_gpu)
         self.open_window()
         from PySide6.QtCore import QTimer
-        QTimer.singleShot(1500, lambda: self.updates.startup())     # after the window is up
+        QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup()))     # after the window is up
         return True
+
+    def whats_new(self, first_run=False, packaged=None):
+        """Once after an update of the packaged app: what changed since the version opened before."""
+        from . import whats_new
+        if not (getattr(sys, 'frozen', False) if packaged is None else packaged):return
+        entries = whats_new.pending(self.preferences, first_run)
+        whats_new.remember(self.preferences)
+        if entries:whats_new.show(self.window, entries)
 
     def open_window(self, geometry=None, photo=None, mode=None):
         self.window = self.window_factory(self.data_dir)
@@ -58,6 +67,8 @@ class DesktopSession:
         self.updates = UpdateController(self.window, self.preferences)
         from PySide6.QtWidgets import QMenu
         menu = self.window.findChild(QMenu, 'settingsMenu'); menu.addSeparator()
+        from . import whats_new
+        menu.addAction(tr('이번 버전의 달라진 점…'), lambda: whats_new.show(self.window))
         menu.addAction(tr('Grainy 정보…'), self.window.show_about)
         if sys.platform == 'darwin':
             # macOS moves a command whose name starts with "Settings", "About", "Quit" (or their
