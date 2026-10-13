@@ -84,3 +84,36 @@ def test_more_menu_overlay_key_and_intersect(window):
     assert '구성 요소 삭제' in [a.text() for a in s.mask_menu().actions()]
     next(a for a in s.mask_menu().actions() if a.text() == '마스크 삭제').trigger()
     assert not w.settings['masks'] and not s.add_button.isEnabled()
+
+
+def test_brush_can_be_limited_to_a_tonal_range(window):
+    import numpy as np
+    from luma.processing import _layer_component
+    w = window; s = w.studio; w.tabs.setCurrentIndex(5)
+    shape = lambda: [(c['type'], c['operation']) for c in w.settings['masks'][s.layer_index]['components']]
+    choose = lambda key: s.brush_range.setCurrentIndex(s.brush_range.findData(key))
+    s.create_mask('brush')
+    assert not s.brush_range.isHidden() and s.brush_range.currentData() == 'all'
+    drag(w, (.3, .4), (.5, .5)); assert shape() == [('brush', 'add')]                      # all tones: nothing added
+    history = len(w.catalog.histories(w.current_id))
+    choose('shadows')                                                                    # limits the painted mask at once
+    last = w.settings['masks'][0]['components'][-1]
+    assert shape() == [('brush', 'add'), ('luma', 'intersect')] and last['brush_range'] == 'shadows' and last['range'] == [0., .2]
+    assert len(w.catalog.histories(w.current_id)) == history+1
+    mask = s.mask_tree.topLevelItem(0)
+    assert [mask.child(i).text(0) for i in range(mask.childCount())] == ['+  브러시 1', '∩  밝기 제한: 어두운 곳']
+    drag(w, (.6, .3), (.7, .6))                                                           # later strokes stay inside the range
+    assert shape() == [('brush', 'add'), ('brush', 'add'), ('luma', 'intersect')] and s.component_index == 1
+    choose('highlights'); assert shape()[-1] == ('luma', 'intersect') and w.settings['masks'][0]['components'][-1]['range'] == [.8, 1.]
+    choose('all'); assert shape() == [('brush', 'add'), ('brush', 'add')]
+    s.create_mask('brush'); assert s.brush_range.currentData() == 'all'                   # the range belongs to the mask
+    choose('midtones'); assert w.settings['masks'][1]['components'] == []                 # chosen first: starts with the stroke
+    drag(w, (.3, .6), (.5, .7))
+    assert shape() == [('brush', 'add'), ('luma', 'intersect')] and w.settings['masks'][1]['components'][-1]['brush_range'] == 'midtones'
+    s.select_layer(0); assert s.brush_range.currentData() == 'all'
+    s.select_layer(1); assert s.brush_range.currentData() == 'midtones'
+    s.mode('')
+    ramp = np.repeat(np.linspace(0, 1, 101, dtype=np.float32)[None, :, None], 3, axis=2).repeat(2, axis=0)
+    parts = {key: _layer_component(ramp, ramp.shape, s.range_component(key), None, None)[0] for key in ('shadows', 'midtones', 'highlights')}
+    np.testing.assert_allclose(sum(parts.values()), 1., atol=1e-5)                       # every tone belongs somewhere, once
+    assert parts['shadows'][0] == 1 and parts['shadows'][50] == 0 and parts['highlights'][-1] == 1 and parts['midtones'][50] == 1

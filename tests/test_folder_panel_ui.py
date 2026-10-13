@@ -11,6 +11,16 @@ from luma.app import MainWindow
 from luma.folders import path_key
 
 
+def rename(folder,new):
+    """Windows refuses to rename a folder while the app's folder scan has it open; a person would simply try again."""
+    import time
+    for attempt in range(50):
+        try:folder.rename(new);return
+        except PermissionError:
+            if attempt==49:raise
+            QApplication.processEvents();time.sleep(.05)
+
+
 @pytest.fixture
 def window(app,tmp_path):
     root=tmp_path/'photos';path=photo(root/'one.jpg')
@@ -41,7 +51,7 @@ def test_live_rename_reloads_active_photo_and_preserves_edits_and_session(window
     w.folder_panel.timer.setInterval(100)
     wait(lambda:path_key(root) in w.catalog.preference('folder_identities',{}))
     w.set_setting('exposure',.65);w.commit();undo=w.catalog.preference(f'undo:{ident}')
-    new=root.with_name('사진 이름 변경');root.rename(new)
+    new=root.with_name('사진 이름 변경');rename(root,new)
     wait(lambda:w.catalog.photo(ident)['path']==str(new/'one.jpg') and w.source is not None and not w.library_loading)
     assert path_key(root) not in w.folder_items and path_key(new) in w.folder_items
     assert w.current_id==ident and w.folder_filter==str(new)
@@ -55,7 +65,7 @@ def test_live_rename_reloads_active_photo_and_preserves_edits_and_session(window
 
 def test_manual_location_cancel_and_backup_failure_are_non_destructive(window,monkeypatch):
     w,root,ident=window;w.folder_panel.shutdown()
-    new=root.with_name('manual');root.rename(new)
+    new=root.with_name('manual');rename(root,new)
     monkeypatch.setattr(QFileDialog,'getExistingDirectory',lambda *args:str(new))
     questions=[]
     def reject(*args):questions.append(args[2]);return QMessageBox.StandardButton.No

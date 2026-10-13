@@ -209,6 +209,11 @@ class StudioTools:
     # Mask kinds in menu order (None = separator). AI masks and depth range are not offered.
     MASK_KINDS=(('brush','브러시'),('linear','선형 그레이디언트'),('radial','방사형 그레이디언트'),(None,''),
                 ('color_range','색상 범위'),('luma_range','광도 범위'))
+    # Tones a brushed mask can be limited to (dodging and burning). The limit is a luminance component that
+    # intersects the mask and stays its last component, so every stroke is inside it. The three ramps add up
+    # to one: a tone belongs to its neighbours in the proportion it lies between them.
+    BRUSH_RANGES=(('all','전체',None),('shadows','어두운 곳',(0.,.2)),('midtones','중간 밝기',(.45,.55)),('highlights','밝은 곳',(.8,1.)))
+    BRUSH_RANGE_SOFTNESS=.25
 
     def kind_button(self,box,text,callback):
         """A button that opens the list of mask kinds and calls callback(kind)."""
@@ -256,6 +261,12 @@ class StudioTools:
         self.flow=Adjustment('flow',tr('플로우'),1,100);self.flow.set_value(100);options.addWidget(self.flow)
         self.density=Adjustment('density',tr('밀도'),1,100);self.density.set_value(100);options.addWidget(self.density)
         for control,value in ((self.radius,.025),(self.feather,70),(self.flow,100),(self.density,100)):control.default_value=value
+        row=QHBoxLayout();options.addLayout(row)
+        self.brush_range_label=QLabel(tr('밝기 제한'));row.addWidget(self.brush_range_label)
+        self.brush_range=QComboBox();self.brush_range.setAccessibleName(tr('밝기 제한'));row.addWidget(self.brush_range,1)
+        for key,title,_ in self.BRUSH_RANGES:self.brush_range.addItem(tr(title),key)
+        self.brush_range.setToolTip(tr('칠한 곳 가운데 고른 밝기에만 보정이 들어갑니다. 닷지·번에 씁니다.'))
+        self.brush_range.currentIndexChanged.connect(lambda _:self.brush_range_changed())
         self.auto_mask=QCheckBox(tr('자동 마스크'));options.addWidget(self.auto_mask)
         self.auto_mask.setToolTip(tr('처음 누른 곳과 비슷한 색 안에서만 칠합니다.'))
         self.auto_tolerance=Adjustment('auto_tolerance',tr('자동 마스크 허용량'),.02,1,100);self.auto_tolerance.set_value(.18);self.auto_tolerance.default_value=.18;options.addWidget(self.auto_tolerance)
@@ -606,7 +617,9 @@ class StudioTools:
         if 0<=p['layer']<len(layers):layer=layers[p['layer']]
         else:
             layer=dict(name='마스크',enabled=True,opacity=1,components=[],adjustments={});layers.append(layer)
-        layer['components'].append(deepcopy(p['component']))
+        component=deepcopy(p['component'])
+        if component.get('type')=='brush':layer['components']=self.ranged(layer['components'],component)[0]
+        else:layer['components'].append(component)
         return settings
 
     def current_layer(self):
@@ -621,9 +634,47 @@ class StudioTools:
     def add_component(self,component):
         if self.current_layer() is None:self.new_layer()
         layers=deepcopy(self.w.settings['masks']);component.setdefault('operation',self.operation.currentData())
-        layers[self.layer_index]['components'].append(component);self.w.set_setting('masks',layers)
-        self.component_index=len(layers[self.layer_index]['components'])-1
+        components=layers[self.layer_index]['components']
+        if component.get('type')=='brush':components,index=self.ranged(components,component)
+        else:components=components+[component];index=len(components)-1
+        layers[self.layer_index]['components']=components;self.w.set_setting('masks',layers)
+        self.component_index=index
         self.load_layers()
+
+    @staticmethod
+    def brush_range_place(components):
+        """Position of the mask's brush range (its last component), or None."""
+        last=components[-1] if components else {}
+        return len(components)-1 if last.get('brush_range') and last.get('type')=='luma' and last.get('operation')=='intersect' else None
+
+    def range_component(self,key):
+        low,high=next(span for name,_,span in self.BRUSH_RANGES if name==key)
+        return dict(type='luma',range=[low,high],softness=self.BRUSH_RANGE_SOFTNESS,operation='intersect',brush_range=key)
+
+    def ranged(self,components,stroke):
+        """(components with a brush stroke added, the stroke's position). The stroke goes inside the mask's
+        brush range; the first painted stroke starts the range chosen in the tool options."""
+        components=list(components);place=self.brush_range_place(components)
+        if place is not None:
+            components.insert(place,stroke);return components,place
+        components.append(stroke);key=self.brush_range.currentData()
+        if key!='all' and stroke.get('operation','add')=='add':components.append(self.range_component(key))
+        return components,len(components)-1 if key=='all' or stroke.get('operation','add')!='add' else len(components)-2
+
+    def brush_range_changed(self):
+        """The chosen range for the selected mask: started, changed or taken away at once when it has strokes."""
+        layer=self.current_layer()
+        if self.loading or layer is None:return
+        components=deepcopy(layer.get('components',[]));place=self.brush_range_place(components);key=self.brush_range.currentData()
+        if place is None:
+            if key=='all' or not any(c.get('type')=='brush' for c in components):return      # starts with the first stroke
+            components.append(self.range_component(key))
+        elif key=='all':components.pop(place)
+        elif components[place].get('brush_range')==key:return
+        else:components[place]=self.range_component(key)
+        self.w.commit();layers=deepcopy(self.w.settings['masks']);layers[self.layer_index]['components']=components
+        self.component_index=min(self.component_index,len(components)-1)
+        self.w.set_setting('masks',layers);self.w.commit('브러시 밝기 범위');self.load_layers();self.w.render()
 
     def add_luma(self):
         lo,hi=sorted([self.low.slider.value()/100,self.high.slider.value()/100])
@@ -833,7 +884,7 @@ class StudioTools:
         self.mask_tree.setVisible(rows>0);self.mask_tree.setFixedHeight(min(230,10+34*max(1,rows)))
         brush=tool=='brush';radial=tool=='radial';picking=tool in ('color_range','color_range_add','luma_range')
         self.tool_options.setVisible(brush or radial or picking)
-        for control in (self.radius,self.flow,self.density,self.auto_mask,self.auto_tolerance,self.brush_note):control.setVisible(brush)
+        for control in (self.radius,self.flow,self.density,self.auto_mask,self.auto_tolerance,self.brush_note,self.brush_range,self.brush_range_label):control.setVisible(brush)
         self.feather.setVisible(brush or radial);self.tolerance.setVisible(tool=='color_range');self.range_pick_note.setVisible(picking)
         self.done_button.setVisible(tool in ('brush','linear','radial','color_range','color_range_add','luma_range','edit_component'))
         names={kind:title for kind,title in self.MASK_KINDS if kind};names['color_range_add']='색상 범위'
@@ -860,6 +911,8 @@ class StudioTools:
                 kind=component.get('type');counts[kind]=counts.get(kind,0)+1
                 sign={'add':'+','subtract':'-','intersect':'∩'}.get(component.get('operation','add'),'+')
                 name=f'{sign}  {tr(NAMES.get(kind,"선택 영역"))} {counts[kind]}'+(tr(' · 꺼짐') if not component.get('enabled',True) else '')
+                if j==self.brush_range_place(layer['components']):
+                    name=f'{sign}  {tr("밝기 제한")}: {tr(next((title for key,title,_ in self.BRUSH_RANGES if key==component["brush_range"]),"전체"))}'
                 child=QTreeWidgetItem([name]);child.setData(0,role,i);child.setData(0,role+1,j);item.addChild(child)
             item.setExpanded(i==self.layer_index)
         self.loading=False;self.load_layer();self.sync_tree()
@@ -870,6 +923,10 @@ class StudioTools:
         self.loading=True;layer=self.current_layer() or {}
         self.mask_enabled.setChecked(layer.get('enabled',True));self.invert.setChecked(layer.get('invert',False))
         self.opacity.set_value(layer.get('opacity',1)*100)
+        # The range belongs to the mask: an existing one is shown, a mask with strokes and none shows "all".
+        components=layer.get('components',[]);place=self.brush_range_place(components)
+        if place is not None or components or not self.w.view.tool_mode=='brush':
+            self.brush_range.setCurrentIndex(max(0,self.brush_range.findData(components[place]['brush_range'] if place is not None else 'all')))
         for key,c in self.local_controls.items():c.set_value(layer.get('adjustments',{}).get(key,0))
         self.load_local_curve()
         self.loading=False;self.load_local_hsl();self.load_local_points();self.load_range_editor();self.update_mask_ui()
