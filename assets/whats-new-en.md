@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.95 — Feedback reference numbers
+
+- **Sending feedback now gives you a reference number**, such as `#K7Q2M`: five random characters, nothing about you or your computer.
+- **When your feedback is addressed, Grainy tells you after the update** that ships it, once, at the top of this window. No e-mail or account is involved: the reference stays on your computer and the list of addressed references ships with the app.
+
 ## 0.5.94 — Turned radial gradients, photo background, overlay that steps aside
 
 - **Radial gradients can be turned and can start off the photo.** A `Turn ellipse` slider appears with a radial gradient selected; start dragging beside the photo or past its edge so only part of the light falls in the frame. Linear gradients can reach past the edge too.

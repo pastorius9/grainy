@@ -54,6 +54,7 @@ QLabel { background:transparent; }
 QLabel#brand { color:#f4e7d4; font-size:28px; font-weight:600; letter-spacing:3px; }
 QLabel#muted { color:#89929d; }
 QLabel#section { color:#d2b991; font-size:10px; font-weight:600; letter-spacing:2px; padding-top:12px; padding-bottom:6px; }
+QLabel#shipped { background:#1f3a3f; border:1px solid #3f7f86; color:#c9f1f2; padding:8px 10px; }
 QPushButton { background:#272d34; border:1px solid #373e47; padding:7px 11px; border-radius:0px; }
 QPushButton:hover { background:#363e47; border-color:#68717a; }
 QPushButton:pressed, QPushButton:checked { background:#4d453a; border-color:#b89c76; color:#ffe7c8; }

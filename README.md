@@ -126,7 +126,7 @@ The full manual ships with the program (`README.html`, in Korean).
 ## Privacy
 
 - No usage statistics are collected. Only two things go to the internet, and both only when you ask.
-- **Feedback**: pressing Send transmits the text you typed, the Grainy version and a one-line system description (operating system version and graphics adapter name). Photos, file names and paths, and user names are not sent.
+- **Feedback**: pressing Send transmits the text you typed, the Grainy version, a one-line system description (operating system version and graphics adapter name) and a random five-character reference number. The reference is also kept on your computer so that a later update can tell you when your feedback was addressed. Photos, file names and paths, and user names are not sent.
 - **Updates**: the latest version information is read from GitHub only when you press "Check for Updates" or have switched on the automatic check (you are asked at first start, and it can be switched off in Settings). Nothing about you is sent.
 
 ## Run from source
@@ -158,4 +158,4 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 - Only binaries built from this repository are signed. Third-party libraries shipped with Grainy keep their own publishers' signatures.
 - Signed releases are built from source by GitHub Actions ([build.yml](.github/workflows/build.yml)) on a GitHub-hosted runner; the native libraries are compiled there as well.
 
-**Privacy policy:** This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. There are two such requests. The Feedback dialog: pressing Send transmits the text you typed, the Grainy version and a one-line system description (operating system version and graphics adapter name). Updates: "Check for Updates" and, only if you switch it on when asked at first start (it can be switched off in Settings), a once-a-day check at start-up read the latest release information from GitHub; installing an update downloads the release file from GitHub. Photos, file names, paths and user names are never transmitted.
+**Privacy policy:** This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. There are two such requests. The Feedback dialog: pressing Send transmits the text you typed, the Grainy version, a one-line system description (operating system version and graphics adapter name) and a random five-character reference number. Updates: "Check for Updates" and, only if you switch it on when asked at first start (it can be switched off in Settings), a once-a-day check at start-up read the latest release information from GitHub; installing an update downloads the release file from GitHub. Photos, file names, paths and user names are never transmitted.

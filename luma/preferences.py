@@ -35,8 +35,18 @@ class Preferences:
     def save_use_gpu(self, value):
         self.save('use_gpu', bool(value))
 
+    def stored(self):
+        """The file as it is now: another Preferences object (the feedback dialog's) may have written to it."""
+        try:
+            data = json.loads(self.path.read_text(encoding='utf-8'))
+            if isinstance(data, dict):
+                return data
+        except (OSError, ValueError):
+            pass
+        return self.values
+
     def save(self, key, value):
-        updated = {**self.values, key: value}
+        updated = {**self.stored(), key: value}
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = None
         try:

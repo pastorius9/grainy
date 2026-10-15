@@ -1,0 +1,3 @@
+보냈습니다. 고맙습니다. 접수 번호는 #{0}입니다. 반영되면 업데이트한 뒤 Grainy가 알려 드립니다. => Sent. Thank you. Your reference number is #{0}. Once it is addressed, Grainy will tell you after an update.
+보내 주신 피드백({0})이 이번 업데이트에 반영되었습니다. 고맙습니다. => Your feedback ({0}) made it into this update. Thank you.
+함께 보내는 정보: Grainy {0} · {1} · 보낼 때 정하는 무작위 접수 번호 => Sent with it: Grainy {0} · {1} · a random reference number, picked when you send

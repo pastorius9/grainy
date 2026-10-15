@@ -52,12 +52,15 @@ class DesktopSession:
         return True
 
     def whats_new(self, first_run=False, packaged=None):
-        """Once after an update of the packaged app: what changed since the version opened before."""
+        """Once after an update of the packaged app: what changed since the version opened before, and which
+        feedback sent from this computer the update addressed."""
         from . import whats_new
         if not (getattr(sys, 'frozen', False) if packaged is None else packaged):return
+        previous = self.preferences.values.get(whats_new.KEY)
         entries = whats_new.pending(self.preferences, first_run)
-        whats_new.remember(self.preferences)
-        if entries:whats_new.show(self.window, entries)
+        refs = [] if first_run else whats_new.shipped(self.preferences, previous)
+        whats_new.remember(self.preferences); whats_new.thank(self.preferences, refs)
+        if entries or refs:whats_new.show(self.window, entries, refs)
 
     def open_window(self, geometry=None, photo=None, mode=None):
         self.window = self.window_factory(self.data_dir)
