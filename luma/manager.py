@@ -130,6 +130,11 @@ class LibraryManager:
         self.add(view,'모니터 색상 자동 감지',lambda:self.w.display_color.configure('auto'))
         self.add(view,'모니터 ICC 프로파일 선택',self.monitor_profile)
         self.add(view,'모니터 ICC 보정 해제',self.clear_monitor_profile)
+        bg_menu=view.addMenu(tr('사진 배경'))
+        self.bg_group=[]
+        for label,key in [(tr('검정'),'black'),(tr('어두운 회색'),'dark_grey'),(tr('중간 회색'),'mid_grey'),(tr('흰색'),'white')]:
+            a=bg_menu.addAction(label);a.setCheckable(True);a.triggered.connect(lambda _=False,k=key:self.w.set_view_background(k))
+            self.bg_group.append((key,a))
         self.add(library,'전체 EXIF 메타데이터 새로 읽기',self.refresh_metadata)
         self.add(library,'RAW 가져오기 기본 보정',self.w.studio.raw_defaults)
         self.add(files,'선택 사진 미리보기 다시 만들기',lambda:self.w.preview_queue.start_batch(self.w.selected_ids()))

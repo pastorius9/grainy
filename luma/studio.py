@@ -33,6 +33,8 @@ class StudioTools:
         self.range_loading=False
         self.pending_stroke=None;self.stroke_generation=0
         self.fresh_layer=None
+        self.affine_key=None;self.affine=None       # fitted screen <-> source map, for gradients that leave the photo
+        self.overlay_paused=False                   # the mask overlay steps aside while the mask's sliders move
         self.healing_strokes=[];self.healing_context=None
         self.healing_mask=None;self.healing_overlay_key=None;self.healing_generation=0
         self.build_color();self.build_detail();self.build_masks();self.build_retouch()
@@ -129,16 +131,18 @@ class StudioTools:
         self.mixer=QComboBox();self.mixer.addItem(tr('HSL · 명도 기반'),'hsl');self.mixer.addItem(tr('기존 HSV · 밝기 기반'),'hsv')
         self.mixer.currentIndexChanged.connect(lambda _:self.w.set_setting('mixer_mode',self.mixer.currentData()) if not self.loading else None)
         box.insertWidget(0,self.mixer)
-        box=self.w.advanced_box(self.w.panel_box('curve'),'채널 및 파라메트릭 곡선')
+        box=self.w.panel_box('curve')
+        label(box,tr('구간별 조정 · 곡선의 네 구간을 각각 올리거나 내립니다.'))
+        self.parametric=[]
+        for i,name in enumerate(['암부 곡선','어두운 영역 곡선','밝은 영역 곡선','명부 곡선']):
+            c=Adjustment(str(i),name);c.changed.connect(self.parametric_changed);c.committed.connect(self.w.finish_interaction)
+            box.addWidget(c);self.parametric.append(c)
+        box=self.w.advanced_box(self.w.panel_box('curve'),'채널 커브')
         label(box,keys(tr('색상 채널 커브 · Ctrl+클릭: 점 추가 / 우클릭: 점 삭제 / 더블클릭: 초기화')))
         self.channel=QComboBox();self.channel.addItems([tr('빨강 R'),tr('초록 G'),tr('파랑 B')]);box.addWidget(self.channel)
         self.channel_curve=ToneCurve();box.addWidget(self.channel_curve)
         self.channel.currentIndexChanged.connect(lambda _:self.channel_curve.set_points(self.w.settings['rgb_curves'][self.channel.currentIndex()]))
         self.channel_curve.changed.connect(self.rgb_curve_changed);self.channel_curve.committed.connect(self.w.finish_interaction)
-        self.parametric=[]
-        for i,name in enumerate(['암부 곡선','어두운 영역 곡선','밝은 영역 곡선','명부 곡선']):
-            c=Adjustment(str(i),name);c.changed.connect(self.parametric_changed);c.committed.connect(self.w.finish_interaction)
-            box.addWidget(c);self.parametric.append(c)
         box=self.w.panel_box('grading')
         for i,title in enumerate(['그림자 컬러 그레이딩','중간톤 컬러 그레이딩','하이라이트 컬러 그레이딩']):
             label(box,title);self.group(box,'grading',i,['색상','채도','명도'],[(0,360,1),(0,100,1),(-100,100,1)])
@@ -246,7 +250,7 @@ class StudioTools:
         row=QHBoxLayout();box.addLayout(row)
         self.invert=QCheckBox(tr('반전'));self.invert.toggled.connect(lambda b:self.layer_property('invert',b));row.addWidget(self.invert)
         self.overlay=QCheckBox(tr('오버레이 표시 (O)'));self.overlay.setChecked(True)
-        self.overlay.toggled.connect(lambda _:self.preview_ready(self.w.view.on_screen));row.addWidget(self.overlay)
+        self.overlay.toggled.connect(lambda _:(setattr(self,'overlay_paused',False),self.preview_ready(self.w.view.on_screen)));row.addWidget(self.overlay)
         # State behind the buttons above; these two are not shown.
         self.mask_enabled=QCheckBox();self.mask_enabled.toggled.connect(lambda b:self.layer_property('enabled',b))
         self.operation=QComboBox();self.operation.addItem(tr('더하기'),'add');self.operation.addItem(tr('빼기'),'subtract');self.operation.addItem(tr('교차'),'intersect')
@@ -287,11 +291,16 @@ class StudioTools:
         self.range_remove=action(range_box,tr('고른 색 제외'),self.remove_range_sample)
         self.range_note=label(range_box,tr('목록에서 밝기 또는 색상 범위를 선택하세요.'))
         self.range_editor.hide()
+        self.radial_editor=QWidget();radial_box=QVBoxLayout(self.radial_editor);radial_box.setContentsMargins(0,0,0,0);box.addWidget(self.radial_editor)
+        self.radial_angle=Adjustment('angle',tr('타원 회전'),-180,180);self.radial_angle.default_value=0
+        self.radial_angle.changed.connect(self.radial_turned);self.radial_angle.committed.connect(self.w.finish_interaction)
+        radial_box.addWidget(self.radial_angle);label(radial_box,tr('방사형 그레이디언트는 사진 밖에서 시작하거나 사진 밖까지 그릴 수 있습니다.'))
+        self.radial_editor.hide()
         self.done_button=action(box,tr('완료'),lambda:self.mode(''))
         # Adjustments of the selected mask, named as in the main panels.
         self.adjust_host=QWidget();adjust=QVBoxLayout(self.adjust_host);adjust.setContentsMargins(0,0,0,0);box.addWidget(self.adjust_host)
         self.opacity=Adjustment('opacity',tr('양'),0,100);adjust.addWidget(self.opacity)
-        self.opacity.changed.connect(lambda _,v:self.layer_property('opacity',v/100))
+        self.opacity.changed.connect(lambda _,v:(self.pause_overlay(),self.layer_property('opacity',v/100)))
         self.local_controls={}
         for title,controls in [('톤',[('exposure','노출',-5,5,100),('contrast','대비',-100,100,1),('highlights','하이라이트',-100,100,1),
                     ('shadows','그림자',-100,100,1),('whites','흰색 계열',-100,100,1),('blacks','검정 계열',-100,100,1)]),
@@ -469,6 +478,7 @@ class StudioTools:
             self.range_pick_note.setText(tr('목록에서 색상 범위를 먼저 선택하세요.'));return
         if kind in ('point_color','local_point_color','color_range','color_range_add','luma_range','clone','heal','inpaint','red_eye') and self.w.before_button.isChecked():self.w.before_button.setChecked(False)
         if self.w.crop_button.isChecked():self.w.cancel_crop()
+        if kind in ('brush','linear','radial','color_range','color_range_add','luma_range','edit_component'):self.overlay_paused=False
         self.w.wb_button.setChecked(False);self.w.view.sample_mode=False
         self.w.set_mode(0);self.w.view.set_tool(kind)
         self.w.view.brush_radius=(self.retouch_radius if kind in ('clone','heal','inpaint','red_eye') else self.radius).slider.value()/1000
@@ -509,7 +519,8 @@ class StudioTools:
         if kind in ('color_range','color_range_add','luma_range'):
             # Range sampling checks transformed borders in its background job.
             self.pick_range(points,kind,add=kind=='color_range_add' or getattr(self.w.view,'tool_shift',False));return
-        source_points=self.source_points(points)
+        shape=self.gradient_shape(kind,points) if kind in ('linear','radial') else None
+        source_points=shape['points'] if shape else self.source_points(points)
         if not source_points:
             self.w.statusBar().showMessage(tr('변형 후 생긴 빈 가장자리 대신 사진 안쪽을 선택하세요.'));return
         if kind in ('point_color','local_point_color'):
@@ -545,6 +556,7 @@ class StudioTools:
         elif kind in ('brush','linear','radial'):
             component=frozen or self.make_component(kind,source_points,alt)
             component['points']=source_points
+            if shape:component.update(shape)
             self.add_component(component)
         self.w.commit('부분 보정');self.w.render()
 
@@ -560,6 +572,85 @@ class StudioTools:
             if alt:component['operation']='subtract'
             if self.auto_mask.isChecked():component.update(auto_mask=True,auto_tolerance=self.auto_tolerance.slider.value()/100,seed=points[0])
         return component
+
+    def frame_affine(self):
+        """(screen -> source, source -> screen) affine maps of normalized coordinates fitted to the inverse geometry map,
+        and the pixel sizes of the shown frame and of the source. They carry gradient points that lie off the photo."""
+        self.source_point([.5,.5])
+        if self.affine_key!=self.coordinate_key:
+            coords=self.coordinates;h,w=coords.shape[:2];step=max(1,int(max(h,w)/96))
+            sub=coords[::step,::step];yy,xx=np.mgrid[0:h:step,0:w:step];valid=sub[...,2]>.9
+            screen=np.stack([xx[valid]/max(1,w-1),yy[valid]/max(1,h-1),np.ones(int(valid.sum()))],axis=1)
+            forward=np.linalg.lstsq(screen,sub[valid][:,:2],rcond=None)[0].T if len(screen)>=3 else np.eye(2,3)
+            square=np.vstack([forward,[0,0,1]])
+            if abs(np.linalg.det(square))<1e-9:forward=np.eye(2,3);square=np.eye(3)       # no usable map: screen and source as one
+            backward=np.linalg.inv(square)[:2]
+            sh,sw=self.w.live_source.shape[:2]
+            self.affine=(forward,backward,(w,h),(sw,sh));self.affine_key=self.coordinate_key
+        return self.affine
+
+    def gradient_point(self,point):
+        """A point of a gradient in the source: exact inside the photo, carried by the fitted map off it."""
+        inside=self.source_point(point) if 0<=point[0]<=1 and 0<=point[1]<=1 else None
+        return inside if inside is not None else (self.frame_affine()[0]@[point[0],point[1],1.]).tolist()
+
+    def screen_point(self,point):
+        """A source point of a gradient on screen: exact inside the crop, carried by the fitted map outside it."""
+        self.source_point([.5,.5]);coords=self.coordinates;h,w=coords.shape[:2]      # refreshes the inverse geometry map
+        if 0<=point[0]<=1 and 0<=point[1]<=1:
+            distance=np.sum((coords[...,:2]-point)**2,axis=-1);distance[coords[...,2]<.9]=np.inf
+            y,x=np.unravel_index(distance.argmin(),distance.shape)
+            if np.isfinite(distance[y,x]) and distance[y,x]<=.001:return [x/max(1,w-1),y/max(1,h-1)]
+        return (self.frame_affine()[1]@[point[0],point[1],1.]).tolist()
+
+    def radial_from_screen(self,centre,half,angle,base):
+        """A radial component from its shape on screen: centre (normalized), half-axes in screen pixels, angle in
+        degrees. Points are the corners of the ellipse in its own frame, `angle` its turn in the source (degrees)."""
+        forward,_,(dw,dh),(sw,sh)=self.frame_affine()
+        m=np.diag([sw,sh])@forward[:,:2]@np.diag([1/max(1,dw-1),1/max(1,dh-1)]);a=np.radians(angle)
+        u=m@(np.array([np.cos(a),np.sin(a)])*max(half[0],.5));v=m@(np.array([-np.sin(a),np.cos(a)])*max(half[1],.5))
+        c=forward@[centre[0],centre[1],1.];r=np.maximum([np.hypot(*u)/sw,np.hypot(*v)/sh],.002)
+        return {**base,'points':[(c-r).tolist(),(c+r).tolist()],'angle':round(float(np.degrees(np.arctan2(u[1],u[0]))),3)}
+
+    def radial_on_screen(self,component):
+        """(centre normalized, half-axes in screen pixels, angle in degrees) of a radial component as shown."""
+        _,backward,(dw,dh),(sw,sh)=self.frame_affine()
+        start,end=np.asarray(component['points'][0],float),np.asarray(component['points'][-1],float)
+        c=(start+end)/2;r=np.abs(end-start)/2;a=np.radians(component.get('angle',0.))
+        m=np.diag([max(1,dw-1),max(1,dh-1)])@backward[:,:2]@np.diag([1/sw,1/sh])
+        u=m@(np.array([np.cos(a),np.sin(a)])*r[0]*sw);v=m@(np.array([-np.sin(a),np.cos(a)])*r[1]*sh)
+        return (backward@[c[0],c[1],1.]),(float(np.hypot(*u)),float(np.hypot(*v))),float(np.degrees(np.arctan2(u[1],u[0])))
+
+    def gradient_shape(self,kind,points):
+        """{'points', 'angle'} of a gradient drawn on screen between the first and last point."""
+        if not points:return None
+        if kind=='linear':return {'points':[self.gradient_point(points[0]),self.gradient_point(points[-1])]}
+        _,_,(dw,dh),_=self.frame_affine();start,end=np.asarray(points[0],float),np.asarray(points[-1],float)
+        half=np.abs(end-start)/2*[max(1,dw-1),max(1,dh-1)]
+        return self.radial_from_screen((start+end)/2,half,0.,{})
+
+    def component_handles(self,component):
+        """(handles on screen, angle on screen) of a gradient: its two ends, or the corners of a radial in its own frame."""
+        if component['type']=='radial':
+            _,_,(dw,dh),_=self.frame_affine();centre,half,angle=self.radial_on_screen(component);a=np.radians(angle)
+            corner=np.array([half[0]*np.cos(a)-half[1]*np.sin(a),half[0]*np.sin(a)+half[1]*np.cos(a)])/[max(1,dw-1),max(1,dh-1)]
+            return [(centre-corner).tolist(),(centre+corner).tolist()],angle
+        return [self.screen_point(p) for p in (component['points'][0],component['points'][-1])],0.
+
+    def radial_turned(self,key,value):
+        component=self.current_component()
+        if self.loading or self.range_loading or component is None or component.get('type')!='radial':return
+        self.pause_overlay()
+        centre,half,_=self.radial_on_screen(component);updated=self.radial_from_screen(centre,half,value,component)
+        layers=deepcopy(self.w.settings['masks']);layers[self.layer_index]['components'][self.component_index]=updated
+        self.w.set_setting('masks',layers)
+        if self.w.view.tool_mode=='edit_component':
+            self.w.view.tool_handles,self.w.view.handle_angle=self.component_handles(updated);self.w.view.viewport().update()
+
+    def pause_overlay(self):
+        """While the mask's sliders move, the red overlay steps aside so the adjustment itself shows; drawing brings it back."""
+        if not self.overlay_paused and self.overlay.isChecked() and not self.loading:
+            self.overlay_paused=True;self.preview_ready(self.w.view.on_screen)
 
     def source_points(self,points):
         if not points:return []
@@ -579,8 +670,10 @@ class StudioTools:
         if retouch and (alt or (kind=='clone' and self.donor is None)):return
         if self.pending_stroke is not None and not self.stroke_valid():
             self.w.view.cancel_stroke();return
-        source_points=self.source_points(points)
+        shape=self.gradient_shape(kind,points) if kind in ('linear','radial') else None
+        source_points=shape['points'] if shape else self.source_points(points)
         if not source_points:return
+        self.overlay_paused=False
         if self.pending_stroke is None:
             self.w.commit()
             if kind!='heal':self.stroke_generation+=1
@@ -588,6 +681,7 @@ class StudioTools:
                 layer=self.layer_index,retouch=retouch,staged=kind=='heal',component=self.make_retouch(kind,source_points) if retouch else self.make_component(kind,source_points,alt))
             if not retouch:self.brush_cursor()
         else:self.pending_stroke['component']['points']=source_points
+        if shape:self.pending_stroke['component'].update(shape)
         if kind=='heal':
             self.healing_generation+=1;self.update_healing_controls();self.update_healing_overlay();return
         self.w.render_version+=1
@@ -690,6 +784,9 @@ class StudioTools:
         self.range_samples.clear()
         for i in range(len(samples)):self.range_samples.addItem(tr('색 {0} / {1}', f'{i + 1}', f'{len(samples)}'))
         for control in (self.range_samples,self.range_add,self.range_remove):control.setVisible(kind=='color')
+        self.radial_editor.setVisible(kind=='radial')
+        if kind=='radial' and self.w.live_source is not None:
+            self.radial_angle.set_value((self.radial_on_screen(component)[2]+180)%360-180)
         self.range_add.setEnabled(len(samples)<5);self.range_remove.setEnabled(len(samples)>1)
         self.range_note.setText(tr('같은 범위 안의 색들을 함께 선택합니다. 허용량을 낮추면 선택이 좁아집니다.') if kind=='color' else tr('범위와 경계 흐림을 조절하며 사진과 선택 영역을 확인하세요.'))
         self.range_loading=False
@@ -766,6 +863,7 @@ class StudioTools:
 
     def local_changed(self,key,value):
         if self.loading or self.current_layer() is None:return
+        self.pause_overlay()
         values=deepcopy(self.current_layer().get('adjustments',{}));values[key]=value;self.layer_property('adjustments',values)
 
     def rename_layer(self):
@@ -781,6 +879,7 @@ class StudioTools:
     def select_layer(self,index):
         if self.loading:return
         self.color_pick_generation+=1
+        self.overlay_paused=False
         self.w.commit();self.layer_index=index;self.component_index=-1;self.w.view.set_tool('');self.load_layer();self.sync_tree();self.preview_ready(self.w.view.on_screen)
 
     def tree_item(self,layer,component=-1):
@@ -848,7 +947,10 @@ class StudioTools:
         self.update_mask_ui()
 
     def toggle_overlay(self):
-        if self.w.tabs.is_open('masks'):self.overlay.toggle()
+        if not self.w.tabs.is_open('masks'):return
+        if self.overlay_paused and self.overlay.isChecked():
+            self.overlay_paused=False;self.preview_ready(self.w.view.on_screen)
+        else:self.overlay.toggle()
 
     def mask_menu(self):
         """The "..." menu for the selected mask (and component)."""
@@ -937,6 +1039,7 @@ class StudioTools:
         for c,value in zip(self.local_hsl_controls,values):c.set_value(value);c.setEnabled(self.current_layer() is not None)
 
     def local_hsl_changed(self,key,value):
+        if not self.loading:self.pause_overlay()
         if self.loading or self.current_layer() is None:return
         edit=deepcopy(self.current_layer().get('adjustments',{}));groups=edit.setdefault('hsl',[[0,0,0] for _ in range(8)])
         groups[self.local_hsl_channel.currentIndex()][int(key)]=value;self.layer_property('adjustments',edit)
@@ -1005,6 +1108,7 @@ class StudioTools:
         self.local_curve.set_points(curves[self.local_curve_channel.currentIndex()])
 
     def local_curve_changed(self,points):
+        if not self.loading:self.pause_overlay()
         if self.loading or self.current_layer() is None:return
         from .processing import IDENTITY
         edit=deepcopy(self.current_layer().get('adjustments',{}));curves=deepcopy(edit.get('local_curves',[IDENTITY]*4))
@@ -1019,6 +1123,7 @@ class StudioTools:
 
     def select_component(self,index):
         if self.loading:return
+        self.overlay_paused=False
         self.w.commit();self.color_pick_generation+=1;self.component_index=index;self.load_range_editor();self.sync_tree()
         if self.w.view.tool_mode=='edit_component':self.edit_component_handles()
 
@@ -1065,23 +1170,23 @@ class StudioTools:
     def edit_component_handles(self):
         component=self.current_component();self.w.view.set_tool('')
         if component is None or component.get('type') not in ('linear','radial'):return
-        self.source_point([.5,.5])  # Refresh the inverse geometry map.
-        coords=self.coordinates;h,w=coords.shape[:2];handles=[]
-        for point in (component['points'][0],component['points'][-1]):
-            distance=np.sum((coords[...,:2]-point)**2,axis=-1);distance[coords[...,2]<.9]=np.inf
-            y,x=np.unravel_index(distance.argmin(),distance.shape)
-            if not np.isfinite(distance[y,x]) or distance[y,x]>.001:
-                self.w.statusBar().showMessage(tr('크롭 밖에 있는 끝점은 영역 편집에서 수치로 조정하세요.'));return
-            handles.append([x/max(1,w-1),y/max(1,h-1)])
-        self.mode('edit_component');self.w.view.tool_handles=handles;self.w.view.handle_kind=component['type'];self.w.view.viewport().update()
+        handles,angle=self.component_handles(component)
+        self.mode('edit_component');self.w.view.tool_handles=handles;self.w.view.handle_kind=component['type'];self.w.view.handle_angle=angle
+        self.w.view.viewport().update()
         self.w.statusBar().showMessage(tr('양 끝점으로 크기를 조정하거나 가운데 점으로 이동하세요.'))
 
     def move_component_handles(self,points):
         component=self.current_component()
         if component is None:return
-        source=[self.source_point(p) for p in points]
-        if any(p is None for p in source):return
-        updated=deepcopy(component);updated['points']=source;self.replace_component(updated)
+        if component.get('type')=='radial':
+            # The handles are the ellipse's corners in its own frame, turned by the shown angle.
+            _,_,(dw,dh),_=self.frame_affine();first,second=np.asarray(points[0],float),np.asarray(points[1],float)
+            centre=(first+second)/2;d=(second-centre)*[max(1,dw-1),max(1,dh-1)];a=np.radians(self.w.view.handle_angle)
+            local=(abs(d[0]*np.cos(a)+d[1]*np.sin(a)),abs(-d[0]*np.sin(a)+d[1]*np.cos(a)))
+            updated=self.radial_from_screen(centre,local,self.w.view.handle_angle,component)
+        else:
+            updated=deepcopy(component);updated['points']=[self.gradient_point(p) for p in points]
+        self.replace_component(updated)
         self.edit_component_handles()
 
     def preview_ready(self,image):
@@ -1095,7 +1200,7 @@ class StudioTools:
 
     def overlay_layer(self):
         if self.point_overlay_target() is not None:return None
-        if (not self.overlay.isChecked() or self.w.before_button.isChecked()
+        if (not self.overlay.isChecked() or self.overlay_paused or self.w.before_button.isChecked()
                 or not self.w.tabs.is_open('masks')
                 or self.current_layer() is None and not self.stroke_valid()):return None
         if self.current_layer() is None:return len(self.w.settings['masks'])

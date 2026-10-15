@@ -117,3 +117,58 @@ def test_brush_can_be_limited_to_a_tonal_range(window):
     parts = {key: _layer_component(ramp, ramp.shape, s.range_component(key), None, None)[0] for key in ('shadows', 'midtones', 'highlights')}
     np.testing.assert_allclose(sum(parts.values()), 1., atol=1e-5)                       # every tone belongs somewhere, once
     assert parts['shadows'][0] == 1 and parts['shadows'][50] == 0 and parts['highlights'][-1] == 1 and parts['midtones'][50] == 1
+
+
+def test_radial_gradient_turns_and_reaches_off_the_photo(window):
+    import numpy as np
+    from luma.mask_dialog import MaskComponentDialog
+    from luma.processing import component_mask
+    w = window; s = w.studio; w.tabs.setCurrentIndex(5)
+    s.create_mask('radial')
+    drag(w, (-.05, .2), (.5, .8))                                                        # pressed beside the photo
+    component = w.settings['masks'][0]['components'][0]
+    assert component['type'] == 'radial' and component['points'][0][0] < 0 and component.get('angle', 0) == pytest.approx(0, abs=.5)
+    assert not s.radial_editor.isHidden() and s.radial_angle.slider.value() == 0
+    s.radial_angle.changed.emit('angle', 30.); w.finish_interaction()
+    turned = w.settings['masks'][0]['components'][0]
+    assert turned['angle'] == pytest.approx(30, abs=.5)
+    np.testing.assert_allclose(np.add(*turned['points']), np.add(*component['points']), atol=1e-6)      # turned about its centre
+    s.edit_component_handles()
+    assert w.view.tool_mode == 'edit_component' and w.view.handle_angle == pytest.approx(30, abs=.5)
+    s.move_component_handles(w.view.tool_handles)                                         # handles give back the same ellipse
+    again = w.settings['masks'][0]['components'][0]
+    np.testing.assert_allclose(again['points'], turned['points'], atol=2e-3); assert again['angle'] == pytest.approx(turned['angle'], abs=.2)
+    s.mode('')
+    dialog = MaskComponentDialog(w, again)
+    assert dialog.fields['angle'].value() == pytest.approx(again['angle'], abs=.1) and dialog.fields['x0'].minimum() < 0
+    dialog.fields['angle'].setValue(-45); assert dialog.result_component()['angle'] == -45
+    flat = {'type': 'radial', 'points': [[.2, .4], [.8, .6]], 'feather': 0}                # wide: .3 across, .1 down
+    across, down = component_mask((101, 201), flat), component_mask((101, 201), {**flat, 'angle': 90})
+    assert across[50, 150] > 0 and across[90, 100] == 0 and down[50, 150] == 0 and down[90, 100] > 0
+
+
+def test_overlay_steps_aside_while_the_sliders_move(window):
+    w = window; s = w.studio; w.tabs.setCurrentIndex(5)
+    s.create_mask('brush'); drag(w, (.3, .4), (.5, .5))
+    assert s.overlay_layer() == 0
+    s.local_controls['exposure'].changed.emit('exposure', 1.); w.finish_interaction()
+    assert s.overlay_paused and s.overlay_layer() is None and s.overlay.isChecked()       # the adjustment shows, the red does not
+    drag(w, (.6, .4), (.7, .5)); assert not s.overlay_paused and s.overlay_layer() == 0     # painting brings it back
+    s.opacity.changed.emit('opacity', 50.); assert s.overlay_paused
+    s.toggle_overlay(); assert not s.overlay_paused and s.overlay.isChecked()             # O shows it again first
+    s.toggle_overlay(); assert not s.overlay.isChecked()
+    s.overlay.setChecked(True); s.local_controls['exposure'].changed.emit('exposure', .5); assert s.overlay_paused
+    s.mode('brush'); assert not s.overlay_paused
+    s.local_controls['exposure'].changed.emit('exposure', .7); s.select_layer(0); assert not s.overlay_paused      # another mask: shown again
+    s.edit_component_handles(); s.frame_affine()
+    s.coordinates = s.coordinates*0; s.affine_key = 'gone'; forward, backward, _, _ = s.frame_affine()      # nothing usable: no crash
+    assert forward.shape == backward.shape == (2, 3)
+    s.coordinate_key = None
+
+
+def test_curve_regions_sit_beside_the_curve(window):
+    w = window; s = w.studio
+    folded = s.channel_curve.parentWidget()
+    assert all(not folded.isAncestorOf(c) for c in s.parametric) and len(s.parametric) == 4
+    s.parametric[1].changed.emit('1', 40.); w.finish_interaction()
+    assert w.settings['parametric'][1] == 40

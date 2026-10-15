@@ -2,6 +2,15 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.94 — Turned radial gradients, photo background, overlay that steps aside
+
+- **Radial gradients can be turned and can start off the photo.** A `Turn ellipse` slider appears with a radial gradient selected; start dragging beside the photo or past its edge so only part of the light falls in the frame. Linear gradients can reach past the edge too.
+- **The background behind the photo can be black, dark grey, mid grey or white**, from View › Photo background or a right-click on the photo.
+- **The red mask overlay steps aside while you move the mask's sliders** and comes back when you paint again or press `O`.
+- **`[` and `]` resize the brush wherever the keyboard focus is.**
+- **The tone curve's region sliders sit right under the curve.**
+- Thank you for the suggestions sent through the Feedback button.
+
 ## 0.5.93 — A brush that acts on chosen tones only
 
 - **Brush masks have a `Tonal range`.** With the brush selected in the Masks tab, the tool options offer `All` · `Shadows` · `Midtones` · `Highlights`. Paint after choosing one and the adjustment reaches only those tones of what you painted: for dodging the shadows or burning the highlights.

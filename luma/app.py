@@ -13,7 +13,7 @@ from collections import deque
 
 import numpy as np
 from PySide6.QtCore import Qt, QObject, Signal, QRunnable, QThreadPool, QTimer, QSize, QItemSelectionModel
-from PySide6.QtGui import QIcon, QPixmap, QImage, QShortcut, QKeySequence, QDesktopServices, QFontDatabase, QFont
+from PySide6.QtGui import QIcon, QPixmap, QImage, QShortcut, QKeySequence, QDesktopServices, QFontDatabase, QFont, QColor, QBrush, QActionGroup
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QListWidget, QListWidgetItem, QAbstractItemView, QStackedWidget,
@@ -265,6 +265,9 @@ def button(text, action, check=False, primary=False):
     return b
 
 
+BACKGROUNDS={'black':'#101215','dark_grey':'#2b2e33','mid_grey':'#808080','white':'#ffffff'}
+
+
 class MainWindow(QMainWindow):
     previewPresented = Signal(int, str, float)
     gpuPreferenceChanged = Signal(bool)
@@ -377,6 +380,7 @@ class MainWindow(QMainWindow):
         self.cloud_backup=CloudBackup(self)
         from .manager import LibraryManager
         self.manager=LibraryManager(self)
+        self.set_view_background(self.catalog.preference('view_background','black'))
         # Edit menu; the keys themselves are the window shortcuts, shown here as hints.
         self.edit_menu=QMenu(tr('편집'),self);self.menuBar().insertMenu(self.menuBar().actions()[1],self.edit_menu)
         for entry in [('실행 취소','Ctrl+Z',self.undo),('다시 실행','Ctrl+Shift+Z',self.redo),None,
@@ -581,6 +585,8 @@ class MainWindow(QMainWindow):
         self.view.fullResolutionRequested.connect(self.load_full_resolution)
         from .compare_view import CompareLayout
         self.compare = CompareLayout(self)      # the view, and a second picture beside it when comparing
+        self.view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.view.customContextMenuRequested.connect(self._view_background_context_menu)
         self.stack.addWidget(self.compare.area)
         self.grid = self.photo_list(grid=True)
         self.grid.photoClicked.connect(self.open_library_photo)
@@ -899,7 +905,7 @@ class MainWindow(QMainWindow):
         quick=QShortcut(QKeySequence('Ctrl+E'),self)
         quick.activated.connect(lambda:self.safe_shortcut(lambda:self.quick_export('previous')))
         for key,action in [('Ctrl+O',self.import_files),('Ctrl+Shift+E',self.export_dialog),('Ctrl+Z',self.undo),('Ctrl+Shift+Z',self.redo),('Ctrl+Y',self.redo),('Ctrl+Shift+C',self.copy_edits),('Ctrl+Shift+V',self.paste_edits),('\\',lambda:self.before_button.click()),('C',lambda:self.compare_button.click()),('G',lambda:self.set_mode(1)),('D',lambda:self.set_mode(0)),('R',lambda:self.crop_button.click()),('P',lambda:self.set_flag(1)),('X',lambda:self.set_flag(-1)),('U',lambda:self.set_flag(0)),
-                ('B',lambda:self.manager.run(self.workflow.quick_toggle)),('Ctrl+Alt+V',lambda:self.manager.run(self.workflow.previous_edits))]:
+                ('B',lambda:self.manager.run(self.workflow.quick_toggle)),('Ctrl+Alt+V',lambda:self.manager.run(self.workflow.previous_edits)),('[',lambda:self.view.resize_brush(False)),(']',lambda:self.view.resize_brush(True))]:
             shortcut = QShortcut(QKeySequence(key),self)
             shortcut.activated.connect(lambda fn=action:self.safe_shortcut(fn))
         for i in range(6):
@@ -910,6 +916,32 @@ class MainWindow(QMainWindow):
         if isinstance(QApplication.focusWidget(), (QLineEdit,QSpinBox)):
             return
         action()
+
+    def set_view_background(self,key):
+        """Apply background to photo view and comparison view; save preference."""
+        color=QColor(BACKGROUNDS.get(key,'#101215'))
+        self.view.setBackgroundBrush(QBrush(color));self.compare.other.setBackgroundBrush(QBrush(color))
+        if self.catalog.preference('view_background','black')!=key:self.catalog.save_preference('view_background',key)
+        if hasattr(self,'manager'):
+            for k,a in self.manager.bg_group:a.setChecked(k==key)
+        if hasattr(self,'_bg_context_actions'):
+            for k,a in self._bg_context_actions:a.setChecked(k==key)
+
+    def _build_bg_context_menu(self):
+        """Build the right-click background menu; sets _bg_context_actions."""
+        menu=QMenu(self);group=QActionGroup(menu);group.setExclusive(True)
+        current=self.catalog.preference('view_background','black')
+        self._bg_context_actions=[]
+        for label,key in [(tr('검정'),'black'),(tr('어두운 회색'),'dark_grey'),(tr('중간 회색'),'mid_grey'),(tr('흰색'),'white')]:
+            a=menu.addAction(label);a.setCheckable(True);a.setChecked(key==current)
+            a.triggered.connect(lambda _=False,k=key:self.set_view_background(k))
+            group.addAction(a);self._bg_context_actions.append((key,a))
+        return menu
+
+    def _view_background_context_menu(self,pos):
+        """Right-click on the photo view: choose background colour."""
+        menu=self._build_bg_context_menu()
+        menu.exec(self.view.viewport().mapToGlobal(pos));menu.deleteLater()
 
     def spawn(self,function,callback,error=None,pool=None):
         token = uuid4().hex

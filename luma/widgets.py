@@ -434,6 +434,7 @@ class PhotoView(QGraphicsView):
         self.tool_handles=[]
         self.handle_drag=None
         self.handle_kind='linear'
+        self.handle_angle=0.              # a turned radial gradient: its angle on screen, degrees
         self.tool_overlay=None
         self.healing_overlay=None
         self.clipping=False
@@ -684,6 +685,17 @@ class PhotoView(QGraphicsView):
         return QPointF(float(np.clip((point.x()-b.left())/b.width(),0,1)),
                        float(np.clip((point.y()-b.top())/b.height(),0,1)))
 
+    def free_point(self, point):
+        """normalized_point without the clamp: a gradient may start or end off the photo."""
+        b=self.canvas_rect()
+        return QPointF((point.x()-b.left())/b.width(),(point.y()-b.top())/b.height())
+
+    def gradient_tool(self):
+        return self.tool_mode in ('linear','radial') or (self.tool_mode=='edit_component' and self.handle_kind in ('linear','radial'))
+
+    def tool_point(self, point):
+        return self.free_point(point) if self.gradient_tool() else self.normalized_point(point)
+
     def normalized_aspect(self):
         b=self.canvas_rect()
         return self.aspect*b.height()/b.width() if self.aspect and self.has_photo else 0
@@ -772,14 +784,14 @@ class PhotoView(QGraphicsView):
             for index,point in enumerate(handles):
                 screen=self.mapFromScene(QPointF(point[0]*self.image_rect.width(),point[1]*self.image_rect.height()))
                 if (screen-event.position().toPoint()).manhattanLength()<=14:
-                    p=self.normalized_point(self.mapToScene(event.position().toPoint()))
+                    p=self.tool_point(self.mapToScene(event.position().toPoint()))
                     self.handle_drag=(index,[p.x(),p.y()],[list(p) for p in self.tool_handles])
                     self.setFocus();event.accept();return
             event.accept();return
         if self.tool_mode and self.has_photo and event.button()==Qt.MouseButton.LeftButton:
             point=self.mapToScene(event.position().toPoint())
-            if self.image_rect.contains(point):
-                point=self.normalized_point(point);self.tool_points=[[point.x(),point.y()]]
+            if self.image_rect.contains(point) or self.gradient_tool():
+                point=self.tool_point(point);self.tool_points=[[point.x(),point.y()]]
                 self.tool_alt=bool(event.modifiers() & Qt.KeyboardModifier.AltModifier)
                 self.tool_shift=bool(event.modifiers() & Qt.KeyboardModifier.ShiftModifier)
                 self.setFocus()
@@ -822,14 +834,13 @@ class PhotoView(QGraphicsView):
         if self.tool_mode:self.viewport().update()
         if self.handle_drag and event.buttons() & Qt.MouseButton.LeftButton:
             index,start,original=self.handle_drag
-            point=self.normalized_point(self.mapToScene(event.position().toPoint()));p=np.array([point.x(),point.y()])
+            point=self.tool_point(self.mapToScene(event.position().toPoint()));p=np.array([point.x(),point.y()])
             values=np.array(original)
             if index<2:values[index]=p
-            else:
-                delta=np.clip(p-start,-values.min(axis=0),1-values.max(axis=0));values+=delta
+            else:values+=p-start
             self.tool_handles=values.tolist();self.viewport().update();event.accept();return
         if self.tool_mode and self.tool_points and event.buttons() & Qt.MouseButton.LeftButton:
-            p=self.normalized_point(self.mapToScene(event.position().toPoint()))
+            p=self.tool_point(self.mapToScene(event.position().toPoint()))
             if self.tool_mode in ('linear','radial'):
                 self.tool_points=self.tool_points[:1]+[[p.x(),p.y()]]
             elif self.tool_points[-1]!=[p.x(),p.y()]:self.tool_points.append([p.x(),p.y()])
@@ -862,15 +873,15 @@ class PhotoView(QGraphicsView):
         if self.handle_drag and event.button()==Qt.MouseButton.LeftButton:
             # Include the release position even when Windows coalesces moves.
             index,start,original=self.handle_drag
-            point=self.normalized_point(self.mapToScene(event.position().toPoint()));p=np.array([point.x(),point.y()]);values=np.array(original)
+            point=self.tool_point(self.mapToScene(event.position().toPoint()));p=np.array([point.x(),point.y()]);values=np.array(original)
             if index<2:values[index]=p
-            else:values+=np.clip(p-start,-values.min(axis=0),1-values.max(axis=0))
+            else:values+=p-start
             self.handle_drag=None;self.tool_handles=values.tolist()
             if not np.allclose(values,original):self.componentEdited.emit(self.tool_handles)
             self.viewport().update();event.accept();return
         if self.tool_mode and self.tool_points:
             if event.button()!=Qt.MouseButton.LeftButton:return super().mouseReleaseEvent(event)
-            end=self.normalized_point(self.mapToScene(event.position().toPoint()))
+            end=self.tool_point(self.mapToScene(event.position().toPoint()))
             if self.tool_mode in ('linear','radial'):self.tool_points=self.tool_points[:1]+[[end.x(),end.y()]]
             elif self.tool_points[-1]!=[end.x(),end.y()]:self.tool_points.append([end.x(),end.y()])
             points=self.tool_points;self.tool_points=[]
@@ -923,10 +934,8 @@ class PhotoView(QGraphicsView):
             self.viewport().update();event.accept()
         elif self.tool_mode=='heal' and event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter):
             self.healingApplyRequested.emit();event.accept()
-        elif self.tool_mode in ('brush','clone','heal','inpaint','red_eye') and event.key() in (Qt.Key.Key_BracketLeft,Qt.Key.Key_BracketRight):
-            maximum=.25 if self.tool_mode=='brush' else .12
-            self.brush_radius=float(np.clip(self.brush_radius*(1.2 if event.key()==Qt.Key.Key_BracketRight else 1/1.2),.002,maximum))
-            self.brushSizeChanged.emit(self.brush_radius);self.viewport().update();event.accept()
+        elif event.key() in (Qt.Key.Key_BracketLeft,Qt.Key.Key_BracketRight) and self.resize_brush(event.key()==Qt.Key.Key_BracketRight):
+            event.accept()
         elif self.crop_mode and event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter):
             self.accept_crop()
             event.accept()
@@ -935,6 +944,13 @@ class PhotoView(QGraphicsView):
             event.accept()
         else:
             super().keyPressEvent(event)
+
+    def resize_brush(self,bigger):
+        """[ and ]: the brush or retouch brush one step smaller or bigger. False when no brush is in use."""
+        if self.tool_mode not in ('brush','clone','heal','inpaint','red_eye'):return False
+        maximum=.25 if self.tool_mode=='brush' else .12
+        self.brush_radius=float(np.clip(self.brush_radius*(1.2 if bigger else 1/1.2),.002,maximum))
+        self.brushSizeChanged.emit(self.brush_radius);self.viewport().update();return True
 
     def set_clipping(self,shadows,highlights):
         self.shadow_clipping=shadows;self.highlight_clipping=highlights
@@ -960,7 +976,11 @@ class PhotoView(QGraphicsView):
             if self.tool_handles and self.tool_mode=='edit_component':
                 painter.save();pen=QPen(QColor('#f7dfbc'),1.5/max(.01,self.transform().m11()));painter.setPen(pen)
                 points=[QPointF(x*self.image_rect.width(),y*self.image_rect.height()) for x,y in self.tool_handles]
-                if self.handle_kind=='radial':painter.drawEllipse(QRectF(points[0],points[1]).normalized())
+                if self.handle_kind=='radial':
+                    centre=(points[0]+points[1])/2;painter.save();painter.translate(centre);painter.rotate(self.handle_angle)
+                    turn=np.radians(self.handle_angle);dx,dy=points[1].x()-centre.x(),points[1].y()-centre.y()
+                    local=QPointF(dx*np.cos(turn)+dy*np.sin(turn),-dx*np.sin(turn)+dy*np.cos(turn))
+                    painter.drawEllipse(QPointF(0,0),abs(local.x()),abs(local.y()));painter.restore()
                 else:painter.drawLine(points[0],points[1])
                 painter.setBrush(QColor('#202327'));radius=5/max(.01,self.transform().m11())
                 for point in points+[(points[0]+points[1])/2]:painter.drawEllipse(point,radius,radius)

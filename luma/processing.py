@@ -381,8 +381,12 @@ def component_mask(shape,component):
         delta=end-start
         return np.clip(((x-start[0])*delta[0]+(y-start[1])*delta[1])/max(1e-6,float(delta@delta)),0,1)
     if kind=='radial':
-        center=(start+end)/2;radius=np.maximum(np.abs(end-start)/2,.002)
-        d=np.hypot((x-center[0])/radius[0],(y-center[1])/radius[1])
+        center=(start+end)/2;radius=np.maximum(np.abs(end-start)/2,.002);turn=np.radians(component.get('angle',0.))
+        if turn:
+            # A turned ellipse: its axes are turned in pixels of the photo, so the shape does not shear on a long frame.
+            dx=(x-center[0])*(w-1);dy=(y-center[1])*(h-1);c,s=np.cos(turn),np.sin(turn)
+            d=np.hypot((dx*c+dy*s)/(radius[0]*max(1,w-1)),(dy*c-dx*s)/(radius[1]*max(1,h-1)))
+        else:d=np.hypot((x-center[0])/radius[0],(y-center[1])/radius[1])
         return np.clip((1-d)/max(.01,component.get('feather',70)/100),0,1)
     return np.ones((h,w),np.float32)
 

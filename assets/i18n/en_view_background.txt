@@ -1,0 +1,5 @@
+사진 배경 => Photo background
+검정 => Black
+어두운 회색 => Dark grey
+중간 회색 => Mid grey
+흰색 => White

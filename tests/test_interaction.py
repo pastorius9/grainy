@@ -155,10 +155,12 @@ def test_mask_overlay_and_colour_conversion_stay_off_ui_thread(window,monkeypatc
     slider.setValue(65)
     wait_for(lambda:w.presented_version==w.render_version)
     assert w.interacting() and w.presented_quality=='live'
-    assert w.view.tool_overlay is not None
+    assert w.view.tool_overlay is None and w.studio.overlay_paused        # the red steps aside while the mask's slider moves
     slider.setSliderDown(False);w.finish_interaction()
     wait_for(lambda:not w.render_running)
     assert w.presented_quality=='quality'
+    w.studio.mode('brush')                                                # drawing again brings the overlay back
+    wait_for(lambda:not w.render_running and w.view.tool_overlay is not None)
     assert w.view.on_screen.shape==(1200,1800,3)
     assert w.view.tool_overlay.width()==720
     assert calls and {kind for kind,_ in calls}=={'develop','mask'}

@@ -36,8 +36,9 @@ class MaskComponentDialog(QDialog):
         if kind=='color':number('tolerance','색상 범위 허용량',component.get('tolerance',.3),.02,1.7,2)
         if kind in ('linear','radial'):
             points=component.get('points',[[.25,.25],[.75,.75]])
-            for i,point in enumerate((points[0],points[-1])):
-                for axis,value in zip(('x','y'),point):number(f'{axis}{i}',f'{"시작" if i==0 else "끝"} {axis.upper()} (%)',value*100)
+            for i,point in enumerate((points[0],points[-1])):     # off the photo is allowed: below 0 or above 100
+                for axis,value in zip(('x','y'),point):number(f'{axis}{i}',f'{"시작" if i==0 else "끝"} {axis.upper()} (%)',value*100,-200,300)
+        if kind=='radial':number('angle','타원 회전',component.get('angle',0.),-180,180)
         buttons=QDialogButtonBox(QDialogButtonBox.StandardButton.Ok|QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept);buttons.rejected.connect(self.reject);box.addWidget(buttons)
 
@@ -54,4 +55,5 @@ class MaskComponentDialog(QDialog):
             if any(values[k]!=self.component.get(k,100) for k in ('flow','density')):result['paint_version']=2
         if 'low' in values:result.update(range=sorted([values['low']/100,values['high']/100]),softness=values['softness']/100)
         if 'x0' in values:result['points']=[[values[f'x{i}']/100,values[f'y{i}']/100] for i in (0,1)]
+        if 'angle' in values:result['angle']=values['angle']
         return result

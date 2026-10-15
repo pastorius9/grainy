@@ -47,9 +47,10 @@ def run():
             assert Image.open(root/'out.avif').format=='AVIF'
             export_image(photo,root/'out.jxl',window.settings,'JPEG XL',keep_metadata=True)
             assert imagecodecs.jpegxl_decode((root/'out.jxl').read_bytes()).shape==(400,600,3)
-            window.tabs.setCurrentIndex(5)
+            window.tabs.setCurrentIndex(5);window.studio.mode('brush')      # the overlay steps aside for sliders; the brush brings it back
             timer.start();QTimer.singleShot(30000,loop.quit);loop.exec();timer.stop()
             assert not errors and window.view.tool_overlay is not None,str(errors)
+            window.studio.mode('')
             from .engine import develop
             assert np.allclose(window.view.on_screen,develop(window.source,window.settings),atol=1e-6)
             from .optics import lens_records,cameras,make_profile,lens_shading,lens_geometry
