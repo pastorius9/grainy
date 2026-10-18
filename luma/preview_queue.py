@@ -48,8 +48,8 @@ class PreviewQueue(QObject):
             if self.closed:return
             if cancel is self.cancel:
                 if batch:
-                    self.completed+=1;self.failures+=int(status.startswith(('오류','원본 없음')))
-                    self.w.statusBar().showMessage(tr('미리보기 {0}/{1}장 처리 · {2}', f'{self.completed}', f'{self.total}', f'{status}'))
+                    self.completed+=1;self.failures+=int(status.startswith(('오류','원본 없음','접근 권한 필요')))
+                    self.w.statusBar().showMessage(tr('미리보기 {0}/{1}장 처리 · {2}', f'{self.completed}', f'{self.total}', tr(status)))
                 errors=self.w.photo_model.rebuild_errors
                 if status.startswith('오류'):errors[ident]=(status,time.monotonic())
                 else:errors.pop(ident,None)

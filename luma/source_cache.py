@@ -6,6 +6,7 @@ from pathlib import Path
 from threading import RLock
 import json
 import hashlib
+from .file_access import present
 
 
 class DecodedSourceCache:
@@ -49,7 +50,7 @@ class DecodedSourceCache:
         """
         path=Path(path);options=self.decode_options(settings)
         for attempt in range(2):
-            origin=path if path.is_file() else Path(offline) if offline is not None else path
+            origin=path if present(path) else Path(offline) if offline is not None else path
             before=self.fingerprint(origin)
             with self.lock:
                 generation=self.generation;key=(generation,before,options,max_size,origin!=path)
@@ -68,7 +69,7 @@ class DecodedSourceCache:
             try:
                 result=decode();after=self.fingerprint(origin)
                 # A reconnect/disconnect during decode also changes the source.
-                current=path if path.is_file() else Path(offline) if offline is not None else path
+                current=path if present(path) else Path(offline) if offline is not None else path
                 if before!=after or current!=origin:
                     future.set_result(None);continue
                 pixels,metadata=result;pixels.setflags(write=False);stored=(pixels,deepcopy(metadata))

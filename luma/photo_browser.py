@@ -34,7 +34,7 @@ class PhotoModel(QAbstractListModel):
         if role==Qt.ItemDataRole.UserRole:return self.ids[index.row()]
         row=self.entry(index.row(),request=False)
         if role==Qt.ItemDataRole.DisplayRole:return self.caption(row) if row else tr('불러오는 중…')
-        if role==Qt.ItemDataRole.ToolTipRole:return row['path']+'\n'+self.thumb_status.get(self.ids[index.row()],'') if row else None
+        if role==Qt.ItemDataRole.ToolTipRole:return row['path']+'\n'+tr(self.thumb_status.get(self.ids[index.row()],'')) if row else None
         return None
 
     @staticmethod
@@ -156,7 +156,7 @@ class PhotoDelegate(QStyledItemDelegate):
         if status:
             badge=QRect(photo.left(),photo.top(),photo.width(),18)
             painter.fillRect(badge,QColor(22,27,33,210));painter.setPen(QColor('#d3b68d'))
-            painter.drawText(badge,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(status,Qt.TextElideMode.ElideRight,badge.width()))
+            painter.drawText(badge,Qt.AlignmentFlag.AlignCenter,painter.fontMetrics().elidedText(tr(status),Qt.TextElideMode.ElideRight,badge.width()))
         colour={'빨강':'#ec998c','노랑':'#eed08e','초록':'#95c9aa','파랑':'#95bce9','보라':'#c6a2e2'}
         painter.setPen(QColor(colour.get(row['label'],'#f4e7d4' if selected else '#aeb6bf') if row else '#89929d'))
         caption=model.caption(row).split('\n') if row else [tr('불러오는 중…'),'']

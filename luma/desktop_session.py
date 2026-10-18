@@ -48,8 +48,14 @@ class DesktopSession:
         native_gpu.set_enabled(self.preferences.use_gpu)
         self.open_window()
         from PySide6.QtCore import QTimer
-        QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup()))     # after the window is up
+        # After the window is up; the folder check follows those dialogs so its message does not cover them.
+        QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.check_folders()))
         return True
+
+    def check_folders(self):
+        """Once per start: can Grainy read the registered folders? (macOS may reset the permission on updates.)"""
+        from . import file_access
+        return file_access.check_folders(self.window)
 
     def whats_new(self, first_run=False, packaged=None):
         """Once after an update of the packaged app: what changed since the version opened before, and which

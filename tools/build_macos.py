@@ -160,9 +160,16 @@ def main():
     with info.open('wb') as handle:plistlib.dump(values,handle)
     run(sys.executable,ROOT/'tools/package_notices.py',APP/'Contents/Resources/THIRD_PARTY_LICENSES')
     shutil.copy2(ROOT/'LICENSE',APP/'Contents/Resources/LICENSE.txt')
-    # The changes above invalidate PyInstaller's signature; Apple Silicon refuses unsigned code.
-    run('codesign','--force','--deep','--sign','-',APP)
+    # The changes above invalidate PyInstaller's signature; Apple Silicon refuses unsigned code. Releases are signed
+    # with one self-signed certificate (GRAINY_SIGN_IDENTITY, set up by the CI workflow): macOS keeps the privacy
+    # permissions it gave the app (folders, external disks) across updates only while that identity stays the same.
+    # An ad hoc signature, the fallback for local builds, changes with every build.
+    identity=os.environ.get('GRAINY_SIGN_IDENTITY') or '-'
+    keychain=['--keychain',os.environ['GRAINY_SIGN_KEYCHAIN']] if identity!='-' and os.environ.get('GRAINY_SIGN_KEYCHAIN') else []
+    run('codesign','--force','--deep','--sign',identity,*keychain,APP)
     run('codesign','--verify','--deep','--strict',APP)
+    requirement=subprocess.run(['codesign','-d','-r-',str(APP)],capture_output=True,text=True)
+    print('Designated requirement:',next((line for line in (requirement.stdout+requirement.stderr).splitlines() if 'designated' in line),'(none)'))
     with tempfile.TemporaryDirectory() as folder:
         report=Path(folder)/'selftest.json'
         result=subprocess.run([str(APP/'Contents/MacOS/Grainy'),'--self-test'],env={**os.environ,'LUMA_SELF_TEST_REPORT':str(report)})

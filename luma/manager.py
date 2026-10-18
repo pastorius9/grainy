@@ -357,8 +357,12 @@ class LibraryManager:
     def integrity(self):
         status=self.w.catalog.db.execute('PRAGMA integrity_check').fetchone()[0]
         photos=self.w.catalog.photos()
-        self.w.spawn(lambda:sum(not Path(p['path']).is_file() for p in photos),
-            lambda missing:QMessageBox.information(self.w,tr('카탈로그 검사'),tr('데이터베이스: {0}\n사진 {1}장 / 누락된 원본 참조 {2}개', f'{status}', f'{len(photos)}', f'{missing}')))
+        from .file_access import access,MISSING,DENIED
+        def count():
+            states=[access(p['path']) for p in photos];return states.count(MISSING),states.count(DENIED)
+        self.w.spawn(count,lambda counts:QMessageBox.information(self.w,tr('카탈로그 검사'),
+            tr('데이터베이스: {0}\n사진 {1}장 / 누락된 원본 참조 {2}개', f'{status}', f'{len(photos)}', f'{counts[0]}')
+            +(tr('\n접근 권한이 필요한 원본 {0}개 (누락 아님)', f'{counts[1]}') if counts[1] else '')))
 
     def optimize_catalog(self):
         w=self.w

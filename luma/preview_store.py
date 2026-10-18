@@ -11,6 +11,7 @@ import time
 from uuid import uuid4
 import numpy as np
 from PIL import Image
+from .file_access import denied
 
 VERSION=4
 
@@ -53,6 +54,8 @@ def snapshot(directory,ident,full=False):
     if row is None:return None
     result=dict(row);result['id']=ident
     result['source']=signature(row['path'])
+    # An original the system will not let Grainy read is not gone: it needs access, not relinking.
+    result['denied']=result['source'] is None and denied(row['path'])
     result['offline']=signature(Path(directory)/'previews'/f'{ident}.npz') if result['source'] is None else None
     if full:
         from .engine import normalized
@@ -87,7 +90,8 @@ def inspect(directory,ident):
     except (OSError,ValueError,KeyError,TypeError,Image.DecompressionBombError):valid=False
     missing=current['source'] is None
     rebuild=not valid and (not missing or current['offline'] is not None)
-    status=('오프라인' if missing else '') if valid else ('갱신 중' if rebuild else '원본 없음 · 이전 미리보기' if image else '원본 없음')
+    if current['denied']:status='접근 권한 필요' if valid else '갱신 중' if rebuild else '접근 권한 필요 · 이전 미리보기' if image else '접근 권한 필요'
+    else:status=('오프라인' if missing else '') if valid else ('갱신 중' if rebuild else '원본 없음 · 이전 미리보기' if image else '원본 없음')
     return dict(image=image,rebuild=rebuild,status=status,snapshot=current,color_space=color_space)
 
 
@@ -164,7 +168,7 @@ def rebuild(directory,ident,cancel=None,force=False,cached=None):
     if reusable:source=cached[0];info=state['info']
     elif state['source'] is not None:source,info=load_image(state['path'],1800,state['settings']['working_space'],raw_options=state['settings'])
     elif state['offline'] is not None:source,info=load_offline(directory,ident,state['settings'])
-    else:return '원본 없음'
+    else:return '접근 권한 필요' if state['denied'] else '원본 없음'
     if cancel is not None and cancel.is_set():return '중단'
     original_size=(info.get('width',source.shape[1]),info.get('height',source.shape[0]))
     if reusable:original_size=cached[1].get('original_size',original_size)

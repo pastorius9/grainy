@@ -112,9 +112,11 @@ def test_the_shipped_change_log_describes_this_version_and_both_builds_carry_it(
 
 def test_shown_once_after_an_update_and_again_from_the_settings_menu(app, tmp_path, monkeypatch):
     preferences = Preferences(tmp_path/'settings.json'); preferences.save_language('ko')
-    preferences.save('update_check', False); preferences.save(whats_new.KEY, '0.5.90')
+    shipped = [version for version, _, _ in whats_new.sections((whats_new.ROOT/'CHANGELOG.md').read_text(encoding='utf-8'))]
+    seen, between = shipped[3], shipped[1]                                   # relative to the version being built
+    preferences.save('update_check', False); preferences.save(whats_new.KEY, seen)
     preferences.save(feedback.SENT, sent('K7Q2M', 'A3BC4', 'ZZZZZ', 'NNNNN'))
-    monkeypatch.setattr(whats_new, 'done', lambda root=None: {__version__: ['K7Q2M'], '0.5.91': ['A3BC4'], '0.5.80': ['ZZZZZ']})
+    monkeypatch.setattr(whats_new, 'done', lambda root=None: {__version__: ['K7Q2M'], between: ['A3BC4'], '0.5.80': ['ZZZZZ']})
     session = DesktopSession(app, tmp_path/'library', preferences)
     shown = []
     monkeypatch.setattr(QDialog, 'exec', lambda dialog: shown.append(captured(dialog)))
@@ -127,7 +129,7 @@ def test_shown_once_after_an_update_and_again_from_the_settings_menu(app, tmp_pa
         session.whats_new(packaged=True)
         (name, title, text, thanks), = shown
         assert name == 'whatsNew' and title == f'Grainy {__version__}의 달라진 점'
-        assert __version__ in text and '0.5.91' in text and '0.5.90 —' not in text
+        assert __version__ in text and between in text and f'{seen} —' not in text
         assert thanks == '보내 주신 피드백(#K7Q2M, #A3BC4)이 이번 업데이트에 반영되었습니다. 고맙습니다.'     # one sentence, above the notes
         stored = Preferences(tmp_path/'settings.json').values
         assert stored[whats_new.KEY] == __version__ and stored[whats_new.THANKED] == ['K7Q2M', 'A3BC4']
@@ -135,9 +137,9 @@ def test_shown_once_after_an_update_and_again_from_the_settings_menu(app, tmp_pa
         assert len(shown) == 1                                               # once
         menu = session.window.findChild(QMenu, 'settingsMenu')
         next(a for a in menu.actions() if a.text() == '이번 버전의 달라진 점…').trigger()
-        assert len(shown) == 2 and __version__ in shown[1][2] and '0.5.91' not in shown[1][2] and shown[1][3] is None
-        preferences.save(whats_new.KEY, '0.5.90'); session.whats_new(packaged=True)      # back from an older version: no second thanks
-        assert len(shown) == 3 and '0.5.91' in shown[2][2] and shown[2][3] is None
+        assert len(shown) == 2 and __version__ in shown[1][2] and between not in shown[1][2] and shown[1][3] is None
+        preferences.save(whats_new.KEY, seen); session.whats_new(packaged=True)      # back from an older version: no second thanks
+        assert len(shown) == 3 and between in shown[2][2] and shown[2][3] is None
     finally:
         set_language(previous)
         session.switching = True

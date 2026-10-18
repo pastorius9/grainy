@@ -9,6 +9,7 @@ import sqlite3
 import xml.etree.ElementTree as ET
 from .engine import normalized
 from .folders import below, contains_folder, stored_path
+from .file_access import access, MISSING, PRESENT
 
 
 def matches(photo,rules,*,now=None):
@@ -25,7 +26,8 @@ def matches(photo,rules,*,now=None):
         elif key=='all':
             if not all(matches(photo,r,now=now) for r in expected):return False
         elif key=='missing':
-            if (not Path(photo['path']).is_file())!=bool(expected):return False
+            # A photo the system will not let Grainy read is not missing (macOS privacy settings).
+            if (access(photo['path'])==MISSING)!=bool(expected):return False
         elif key=='virtual':
             if (photo.get('virtual_source') is not None)!=bool(expected):return False
         elif key.endswith('_min') or key.endswith('_max'):
@@ -58,7 +60,7 @@ def duplicate_groups(photos):
     sizes={};seen=set()
     for p in photos:
         path=Path(p['path'])
-        if str(path).casefold() in seen or not path.is_file():continue
+        if str(path).casefold() in seen or access(path)!=PRESENT:continue
         seen.add(str(path).casefold());sizes.setdefault(path.stat().st_size,[]).append(p)
     groups=[]
     for candidates in sizes.values():

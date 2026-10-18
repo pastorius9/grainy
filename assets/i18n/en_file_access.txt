@@ -1,0 +1,16 @@
+사진 폴더 접근 권한 => Photo folder access
+위치: {0} => Location: {0}
+macOS가 Grainy의 사진 폴더 접근을 막고 있습니다. => macOS is blocking Grainy from your photo folder.
+Grainy를 업데이트한 뒤 macOS가 폴더·디스크 접근 허용을 다시 묻거나 막는 일이 있습니다. 사진 파일과 보정 기록은 그대로 있고, 허용하면 다시 가져오지 않아도 그대로 돌아옵니다.\n\n허용하는 방법: 시스템 설정 › 개인정보 보호 및 보안 › 파일 및 폴더에서 Grainy 아래의 해당 폴더를 켭니다. 외장 디스크는 "이동식 볼륨", 네트워크 디스크는 "네트워크 볼륨"으로 나옵니다. 목록에 없으면 같은 화면의 전체 디스크 접근 권한에 Grainy를 추가합니다. 그다음 Grainy를 종료했다가 다시 여세요. => After Grainy is updated, macOS may ask again for, or block, its access to folders and disks. Your photo files and edits are untouched, and once access is allowed they come back without importing them again.\n\nTo allow it: in System Settings › Privacy & Security › Files and Folders, turn on the folder listed under Grainy. External disks appear as "Removable Volumes" and network disks as "Network Volumes". If Grainy is not listed there, add it to Full Disk Access on the same screen. Then quit Grainy and open it again.
+시스템 설정 열기 => Open System Settings
+Grainy가 사진 폴더를 읽을 권한이 없습니다. => Grainy does not have permission to read your photo folder.
+사진 파일과 보정 기록은 그대로 있습니다. 탐색기에서 폴더를 오른쪽 클릭 › 속성 › 보안에서 내 계정에 읽기 권한이 있는지 확인한 뒤 Grainy를 다시 여세요. => Your photo files and edits are untouched. In File Explorer, right-click the folder › Properties › Security, check that your account is allowed to read it, then open Grainy again.
+원본 폴더에 접근할 권한이 없습니다. 접근을 허용하면 사진이 그대로 돌아옵니다. => Grainy is not allowed to read the original's folder. Allow access and the photo comes back as it was.
+원본 폴더 접근을 허용하면 원본 100%로 확인할 수 있습니다. => Allow access to the original's folder to view it at 100%.
+\n접근 권한이 필요한 원본 {0}개 (누락 아님) => \n{0} originals need access (not missing)
+접근 권한 필요 => Access needed
+접근 권한 필요 · 이전 미리보기 => Access needed · earlier preview
+오프라인 => Offline
+갱신 중 => Updating
+원본 없음 => Original missing
+원본 없음 · 이전 미리보기 => Original missing · earlier preview

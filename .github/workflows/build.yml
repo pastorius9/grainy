@@ -113,7 +113,9 @@ jobs:
           path: validation/check-windows
 
   # The macOS app, built the same way: from source on a GitHub-hosted Apple Silicon runner, with the
-  # checked-in native libraries compiled again. The app is signed ad hoc (no Apple developer identity).
+  # checked-in native libraries compiled again. It is signed with a self-signed certificate kept in the
+  # repository secrets (no Apple developer identity): the same identity in every release, so macOS keeps
+  # the folder and disk permissions it gave Grainy across updates. Without the secrets it is signed ad hoc.
   macos:
     runs-on: macos-14
     timeout-minutes: 45
@@ -134,6 +136,28 @@ jobs:
 
       - name: Remove prebuilt native libraries
         run: rm -f assets/native/*.dylib assets/native/*.macos.json
+
+      - name: Signing identity (the same certificate for every release)
+        env:
+          P12: ${{ secrets.MACOS_SIGN_P12 }}
+          PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
+        run: |
+          if [ -z "$P12" ]; then echo "::notice::No signing certificate in the secrets: the app is signed ad hoc."; exit 0; fi
+          KEYCHAIN="$RUNNER_TEMP/grainy-signing.keychain-db"; KEYPASS="$(openssl rand -hex 16)"
+          printf '%s' "$P12" | base64 --decode > "$RUNNER_TEMP/grainy.p12"
+          security create-keychain -p "$KEYPASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYPASS" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/grainy.p12" -k "$KEYCHAIN" -P "$PASSWORD" -T /usr/bin/codesign
+          rm -f "$RUNNER_TEMP/grainy.p12"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYPASS" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          # Self-signed: trusted for code signing on this runner only, so codesign accepts it.
+          security find-certificate -c "Grainy Code Signing" -p "$KEYCHAIN" > "$RUNNER_TEMP/grainy.pem"
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign -k /Library/Keychains/System.keychain "$RUNNER_TEMP/grainy.pem"
+          security find-identity -p codesigning "$KEYCHAIN"
+          echo "GRAINY_SIGN_IDENTITY=Grainy Code Signing" >> "$GITHUB_ENV"
+          echo "GRAINY_SIGN_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
 
       - name: Build, self-test and disk image
         run: .venv/bin/python tools/build_macos.py

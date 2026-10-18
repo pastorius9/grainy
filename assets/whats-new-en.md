@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.96 — Photos no longer go offline after updating on macOS
+
+- **macOS: photos no longer go offline after every update.** macOS remembers per app which folders and disks it may read. Each macOS build of Grainy used to carry a different signature, so macOS took every update for a new app and forgot the permission. All releases are now signed with the same certificate. The first update to this version may ask once more; later ones keep it.
+- **A photo the system will not let Grainy read is shown as needing access, not as offline**, with its saved preview, and Grainy explains once how to allow the folder again (on macOS with a button that opens the right System Settings page).
+- Reported through the Feedback button (#UMJ92). Thank you.
+
 ## 0.5.95 — Feedback reference numbers
 
 - **Sending feedback now gives you a reference number**, such as `#K7Q2M`: five random characters, nothing about you or your computer.

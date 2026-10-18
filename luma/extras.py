@@ -106,7 +106,7 @@ class ExtraTools:
 
     def watch_scan(self):
         if self.w.import_busy or self.w.import_scans or self.w.export_running or getattr(self.w,'maintenance_running',False):return
-        paths=[p for p in self.watch_paths if Path(p).is_dir()]
+        paths=[p for p in self.watch_paths if os.path.isdir(p)]     # Path.is_dir() raises where macOS refuses access
         if paths:self.w.import_paths(paths,restore=False)
 
     def map(self):

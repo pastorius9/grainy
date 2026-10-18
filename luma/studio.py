@@ -1397,10 +1397,11 @@ class StudioTools:
 
     def load_raw_controls(self):
         from .engine import RAW_EXTENSIONS
+        from .file_access import present
         s=self.w.settings;photo=self.w.catalog.photo(self.w.current_id) if self.w.current_id else None
         info=photo['info'] if photo else {}
         usable=bool(photo and Path(photo['path']).suffix.lower() in RAW_EXTENSIONS)
-        offline=usable and not Path(photo['path']).is_file()
+        offline=usable and not present(photo['path'])
         if offline and not (info.get('raw_native') or info.get('raw_dual_preview')):usable=False
         self.raw_mode.setEnabled(usable);self.dcp_button.setEnabled(usable);self.dcp_browse.setEnabled(usable)
         self.raw_mode.setVisible(usable);self.dcp_browse.setVisible(usable);self.dcp_note.setVisible(usable)

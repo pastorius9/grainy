@@ -325,3 +325,11 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
 - 업데이트 뒤 달라진 점 창의 첫 줄 아래에 `보내 주신 피드백(#K7Q2M)이 이번 업데이트에 반영되었습니다. 고맙습니다.`가 한 번 뜬다(`whats_new.shipped`, 보여 준 번호는 `feedback_thanked`). 변경 기록이 비어도 이 줄이 있으면 창을 연다. 처음 실행·같은 버전·낮은 버전, 설정 메뉴의 `이번 버전의 달라진 점…`에서는 뜨지 않는다.
 - `Preferences.save`가 저장 직전에 파일을 다시 읽어 합친다. 세션이 시작할 때 읽어 둔 설정 객체가 나중에(업데이트 확인, GPU·언어 변경) 저장하면서 피드백 창이 따로 적은 번호를 지우지 않게 하려는 것이다.
 - 플랫폼 코드는 없다. 맥에서 볼 것: 달라진 점 창의 강조 줄(`QLabel#shipped`) 모양.
+
+## 2026-10-19 — 업데이트 뒤 사진이 오프라인으로 보이던 문제: 접근 권한과 누락 구분 (Windows 쪽에서, 아직 배포 전)
+
+- 피드백(macOS 27, M3, 0.5.95): 업데이트할 때마다 사진이 오프라인이 되어 다시 불러와야 한다. 앱이 임시(ad hoc) 서명이라 업데이트마다 macOS가 새 앱으로 보고 `파일 및 폴더` 권한을 되돌린 것으로 본다. 그러면 사진 파일은 `stat`부터 `PermissionError`(EPERM)로 막힌다. 서명은 CI 쪽에서 따로 고친다.
+- Python 3.13에서 그때 `os.path.isfile()`은 False라 누락과 구분되지 않고, `Path.is_file()`은 `PermissionError`를 그대로 던진다(사진 열기 실패 처리가 여기서 멈춰 아무 안내도 없었다). 새 `luma/file_access.py`의 `access()`가 `os.stat`으로 있음·없음·막힘(`present`/`missing`/`denied`)을 나누고, 원본이 있는지는 `present()`로 본다(`source_cache`, 사진 열기·미리 읽기, RAW 조절, 일괄 자동톤).
+- 막힌 사진: 썸네일 상태가 `오프라인`/`원본 없음` 대신 `접근 권한 필요`(`preview_store.snapshot`의 `denied`)이고, 저장된 미리보기는 지금처럼 보여 준다. `누락 원본만` 필터, 카탈로그 검사의 누락 수(막힌 수는 따로 적는다), 폴더 목록의 `?`(위치 다시 지정), 이름이 바뀐 폴더 자동 찾기에 들어가지 않는다(`library.matches`, `folder_locations.scan_folders`).
+- 안내 창(`file_access.guide`)은 세션당 한 번: 사진을 열 때(`MainWindow.original_unreadable`), 폴더 동기화를 고를 때, 그리고 시작 1.5초 뒤 달라진 점·업데이트 창 다음에 등록 폴더의 루트만 `os.scandir`로 열어 보는 검사(`file_access.check_folders`, 데몬 스레드라 창은 기다리지 않는다)에서. 맥에서는 `시스템 설정 열기` 버튼이 `x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders`를 연다. Windows는 폴더 보안 권한을 확인하라는 짧은 문구만.
+- 맥에서 확인할 것: 외장 디스크의 사진 폴더를 등록해 둔 상태에서 시스템 설정 › 개인정보 보호 및 보안 › 파일 및 폴더에서 Grainy의 `이동식 볼륨`을 끄고 Grainy를 연다 → 안내 창이 한 번 뜨고, 썸네일에 `접근 권한 필요`, 폴더 목록에 `?`가 없어야 한다. `시스템 설정 열기`가 그 화면을 여는지. 다시 켜고 Grainy를 다시 열면 가져오기 없이 사진과 보정이 그대로 돌아와야 한다. 데스크탑·문서 폴더의 사진으로도 한 번. 시작할 때 macOS가 접근을 묻는 창을 띄우는지, 그리고 막혔을 때 `stat`부터 EPERM인지(열 때만 막히면 이 구분이 걸리지 않고 오류 창이 뜬다)도 적어 둔다.

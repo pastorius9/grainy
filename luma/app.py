@@ -31,7 +31,7 @@ from .auth_dialog import AuthDialog
 from .command_dialog import CommandDialog
 from .photo_browser import PhotoModel,PhotoListView
 from .library_query import query as library_query,QueryCancelled
-from . import __version__
+from . import __version__, file_access
 from .user_paths import MAC
 
 
@@ -1186,7 +1186,11 @@ class MainWindow(QMainWindow):
         if path:self.manager.run(lambda:self.folder_panel.remove(path))
 
     def sync_folder(self,path):
-        if not Path(path).is_dir():
+        state=file_access.access(path,folder=True)
+        if state==file_access.DENIED:
+            self.statusBar().showMessage(tr('원본 폴더에 접근할 권한이 없습니다. 접근을 허용하면 사진이 그대로 돌아옵니다.'))
+            file_access.guide(self,path);return
+        if state!=file_access.PRESENT:
             self.statusBar().showMessage(tr('폴더를 찾을 수 없습니다. 드라이브 연결이나 원본 위치를 확인해 주세요.'))
             return
         self.import_paths([path])
@@ -1284,10 +1288,13 @@ class MainWindow(QMainWindow):
             self.render()
             if not self.view.fit_mode:self.load_full_resolution()
             self.prefetch_neighbors(photo_id)
+            if info.get('offline_preview'):self.original_unreadable(photo['path'])
         def failed(error):
             if version==self.load_version:
                 self.info_label.setText(tr('사진을 읽을 수 없습니다.'))
-                if not Path(photo['path']).is_file():
+                state=file_access.access(photo['path'])
+                if state==file_access.DENIED:self.original_unreadable(photo['path'])
+                elif state==file_access.MISSING:
                     self.statusBar().showMessage(tr('원본 위치를 찾고 있습니다. 폴더 우클릭에서 자동 찾기나 위치 지정을 사용할 수 있습니다.'))
                     self.folder_panel.recover()
                 else:self.show_error(error)
@@ -1295,13 +1302,21 @@ class MainWindow(QMainWindow):
             if version!=self.load_version or self.closing:return None
             offline=self.catalog.directory/'previews'/f'{photo_id}.npz'
             def read():
-                if not Path(photo['path']).is_file() and offline.is_file():
+                if not file_access.present(photo['path']) and offline.is_file():
                     from .preview_store import load_offline
                     return load_offline(self.catalog.directory,photo_id,photo['settings'])
                 return load_image(photo['path'],1800,photo['settings']['working_space'],raw_options=photo['settings'])
             source,info=self.source_cache.load(photo['path'],photo['settings'],1800,read,offline=offline)
             return source,resize_float(source,720),info
         self.spawn(decode,ready,failed,pool=self.source_pool)
+
+    def original_unreadable(self,path):
+        """The system will not let Grainy read this original (macOS privacy settings after an update):
+        say so and how to allow it, instead of looking for a moved folder."""
+        if not file_access.denied(path):return False
+        self.statusBar().showMessage(tr('원본 폴더에 접근할 권한이 없습니다. 접근을 허용하면 사진이 그대로 돌아옵니다.'))
+        file_access.guide(self,str(Path(path).parent))
+        return True
 
     def prefetch_neighbors(self,photo_id):
         """Decode the next and previous photos while this one is viewed."""
@@ -1317,7 +1332,7 @@ class MainWindow(QMainWindow):
 
     def _prefetch(self,generation,path,settings):
         # Stale requests (the user already moved on) are skipped before any decoding.
-        if self.closing or generation!=self.prefetch_generation or not Path(path).is_file():return
+        if self.closing or generation!=self.prefetch_generation or not file_access.present(path):return
         try:
             self.source_cache.load(path,settings,1800,lambda:load_image(path,1800,settings['working_space'],raw_options=settings))
         except Exception:
@@ -1501,10 +1516,10 @@ class MainWindow(QMainWindow):
         from .engine import RAW_EXTENSIONS,VIDEO_EXTENSIONS
         if self.current_id:
             photo=self.catalog.photo(self.current_id)
-            if (Path(photo['path']).suffix.lower() in VIDEO_EXTENSIONS and Path(photo['path']).is_file()
+            if (Path(photo['path']).suffix.lower() in VIDEO_EXTENSIONS and file_access.present(photo['path'])
                     and getattr(self,'loaded_video_settings',None)!=(self.settings.get('video_color'),self.settings.get('video_time',0))):
                 self.commit();self.activate(self.current_id,force=True);return
-            if Path(photo['path']).suffix.lower() in RAW_EXTENSIONS and enabled(self.settings)!=isinstance(self.source,CameraSource) and (Path(photo['path']).is_file() or photo['info'].get('raw_dual_preview')):
+            if Path(photo['path']).suffix.lower() in RAW_EXTENSIONS and enabled(self.settings)!=isinstance(self.source,CameraSource) and (file_access.present(photo['path']) or photo['info'].get('raw_dual_preview')):
                 self.commit();self.activate(self.current_id,force=True);return
         if self.live_running:
             self.live_pending=True
@@ -1686,8 +1701,10 @@ class MainWindow(QMainWindow):
     def load_full_resolution(self):
         if self.source is None or self.full_loading or self.full_source is not None:return
         version=self.load_version;photo=self.catalog.photo(self.current_id)
-        if not Path(photo['path']).is_file():
-            self.statusBar().showMessage(tr('원본을 다시 연결하면 원본 100%로 확인할 수 있습니다.'));return
+        state=file_access.access(photo['path'])
+        if state!=file_access.PRESENT:
+            self.statusBar().showMessage(tr('원본 폴더 접근을 허용하면 원본 100%로 확인할 수 있습니다.') if state==file_access.DENIED
+                else tr('원본을 다시 연결하면 원본 100%로 확인할 수 있습니다.'));return
         self.full_loading=True
         self.statusBar().showMessage(tr('원본 해상도 불러오는 중…'))
         def ready(result):
@@ -2523,7 +2540,7 @@ class MainWindow(QMainWindow):
             for index,record in enumerate(records):
                 if cancel.is_set():return None
                 settings=record['settings'];path=Path(record['path'])
-                if path.is_file():
+                if file_access.present(path):
                     before=signature(path)
                     source,_=load_image(path,720,settings['working_space'],raw_options=settings)
                     if signature(path)!=before:raise ValueError('원본이 변경되었습니다.')

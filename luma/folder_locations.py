@@ -5,6 +5,7 @@ import os
 import stat
 import json
 from .folders import path_key, contains_folder, in_folder, below, stored_path
+from .file_access import denied
 from .i18n import tr
 
 
@@ -58,7 +59,7 @@ def scan_folders(paths,roots,expanded,identities,cancel):
         if stopped():break
         identity=directory_identity(path)
         if identity:observed[key]={'path':path,'id':identity}
-        else:missing.add(key)
+        elif not denied(path):missing.add(key)     # a folder the system refuses is there, not renamed
     for key in sorted(missing,key=lambda p:len(Path(p).parts)):
         if stopped() or any(contains_folder(old,key) for old,_ in moves):continue
         saved=identities.get(key)
