@@ -33,7 +33,11 @@ PARSE_ERROR={'jsonrpc':'2.0','id':None,'error':{'code':-32700,'message':'Parse e
 class McpHttpServer(socketserver.ThreadingMixIn,http.server.HTTPServer):
     daemon_threads=True
     block_on_close=False          # stop() waits (bounded) for requests itself
-    allow_reuse_address=False
+    # Windows: SO_REUSEADDR would let another program take a port in use, so server_bind sets SO_EXCLUSIVEADDRUSE
+    # instead. Elsewhere SO_REUSEADDR only lets the port be bound again over connections a stopped server left
+    # in TIME_WAIT (about 30 s on macOS): without it switching the connection off and on, or Grainy restarting
+    # for an update, cannot use the port again for that long. A port another program listens on stays refused.
+    allow_reuse_address=not hasattr(socket,'SO_EXCLUSIVEADDRUSE')
     request_queue_size=16
 
     def __init__(self,port,host,gui=None):
