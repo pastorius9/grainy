@@ -90,15 +90,12 @@ class StudioTools:
 
     def change_film(self,name):
         if self.loading or self.w.source is None or name is None:return
-        from .film_look import grain_settings
-        old=self.w.settings.get('film_look','')
-        if name==old:return
-        self.w.commit();self.w.set_setting('film_look',name)
+        from .film_look import with_film
+        if name==self.w.settings.get('film_look',''):return
+        self.w.commit()
         # The stock's grain goes into Effects › Grain, where it stays editable; it leaves with the film unless changed.
-        before=grain_settings(old)
-        if before and all(abs(float(self.w.settings[k])-v)<1e-6 for k,v in before.items()):
-            for k in before:self.w.set_setting(k,defaults()[k])
-        for k,v in (grain_settings(name) or {}).items():self.w.set_setting(k,v)
+        for key,value in with_film(self.w.settings,name).items():
+            if self.w.settings.get(key)!=value:self.w.set_setting(key,value)
         self.w.commit('필름');self.w.load_controls();self.w.render()
 
     def load_film(self,s):

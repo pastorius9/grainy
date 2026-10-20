@@ -1140,6 +1140,7 @@
   "이 버전에 없는 필름입니다: {0}": "This version does not have this film: {0}",
   "필름을 고르면 그 필름 제조사가 공개한 기술 자료의 곡선으로 계산한 색과 톤이 적용됩니다.": "Choose a film to apply the colour and tone computed from the curves in its maker's published technical data.",
   "제조사 기술 자료로 계산한 느낌입니다. 실제 필름 색은 현상·인화·스캔에 따라 달라집니다.": "A look computed from the maker's technical data. Real film colour also depends on developing, printing and scanning.",
+  "기타 프리셋": "Other presets",
   "폴더 목록 새로 고침": "Refresh folder list",
   "폴더 위치 다시 지정…": "Update folder location…",
   "폴더 위치 다시 지정": "Update folder location",

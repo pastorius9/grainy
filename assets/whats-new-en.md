@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.99 — Film looks in the Presets panel
+
+- **The Presets panel now has folders.** The 82 film looks are in a folder per maker (Kodak and Fujifilm split again into colour negative, colour slide, black and white and motion picture); your own and the built-in presets are in Other presets.
+- Clicking a film applies it just as the Film panel does, grain included, as one undo step; other edits stay as they are.
+
 ## 0.5.98 — 82 film looks
 
 - **A Film panel in Develop.** Choose from 82 films — Kodak Portra, Ektar, Gold, Kodachrome, Ektachrome, Tri-X, T-MAX and Vision3, Fujifilm Velvia, Provia, Astia, Superia, Pro 400H and Acros, Ilford HP5, FP4 and Delta, Fomapan, Agfa and more.

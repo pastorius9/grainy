@@ -340,6 +340,31 @@ def known(name):
     return entry(name) is not None
 
 
+MAKERS = ('Kodak', 'Fujifilm', 'Ilford')     # first in the Presets panel; the others follow alphabetically
+SPLIT = 10                                   # a maker with more films than this, of several kinds, gets a folder per kind
+
+
+def short_name(entry):
+    """A stock's name inside its maker's folder: 'Portra 400' for 'Kodak Portra 400'."""
+    maker = entry.get('maker') or ''
+    return entry['name'][len(maker) + 1:] if maker and entry['name'].startswith(maker + ' ') else entry['name']
+
+
+def by_maker():
+    """[(maker, [(kind title or None, [entries])])] for the Presets panel, in catalog order within each."""
+    makers = {}
+    for e in catalog():
+        makers.setdefault(e.get('maker') or '', []).append(e)
+    order = sorted(makers, key=lambda m: (MAKERS.index(m) if m in MAKERS else len(MAKERS), m.lower()))
+    out = []
+    for maker in order:
+        entries = makers[maker]
+        kinds = [(title, [e for e in entries if e['group'] == kind]) for kind, title in KINDS]
+        kinds = [(title, group) for title, group in kinds if group]
+        out.append((maker, kinds if len(entries) > SPLIT and len(kinds) > 1 else [(None, entries)]))
+    return out
+
+
 def _key(text):
     return ''.join(c for c in str(text).lower() if c.isalnum())
 

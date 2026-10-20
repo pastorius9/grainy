@@ -520,10 +520,12 @@ class MainWindow(QMainWindow):
         presets_content=QWidget()
         presets_layout=QVBoxLayout(presets_content)
         presets_layout.setContentsMargins(0,0,0,0)
-        self.preset_list = QListWidget()
-        self.preset_list.setFixedHeight(190)
-        self.preset_list.itemClicked.connect(self.apply_preset)
-        presets_layout.addWidget(self.preset_list)
+        # Film looks in a folder per maker (luma/film_look.py), the other presets in their own folder.
+        self.preset_tree = QTreeWidget()
+        self.preset_tree.setHeaderHidden(True);self.preset_tree.setIndentation(14)
+        self.preset_tree.setFixedHeight(260)
+        self.preset_tree.itemClicked.connect(self.preset_clicked)
+        presets_layout.addWidget(self.preset_tree)
         self.refresh_presets()
         presets_layout.addWidget(button(tr('현재 보정을 프리셋으로 저장'), self.save_preset))
         self.add_foldout(sidebar,tr('프리셋'),presets_content)
@@ -2107,18 +2109,46 @@ class MainWindow(QMainWindow):
 
     def refresh_presets(self):
         self.all_presets={**{name:normalized({'tone_version':defaults()['tone_version'],**values}) for name,values in PRESETS.items()},**self.catalog.presets()}
-        self.preset_list.clear()
-        self.preset_list.addItems(list(self.all_presets))
-        from .adobe_preset import KEY
-        for index in range(self.preset_list.count()):
-            item=self.preset_list.item(index);preset=self.all_presets[item.text()]
-            if KEY in preset:item.setToolTip(preset[KEY].get('report','Adobe 프리셋'))
+        tree=self.preset_tree;role=Qt.ItemDataRole.UserRole
+        opened=set()
+        stack=[tree.topLevelItem(i) for i in range(tree.topLevelItemCount())]
+        while stack:
+            item=stack.pop()
+            if item.isExpanded():opened.add(item.data(0,role))
+            stack.extend(item.child(i) for i in range(item.childCount()))
+        tree.clear()
 
-    def apply_preset(self,item):
+        def folder(parent,title,key):
+            item=QTreeWidgetItem(parent,[title]);item.setData(0,role,key)
+            item.setExpanded(key in opened);return item
+        from .film_look import by_maker,short_name
+        for maker,kinds in by_maker():
+            top=folder(tree,f'{maker} ({sum(len(group) for _,group in kinds)})',('folder',maker))
+            for title,group in kinds:
+                parent=top if title is None else folder(top,f'{tr(title)} ({len(group)})',('folder',maker,title))
+                for e in group:
+                    item=QTreeWidgetItem(parent,[short_name(e)]);item.setData(0,role,('film',e['id']))
+                    item.setToolTip(0,' · '.join([e['name'],tr(e['kind_title'])]+([f"ISO {e['iso']}"] if e.get('iso') else [])))
+                parent.setExpanded(('folder',maker,title) in opened if title else top.isExpanded())
+            top.setExpanded(('folder',maker) in opened)
+        others=folder(tree,f"{tr('기타 프리셋')} ({len(self.all_presets)})",('folder','others'))
+        from .adobe_preset import KEY
+        for name,preset in self.all_presets.items():
+            item=QTreeWidgetItem(others,[name]);item.setData(0,role,('preset',name))
+            if KEY in preset:item.setToolTip(0,preset[KEY].get('report','Adobe 프리셋'))
+        others.setExpanded(('folder','others') in opened)
+
+    def preset_clicked(self,item,column=0):
+        kind,*rest=item.data(0,Qt.ItemDataRole.UserRole) or (None,)
+        if kind=='folder':item.setExpanded(not item.isExpanded())
+        elif kind=='film':self.studio.change_film(rest[0])
+        elif kind=='preset':self.apply_preset(rest[0])
+
+    def apply_preset(self,name):
         if self.source is None:
             return
         self.commit()
-        value=deepcopy(self.all_presets[item.text()])
+        value=deepcopy(self.all_presets[name])
         from .adobe_preset import resolve
         try:value=resolve(value,self.settings,self.catalog.photo(self.current_id)['path'])
         except (ValueError,TypeError) as error:
@@ -2143,6 +2173,7 @@ class MainWindow(QMainWindow):
         if ok and name.strip():
             self.catalog.save_preset(name.strip(),self.settings)
             self.refresh_presets()
+            self.preset_tree.topLevelItem(self.preset_tree.topLevelItemCount()-1).setExpanded(True)   # where it went
 
     def set_rating(self,rating):
         self.catalog.update_many(self.selected_ids(),'rating',rating)

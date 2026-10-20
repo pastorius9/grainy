@@ -33,3 +33,37 @@ def test_film_list_groups_the_catalog(window):
     assert ids == [e['id'] for e in film_look.catalog()]
     headers = [combo.itemText(i) for i in range(combo.count()) if combo.itemData(i) is None and combo.itemText(i)]
     assert headers and len(headers) == len({e['group'] for e in film_look.catalog()})
+
+
+def test_presets_panel_has_a_folder_per_maker_and_one_for_other_presets(window):
+    from PySide6.QtCore import Qt
+    w = window
+    tree = w.preset_tree
+    tops = [tree.topLevelItem(i) for i in range(tree.topLevelItemCount())]
+    makers = [maker for maker, _ in film_look.by_maker()]
+    assert [t.data(0, Qt.ItemDataRole.UserRole) for t in tops] == [('folder', m) for m in makers] + [('folder', 'others')]
+    assert makers[:3] == ['Kodak', 'Fujifilm', 'Ilford'] and not any(t.isExpanded() for t in tops)
+
+    def leaves(item):
+        kind = item.data(0, Qt.ItemDataRole.UserRole)
+        return [kind] if kind[0] != 'folder' else [k for i in range(item.childCount()) for k in leaves(item.child(i))]
+    films = [k[1] for t in tops[:-1] for k in leaves(t)]
+    assert sorted(films) == sorted(e['id'] for e in film_look.catalog())
+    assert [k[1] for k in leaves(tops[-1])] == list(w.all_presets)
+    kodak = tops[0]
+    assert kodak.childCount() > 1 and all(kodak.child(i).data(0, Qt.ItemDataRole.UserRole)[0] == 'folder' for i in range(kodak.childCount()))
+    # A click on a folder opens it; on a film, chooses it as the Film panel does; on a preset, applies it.
+    w.preset_clicked(kodak)
+    assert kodak.isExpanded()
+    first = kodak.child(0).child(0)
+    assert first.text(0) == film_look.short_name(film_look.entry(first.data(0, Qt.ItemDataRole.UserRole)[1]))
+    w.preset_clicked(first)
+    wait(lambda: w.settings['film_look'] == first.data(0, Qt.ItemDataRole.UserRole)[1])
+    assert w.studio.film_choice.currentData() == w.settings['film_look']
+    mono = next(k for k in leaves(tops[-1]) if w.all_presets[k[1]].get('monochrome'))
+    w.apply_preset(mono[1])
+    wait(lambda: w.settings['monochrome'])
+    w.refresh_presets()
+    assert w.preset_tree.topLevelItem(0).isExpanded()                     # a refresh keeps folders as they were
+    if os.environ.get('GRAINY_FILM_SCREENSHOT'):
+        w.preset_tree.grab().save(os.environ['GRAINY_FILM_SCREENSHOT'].replace('.png', '-presets.png'))
