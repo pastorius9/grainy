@@ -1,0 +1,6 @@
+{"id": "cinestill-50d",
+ "meta": {"name": "CineStill 50D", "maker": "CineStill", "kind": "colour-negative", "cine": false, "iso": 50,
+          "derived_from": "kodak-vision3-50d",
+          "halation": {"radius": 0.004, "threshold": 1.0, "strength": [0.35, 0.06, 0.0]},
+          "notes": ["CineStill publishes no technical data. CineStill 50D is reported to be Kodak Vision3 50D (5203) with its rem-jet anti-halation backing removed, processed in C-41; this look is the 5203 datasheet curves printed on a colour paper.",
+                    "The red glow around highlights (halation) is modelled; its radius, threshold and strength are Grainy's choice, not published values."]}}

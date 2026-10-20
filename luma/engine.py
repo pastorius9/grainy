@@ -45,6 +45,8 @@ DEFAULTS = dict(exposure=0., contrast=0., highlights=0., shadows=0., whites=0., 
 DEFAULTS.update(deepcopy(EXTRA_DEFAULTS))
 from . import negative
 DEFAULTS.update(deepcopy(negative.DEFAULTS))
+# Film look (luma/film_look.py): a stock's id ('' = none) and how much of it, blended over the ordinary rendering.
+DEFAULTS.update(film_look='', film_strength=100.)
 SHOULDER_KNEE = .5   # linear light; values below are never changed by the highlight roll-off
 ROLLOFF_WHITE = 4.   # at most two stops of highlights are rolled off; stronger gains still clip (and warn)
 
@@ -393,15 +395,22 @@ def _develop_tone(a, s):
 
 
 def _tone_encoded(a, s):
-    """Exposure, white balance, lens vignette and highlight roll-off on linear pixels (in place), then sRGB encoding."""
+    """Exposure, white balance, lens vignette and highlight roll-off on linear pixels (in place), then sRGB encoding.
+    A film look takes the place of the roll-off: the stock's response turns the scene into a print or slide."""
     a *= 2. ** s['exposure']
     a *= white_balance(s)
     if s['lens_vignette']:
         y,x=np.ogrid[-1:1:complex(a.shape[0]),-1:1:complex(a.shape[1])]
         a*=np.maximum(.1,1+(x*x+y*y)*s['lens_vignette']/100)[...,None]
+    from . import film_look
+    film = to_srgb(film_look.render(a, s['film_look'], s['working_space'])) if film_look.active(s) else None
+    strength = float(np.clip(s['film_strength'], 0, 100))/100
+    if film is not None and strength >= 1:
+        return film
     if s.get('tone_version',1) >= 2 and not s['hdr']:
         a = highlight_rolloff(a, rolloff_white(s))
-    return to_srgb(a)
+    plain = to_srgb(a)
+    return plain if film is None else (plain + (film - plain)*np.float32(strength)).astype(np.float32)
 
 
 def tone_base(a, s):
@@ -651,7 +660,8 @@ GEOMETRY_KEYS=('retouch','rotation','straighten','flip','crop','distortion',
                'lensfun','lensfun_enabled','lensfun_distortion','lensfun_tca','lensfun_vignette','lensfun_scale',
                'upright','upright_crop')
 TONE_KEYS=('exposure','temperature','tint','kelvin','wb_reference','kelvin_enabled',
-           'lens_vignette','shadows','highlights','blacks','whites','contrast','curve','hdr','tone_version')
+           'lens_vignette','shadows','highlights','blacks','whites','contrast','curve','hdr','tone_version',
+           'film_look','film_strength','working_space')
 COLOR_KEYS=('saturation','vibrance','mixer_mode','hsl','rgb_curves','parametric',
             'calibration','point_colors','grading','grading_balance','camera_matrix',
             'photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity','monochrome')

@@ -38,6 +38,8 @@ def test_parse_changes_accepts_every_field_at_its_limits():
     for key,(_,low,high) in FIELDS.items():
         if key=='monochrome':
             assert service.parse_changes({key:True})==({key:True},{key:'set'});continue
+        if key=='film_look':
+            assert service.parse_changes({key:''})==({key:''},{key:'set'});continue      # names: test_film_look.py
         for value in (low,high):
             assert service.parse_changes({key:value})==({key:float(value)},{key:'set'})
         assert service.parse_changes(None,{key:high-low})==({key:float(high-low)},{key:'add'})

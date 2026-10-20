@@ -1,0 +1,32 @@
+{"id": "fuji-neopan-ss", "dpi": 400,
+ "plots": {
+  "curves": {"page": 3, "box": [348, 344.5, 545, 441.5], "x": [[346.55, -4.0], [366.65, -3.5], [386.72, -3.0], [406.46, -2.5], [426.33, -2.0], [446.15, -1.5], [465.97, -1.0], [485.95, -0.5], [505.89, 0.0], [526.01, 0.5], [545.68, 1.0]], "y": [[442.52, 0.0], [422.49, 0.5], [402.66, 1.0], [382.94, 1.5], [362.91, 2.0], [343.26, 2.5]], "mask": [[352, 344, 470, 360.5], [484, 428, 545, 441]], "step": 0.05, "window": 0.03, "strict": true,
+   "lines": {
+    "v-microfine-12": {"hints": [[-2.875, 0.297], [-2.8, 0.302], [-2.7, 0.307], [-2.6, 0.32], [-2.4, 0.366], [-2.3, 0.396], [-2.2, 0.438], [-2.1, 0.478], [-2.0, 0.538], [-1.9, 0.598], [-1.65, 0.761], [-1.6, 0.795], [-1.55, 0.829], [-1.5, 0.864], [-1.25, 1.038], [-1.2, 1.07], [-1.15, 1.106], [-1.05, 1.172], [-1.0, 1.206], [-0.95, 1.24], [-0.9, 1.274], [-0.85, 1.303], [-0.7, 1.396], [-0.65, 1.428], [-0.6, 1.457], [-0.5, 1.517], [-0.4, 1.577], [-0.3, 1.632], [-0.2, 1.684], [-0.1, 1.738], [0.0, 1.784], [0.1, 1.829], [0.15, 1.849], [0.2, 1.87], [0.27, 1.905]]},
+    "v": {"hints": [[-2.875, 0.297], [-2.8, 0.3], [-2.7, 0.303], [-2.6, 0.312], [-2.4, 0.35], [-2.3, 0.37], [-2.2, 0.405], [-2.1, 0.448], [-2.0, 0.497], [-1.9, 0.546], [-1.65, 0.684], [-1.6, 0.711], [-1.55, 0.739], [-1.5, 0.769], [-1.25, 0.92], [-1.2, 0.943], [-1.15, 0.974], [-1.05, 1.033], [-1.0, 1.064], [-0.95, 1.095], [-0.9, 1.122], [-0.85, 1.149], [-0.7, 1.231], [-0.65, 1.26], [-0.6, 1.287], [-0.5, 1.337], [-0.4, 1.387], [-0.3, 1.439], [-0.2, 1.49], [-0.1, 1.541], [0.0, 1.585], [0.1, 1.63], [0.15, 1.652], [0.2, 1.67], [0.29, 1.707]]},
+    "v-microfine-8": {"hints": [[-2.875, 0.297], [-2.8, 0.299], [-2.7, 0.3], [-2.6, 0.308], [-2.4, 0.333], [-2.3, 0.35], [-2.2, 0.366], [-2.1, 0.398], [-2.0, 0.435], [-1.9, 0.473], [-1.65, 0.587], [-1.6, 0.609], [-1.55, 0.632], [-1.5, 0.657], [-1.25, 0.779], [-1.2, 0.804], [-1.15, 0.822], [-1.05, 0.87], [-1.0, 0.895], [-0.95, 0.92], [-0.9, 0.943], [-0.85, 0.968], [-0.7, 1.038], [-0.65, 1.058], [-0.6, 1.079], [-0.5, 1.122], [-0.4, 1.165], [-0.3, 1.206], [-0.2, 1.246], [-0.1, 1.287], [0.0, 1.325], [0.1, 1.364], [0.15, 1.38], [0.2, 1.394], [0.3, 1.428]]},
+    "v-microfine-6": {"hints": [[-2.875, 0.297], [-2.8, 0.298], [-2.7, 0.298], [-2.6, 0.302], [-2.4, 0.316], [-2.3, 0.327], [-2.2, 0.342], [-2.1, 0.368], [-2.0, 0.398], [-1.9, 0.428], [-1.65, 0.525], [-1.6, 0.539], [-1.55, 0.557], [-1.5, 0.578], [-1.25, 0.68], [-1.2, 0.702], [-1.15, 0.718], [-1.05, 0.759], [-1.0, 0.778], [-0.95, 0.798], [-0.9, 0.813], [-0.85, 0.832], [-0.7, 0.893], [-0.65, 0.909], [-0.6, 0.927], [-0.5, 0.959], [-0.4, 0.99], [-0.3, 1.031], [-0.2, 1.06], [-0.1, 1.097], [0.0, 1.127], [0.1, 1.158], [0.15, 1.176], [0.2, 1.187], [0.3, 1.219]]},
+    "v-microfine-4": {"hints": [[-2.875, 0.297], [-2.8, 0.296], [-2.7, 0.296], [-2.6, 0.296], [-2.4, 0.3], [-2.3, 0.305], [-2.2, 0.318], [-2.1, 0.331], [-2.0, 0.35], [-1.9, 0.369], [-1.65, 0.433], [-1.6, 0.446], [-1.55, 0.46], [-1.5, 0.475], [-1.25, 0.548], [-1.2, 0.562], [-1.15, 0.578], [-1.05, 0.607], [-1.0, 0.621], [-0.95, 0.634], [-0.9, 0.65], [-0.85, 0.664], [-0.7, 0.705], [-0.65, 0.716], [-0.6, 0.734], [-0.5, 0.759], [-0.4, 0.784], [-0.3, 0.807], [-0.2, 0.832], [-0.1, 0.857], [0.0, 0.881], [0.1, 0.904], [0.15, 0.915], [0.2, 0.927], [0.3, 0.949]]}
+   }},
+  "sensitivity": {"page": 3, "box": [106, 344.5, 287, 502.5], "x": [[115.63, 400], [169.21, 500], [223.07, 600], [277.02, 700]], "y": [[396.9, 1.0], [450.36, 0.0]], "mask": [[108, 345, 212, 356]], "step": 5, "window": 0.06,
+   "lines": {
+    "v": {"hints": [[381.585, 0.712], [387.272, 0.779], [400.655, 0.816], [414.037, 0.816], [430.764, 0.796], [447.492, 0.745], [464.22, 0.637], [474.256, 0.536], [484.293, 0.368], [490.984, 0.257], [496.002, 0.244], [504.366, 0.284], [514.403, 0.368], [524.439, 0.395], [537.821, 0.402], [547.858, 0.452], [557.895, 0.536], [567.931, 0.654], [574.622, 0.688], [584.659, 0.695], [593.023, 0.745], [599.714, 0.732], [604.732, 0.654], [611.423, 0.631], [621.46, 0.631], [626.478, 0.587], [631.496, 0.503], [641.533, 0.351], [648.224, 0.2], [653.242, 0.048], [656.588, -0.103], [658.26, -0.221]]}
+   }}
+ },
+ "meta": {
+  "name": "Fujifilm Neopan SS",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 100,
+  "balance": "daylight",
+  "log_h_ref": null,
+  "densitometry": "not stated",
+  "process": "Microfine 20 C, 10 min, small tank (nearest plotted time to the 9 1/2 min listed for EI 100)",
+  "grain": null,
+  "print_on": null,
+  "document": "AF3-411E",
+  "date": "1999-03",
+  "notes": ["Fujifilm Data Sheet 'NEOPAN SS (135)', 4 pages, scanned black-and-white drawings (bilevel, broken grid lines). Document AF3-411E; date taken from the print code EIGI-99.3 next to the reference number on page 4 (no other date printed). Speed ISO 100/21 deg, orthopanchromatic.", "curves: page 3, section 9, one plot, Microfine 20 C small tank, five development times 4, 6, 8, 10, 12 min with printed average gradients G-bar 0.28, 0.37, 0.45, 0.53, 0.61. x axis is log H in lux-seconds as printed (-4.0 to 1.0), y is density (0 to 2.5 frame, labelled to 2.0); exposure light and densitometry are not stated. The sheet marks no curve as standard. Page 2 lists Microfine at 20 C, EI 100 = 9 1/2 min (first developer in the table), so v is the 10 min curve, the nearest plotted time; the others are v-microfine-4, -6, -8, -12 (8 min is not the 9 1/2 min time).", "Curves start at log H about -2.88 (base density plateau about 0.30, printed label 'Base Density') and end at log H 0.27-0.31 inside the printed 'min. G=' labels, which touch the curves from log H about -0.5 on (labels not masked; hints placed on the curve ink and checked on the overlay). Below log H about -2.1 the five curves lie in one bundle; there each line is placed from the bundle's ink edges and is good to about 0.03 D.", "sensitivity: page 3, section 8, 'Spectrogram to Daylight (5400K)', a plotted curve (not a photograph). The axis 'Relative Sensitivity (log)' has no numbers, only an arrow marking 1.0 log unit between two grid lines; y here is relative, with the lower grid line taken as 0.0 and the upper as 1.0 (zero point arbitrary). The curve starts at the left frame edge (about 382 nm) and ends at about 658 nm in a steep fall; the last 5 nm samples are approximate.", "Grain: no granularity (RMS) or resolving power is printed in this sheet. Section 10 has development time vs G-bar curves for SPD, Fujidol E and Microfine (not traced)."]
+ }
+}

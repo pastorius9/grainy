@@ -1,0 +1,39 @@
+{"id": "fuji-acros-100-ii", "dpi": 400,
+ "plots": {
+  "curves": {"page": 3, "box": [74.5, 204, 254, 311.5], "x": [[109.62, -3.0], [254.88, 1.0]], "y": [[312.03, 0.0], [203.13, 3.0]], "mask": [], "step": 0.05, "window": 0.02, "strict": true,
+   "lines": {
+    "v": {"hints": [[-3.0, 0.125], [-2.8, 0.128], [-2.6, 0.138], [-2.5, 0.143], [-2.4, 0.15], [-2.2, 0.183], [-2.1, 0.216], [-2.0, 0.257], [-1.9, 0.298], [-1.8, 0.345], [-1.7, 0.394], [-1.6, 0.444], [-1.5, 0.496], [-1.4, 0.548], [-1.3, 0.602], [-1.2, 0.652], [-1.1, 0.707], [-1.0, 0.767], [-0.9, 0.828], [-0.8, 0.888], [-0.7, 0.945], [-0.5, 1.062], [-0.4, 1.121], [-0.3, 1.178], [-0.2, 1.237], [-0.1, 1.292], [0.0, 1.349], [0.1, 1.408], [0.2, 1.468], [0.3, 1.529], [0.4, 1.584], [0.5, 1.642], [0.595, 1.69]]},
+    "v-microfine-5": {"hints": [[-3.0, 0.125], [-2.8, 0.127], [-2.6, 0.128], [-2.5, 0.13], [-2.4, 0.133], [-2.2, 0.134], [-2.1, 0.139], [-2.0, 0.147], [-1.9, 0.154], [-1.8, 0.169], [-1.7, 0.188], [-1.6, 0.206], [-1.5, 0.227], [-1.4, 0.248], [-1.3, 0.273], [-1.2, 0.298], [-1.1, 0.322], [-1.0, 0.355], [-0.9, 0.387], [-0.8, 0.426], [-0.7, 0.464], [-0.5, 0.541], [-0.4, 0.58], [-0.3, 0.62], [-0.2, 0.66], [-0.1, 0.699], [0.0, 0.738], [0.1, 0.78], [0.2, 0.82], [0.3, 0.86], [0.4, 0.9], [0.5, 0.945], [0.567, 0.974]]},
+    "v-microfine-15": {"hints": [[-3.0, 0.125], [-2.8, 0.129], [-2.6, 0.141], [-2.5, 0.15], [-2.4, 0.165], [-2.2, 0.223], [-2.1, 0.265], [-2.0, 0.32], [-1.9, 0.374], [-1.8, 0.434], [-1.7, 0.486], [-1.6, 0.55], [-1.5, 0.61], [-1.4, 0.669], [-1.3, 0.726], [-1.2, 0.786], [-1.1, 0.848], [-1.0, 0.912], [-0.9, 0.977], [-0.8, 1.049], [-0.7, 1.113], [-0.5, 1.25], [-0.4, 1.319], [-0.3, 1.391], [-0.2, 1.46], [-0.1, 1.535], [0.0, 1.607], [0.1, 1.68], [0.2, 1.752], [0.3, 1.826], [0.4, 1.899], [0.5, 1.97], [0.585, 2.031]]},
+    "v-microfine-20": {"hints": [[-3.0, 0.125], [-2.8, 0.13], [-2.6, 0.145], [-2.5, 0.158], [-2.4, 0.178], [-2.2, 0.255], [-2.1, 0.317], [-2.0, 0.391], [-1.9, 0.464], [-1.8, 0.538], [-1.7, 0.612], [-1.6, 0.689], [-1.5, 0.766], [-1.4, 0.843], [-1.3, 0.92], [-1.2, 0.984], [-1.1, 1.071], [-1.0, 1.151], [-0.9, 1.23], [-0.8, 1.309], [-0.7, 1.386], [-0.5, 1.548], [-0.4, 1.629], [-0.3, 1.708], [-0.2, 1.788], [-0.1, 1.867], [0.0, 1.95], [0.1, 2.038], [0.2, 2.12], [0.3, 2.206], [0.4, 2.288], [0.5, 2.371], [0.585, 2.444]]}
+   }},
+  "curves-d76": {"page": 3, "box": [347, 204, 527, 311.5], "x": [[382.5, -3.0], [527.76, 1.0]], "y": [[312.21, 0.0], [203.13, 3.0]], "mask": [], "step": 0.05, "window": 0.02, "strict": true,
+   "lines": {
+    "v-d76-4": {"hints": [[-3.25, 0.144], [-3.0, 0.145], [-2.8, 0.148], [-2.7, 0.15], [-2.6, 0.153], [-2.5, 0.153], [-2.4, 0.153], [-2.3, 0.163], [-2.2, 0.178], [-2.1, 0.205], [-2.0, 0.24], [-1.9, 0.275], [-1.8, 0.312], [-1.7, 0.351], [-1.6, 0.391], [-1.5, 0.435], [-1.4, 0.48], [-1.3, 0.532], [-1.2, 0.589], [-1.1, 0.646], [-1.0, 0.704], [-0.9, 0.762], [-0.8, 0.819], [-0.7, 0.874], [-0.6, 0.928], [-0.5, 0.985], [-0.4, 1.042], [-0.3, 1.099], [-0.2, 1.156], [0.0, 1.263], [0.05, 1.29], [0.1, 1.319], [0.2, 1.379], [0.3, 1.438], [0.4, 1.485], [0.55, 1.574]]},
+    "v-d76-7": {"hints": [[-3.25, 0.144], [-3.0, 0.145], [-2.8, 0.149], [-2.7, 0.151], [-2.6, 0.158], [-2.5, 0.168], [-2.4, 0.188], [-2.3, 0.215], [-2.2, 0.25], [-2.1, 0.295], [-2.0, 0.34], [-1.9, 0.384], [-1.8, 0.433], [-1.7, 0.48], [-1.6, 0.535], [-1.5, 0.591], [-1.4, 0.646], [-1.3, 0.7], [-1.2, 0.755], [-1.1, 0.814], [-1.0, 0.874], [-0.9, 0.933], [-0.8, 0.988], [-0.7, 1.062], [-0.6, 1.131], [-0.5, 1.206], [-0.4, 1.28], [-0.3, 1.354], [-0.2, 1.426], [0.0, 1.577], [0.05, 1.616], [0.1, 1.656], [0.2, 1.735], [0.3, 1.812], [0.4, 1.891], [0.5, 1.972]]},
+    "v-d76-10": {"hints": [[-3.25, 0.144], [-3.0, 0.145], [-2.8, 0.149], [-2.7, 0.152], [-2.6, 0.162], [-2.5, 0.178], [-2.4, 0.205], [-2.3, 0.24], [-2.2, 0.292], [-2.1, 0.354], [-2.0, 0.413], [-1.9, 0.473], [-1.8, 0.532], [-1.7, 0.592], [-1.6, 0.651], [-1.5, 0.717], [-1.4, 0.782], [-1.3, 0.849], [-1.2, 0.913], [-1.1, 0.98], [-1.0, 1.058], [-0.9, 1.136], [-0.8, 1.223], [-0.7, 1.307], [-0.6, 1.396], [-0.5, 1.485], [-0.4, 1.574], [-0.3, 1.663], [-0.2, 1.755], [0.0, 1.942], [0.05, 1.98], [0.1, 2.032], [0.2, 2.128], [0.3, 2.223], [0.4, 2.324], [0.47, 2.39]]}
+   }},
+  "sensitivity": {"page": 3, "box": [70, 397, 237.5, 542], "x": [[78.03, 400], [228.51, 700]], "y": [[493.83, 0.0], [444.87, 1.0]], "mask": [], "step": 5, "window": 0.05,
+   "lines": {
+    "v": {"hints": [[400, 0.296], [420, 0.325], [443, 0.39], [466, 0.378], [481, 0.32], [491, 0.252], [498, 0.235], [506, 0.287], [524, 0.422], [549, 0.56], [564, 0.619], [580, 0.669], [590, 0.604], [600, 0.531], [610, 0.493], [618, 0.516], [626, 0.58], [630, 0.575], [636, 0.457], [640, 0.487], [644, 0.528], [649, 0.51], [651, 0.34], [652, 0.05], [656, -0.158], [661, -0.37]]}
+   }}
+ },
+ "meta": {
+  "name": "Fujifilm Neopan 100 Acros II",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 100,
+  "balance": "daylight",
+  "log_h_ref": null,
+  "densitometry": "not stated for the curves (the granularity figure is diffuse)",
+  "process": "Microfine 20 C, 10 min, small round tank (EI 100)",
+  "grain": {
+   "rms": 7
+  },
+  "print_on": null,
+  "document": "163AR0129A",
+  "date": "2019-12",
+  "notes": ["Japanese Product Information Bulletin (Neopan 100 Acros II, 135), 4 pages, scanned drawings. Document number 163AR0129A; date taken from the print code '19.12-FFBX' in the footer of page 4 (no other date printed).", "curves: page 3, section 13 (characteristic curves), Microfine 20 C small round tank with 5, 10, 15 and 20 min. x axis is log H in lux-seconds as printed (-3.0 to 1.0), y is density (0 to 3.0); the sheet does not say which light the curves were exposed with or how density was measured. v is Microfine 10 min: page 2 lists Microfine at 20 C, EI 100 as the first and standard developer with 10 min; the other times are v-microfine-5, -15 and -20.", "curves-d76: the same section also has a second plot for D-76 20 C (4, 7 and 10 min); the sheet's own table gives D-76 EI 100 at 20 C as 7 1/4 min. Because a plot name can be used once per sheet it is stored under the extra plot name 'curves-d76' (lines v-d76-4, v-d76-7, v-d76-10); build.py reads only 'curves'. Its x axis starts at about -3.27, the Microfine curves at about -3.04.", "Below log H about -2.4 the curves of one plot lie on top of each other (D-min plateau about 0.125 for Microfine, 0.145 for D-76); there the bundle centre is traced for all of them and the individual lines are good to about 0.02 D. Curves stop at log H about 0.5-0.6 and are not drawn further; the labels (20分 etc.) sit just above the line ends and were ignored.", "sensitivity: page 3, section 14, daylight (5400 K). The axis has no numbers, only a double arrow marking 1.0 log unit between two grid lines; y is therefore relative, with the lower of the two grid lines taken as 0.0 and the upper as 1.0 (zero point arbitrary). The curve runs from 400 nm to about 662 nm; it ends in a near-vertical drop at about 650 nm, so the last values near 650-660 nm are approximate on the 5 nm grid.", "Grain: diffuse RMS granularity 7, Microfine development, 48 um aperture, density 1.0 above D-min (page 3, section 11). Resolving power 60 lp/mm at contrast 1.6:1 and 200 lp/mm at 1000:1 (Microfine 20 C, section 12). Page 3 also has a development time vs mean gradient plot (section 15), not traced."]
+ }
+}

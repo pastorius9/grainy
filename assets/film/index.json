@@ -1,0 +1,1144 @@
+[
+ {
+  "id": "agfa-vista-plus-200",
+  "name": "AgfaPhoto Vista Plus 200",
+  "maker": "Agfa",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Endura Premier",
+  "grain": null
+ },
+ {
+  "id": "cinestill-50d",
+  "name": "CineStill 50D",
+  "maker": "CineStill",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 50,
+  "print_name": "Kodak Endura Premier",
+  "grain": null
+ },
+ {
+  "id": "cinestill-800t",
+  "name": "CineStill 800T",
+  "maker": "CineStill",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 800,
+  "print_name": "Kodak Endura Premier",
+  "grain": null
+ },
+ {
+  "id": "fuji-fujicolor-100",
+  "name": "Fujicolor 100",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-c200",
+  "name": "Fujicolor C200",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 26.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-natura-1600",
+  "name": "Fujicolor Natura 1600",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 1600,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 28.0,
+   "grain_size": 44.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-pro-160nc",
+  "name": "Fujicolor Pro 160NC",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-pro-160ns",
+  "name": "Fujicolor Pro 160NS",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-pro-400h",
+  "name": "Fujicolor Pro 400H",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-reala-ace",
+  "name": "Fujicolor Reala Ace",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-superia-1600",
+  "name": "Fujicolor Superia 1600",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 1600,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 28.0,
+   "grain_size": 44.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-superia-premium-400",
+  "name": "Fujicolor Superia Premium 400",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-superia-venus-800",
+  "name": "Fujicolor Superia Venus 800",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 800,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 20.0,
+   "grain_size": 38.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-superia-xtra-400",
+  "name": "Fujicolor Superia X-TRA 400",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-200",
+  "name": "Fujifilm 200",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Endura Premier",
+  "grain": null
+ },
+ {
+  "id": "fuji-400",
+  "name": "Fujifilm 400",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": null
+ },
+ {
+  "id": "kodak-ektar-100",
+  "name": "Kodak Ektar 100",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 6.3,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-elite-color-200",
+  "name": "Kodak Elite Color 200",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 12.6,
+   "grain_size": 26.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-elite-color-400",
+  "name": "Kodak Elite Color 400",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 18.9,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-gold-100",
+  "name": "Kodak Gold 100",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 21.6,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-gold-200",
+  "name": "Kodak Gold 200",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 23.4,
+   "grain_size": 26.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-100t",
+  "name": "Kodak Portra 100T",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 13.5,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-160",
+  "name": "Kodak Portra 160",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 9.0,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-160nc",
+  "name": "Kodak Portra 160NC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 12.6,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-160vc",
+  "name": "Kodak Portra 160VC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 14.4,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-400",
+  "name": "Kodak Portra 400",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 17.1,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-400nc",
+  "name": "Kodak Portra 400NC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 19.8,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-400vc",
+  "name": "Kodak Portra 400VC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 21.6,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-portra-800",
+  "name": "Kodak Portra 800",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 800,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 27.0,
+   "grain_size": 38.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-royal-gold-25",
+  "name": "Kodak Royal Gold 25",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 25,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 6.3,
+   "grain_size": 12.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ultra-color-100",
+  "name": "Kodak Ultra Color 100UC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 100,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 11.7,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ultra-color-400",
+  "name": "Kodak Ultra Color 400UC",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 19.8,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-max-800",
+  "name": "Kodak Ultra Max 800",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 800,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 27.0,
+   "grain_size": 38.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ultramax-400",
+  "name": "Kodak UltraMax 400",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "colour-negative",
+  "kind_title": "컬러 네거티브",
+  "iso": 400,
+  "print_name": "Kodak Endura Premier",
+  "grain": {
+   "grain": 25.2,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-astia-100f",
+  "name": "Fujifilm Astia 100F",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 8.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-provia-100f",
+  "name": "Fujifilm Provia 100F",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-provia-400x",
+  "name": "Fujifilm Provia 400X",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 400,
+  "print_name": null,
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 32.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-velvia-50",
+  "name": "Fujifilm Velvia 50",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 50,
+  "print_name": null,
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 14.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-velvia-100",
+  "name": "Fujifilm Velvia 100",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "fuji-velvia-100f",
+  "name": "Fujifilm Velvia 100F",
+  "maker": "Fujifilm",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ektachrome-e100",
+  "name": "Kodak Ektachrome E100",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ektachrome-e100g",
+  "name": "Kodak Ektachrome E100G",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ektachrome-e100gx",
+  "name": "Kodak Ektachrome E100GX",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-ektachrome-e100vs",
+  "name": "Kodak Ektachrome E100VS",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-elite-chrome-100",
+  "name": "Kodak Elite Chrome 100",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-elite-chrome-200",
+  "name": "Kodak Elite Chrome 200",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 200,
+  "print_name": null,
+  "grain": {
+   "grain": 18.0,
+   "grain_size": 26.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-elite-chrome-extra-color-100",
+  "name": "Kodak Elite Chrome Extra Color 100",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": {
+   "grain": 16.0,
+   "grain_size": 20.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-kodachrome-25",
+  "name": "Kodak Kodachrome 25",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 25,
+  "print_name": null,
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 12.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-kodachrome-64",
+  "name": "Kodak Kodachrome 64",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 64,
+  "print_name": null,
+  "grain": {
+   "grain": 14.0,
+   "grain_size": 16.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-kodachrome-200",
+  "name": "Kodak Kodachrome 200",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "colour-slide",
+  "kind_title": "컬러 슬라이드",
+  "iso": 200,
+  "print_name": null,
+  "grain": {
+   "grain": 26.0,
+   "grain_size": 26.0,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "agfa-apx-100",
+  "name": "Agfapan APX 100",
+  "maker": "Agfa",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 20.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "agfa-apx-400",
+  "name": "Agfapan APX 400",
+  "maker": "Agfa",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 22.0,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "foma-fomapan-100",
+  "name": "Foma Fomapan 100 Classic",
+  "maker": "Foma",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 21.0,
+   "grain_size": 20.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "foma-fomapan-200",
+  "name": "Foma Fomapan 200 Creative",
+  "maker": "Foma",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 200,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 22.0,
+   "grain_size": 26.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "foma-fomapan-400",
+  "name": "Foma Fomapan 400 Action",
+  "maker": "Foma",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 29.0,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "fuji-acros-100-ii",
+  "name": "Fujifilm Neopan 100 Acros II",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 8.0,
+   "grain_size": 20.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "fuji-neopan-400",
+  "name": "Fujifilm Neopan 400 Presto",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "fuji-neopan-1600",
+  "name": "Fujifilm Neopan 1600",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 1600,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "fuji-neopan-ss",
+  "name": "Fujifilm Neopan SS",
+  "maker": "Fujifilm",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-delta-100",
+  "name": "Ilford Delta 100",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-delta-400",
+  "name": "Ilford Delta 400",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-delta-3200",
+  "name": "Ilford Delta 3200",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 3200,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-fp4-plus",
+  "name": "Ilford FP4 Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 125,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-hp5-plus",
+  "name": "Ilford HP5 Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-ortho-plus",
+  "name": "Ilford Ortho Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 80,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-pan-f-plus",
+  "name": "Ilford Pan F Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 50,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-sfx-200",
+  "name": "Ilford SFX 200",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 200,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "ilford-xp2-super",
+  "name": "Ilford XP2 Super",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": null
+ },
+ {
+  "id": "kodak-bw400cn",
+  "name": "Kodak BW400CN",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 6.3,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-t400cn",
+  "name": "Kodak T400 CN",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 12.0,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-tmax-100",
+  "name": "Kodak T-MAX 100",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 100,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 10.0,
+   "grain_size": 20.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-tmax-400",
+  "name": "Kodak T-MAX 400",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 14.0,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-tmax-p3200",
+  "name": "Kodak T-MAX P3200",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 800,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 30.0,
+   "grain_size": 38.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-tri-x-320",
+  "name": "Kodak Tri-X 320",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 320,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 26.0,
+   "grain_size": 30.1,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-tri-x-400",
+  "name": "Kodak Tri-X 400",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "bw-negative",
+  "kind_title": "흑백 네거티브",
+  "iso": 400,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 28.0,
+   "grain_size": 32.0,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "fuji-eterna-vivid-160",
+  "name": "Fujicolor Eterna Vivid 160",
+  "maker": "Fujifilm",
+  "kind": "colour-negative",
+  "group": "cine",
+  "kind_title": "컬러 네거티브",
+  "iso": 160,
+  "print_name": "Kodak Vision Color Print 2383",
+  "grain": {
+   "grain": 14.0,
+   "grain_size": 24.1,
+   "grain_roughness": 50.0
+  }
+ },
+ {
+  "id": "kodak-double-x",
+  "name": "Eastman Double-X Negative 5222",
+  "maker": "Kodak",
+  "kind": "bw-negative",
+  "group": "cine",
+  "kind_title": "흑백 네거티브",
+  "iso": 250,
+  "print_name": "Ilford Multigrade RC Deluxe",
+  "grain": {
+   "grain": 22.0,
+   "grain_size": 27.9,
+   "grain_roughness": 60.0
+  }
+ },
+ {
+  "id": "kodak-ektachrome-100d",
+  "name": "Kodak Ektachrome 100D 5294",
+  "maker": "Kodak",
+  "kind": "colour-slide",
+  "group": "cine",
+  "kind_title": "컬러 슬라이드",
+  "iso": 100,
+  "print_name": null,
+  "grain": null
+ },
+ {
+  "id": "kodak-vision3-50d",
+  "name": "Kodak Vision3 50D 5203",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "cine",
+  "kind_title": "컬러 네거티브",
+  "iso": 50,
+  "print_name": "Kodak Vision Color Print 2383",
+  "grain": null
+ },
+ {
+  "id": "kodak-vision3-200t",
+  "name": "Kodak Vision3 200T 5213",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "cine",
+  "kind_title": "컬러 네거티브",
+  "iso": 200,
+  "print_name": "Kodak Vision Color Print 2383",
+  "grain": null
+ },
+ {
+  "id": "kodak-vision3-250d",
+  "name": "Kodak Vision3 250D 5207",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "cine",
+  "kind_title": "컬러 네거티브",
+  "iso": 250,
+  "print_name": "Kodak Vision Color Print 2383",
+  "grain": null
+ },
+ {
+  "id": "kodak-vision3-500t",
+  "name": "Kodak Vision3 500T 5219",
+  "maker": "Kodak",
+  "kind": "colour-negative",
+  "group": "cine",
+  "kind_title": "컬러 네거티브",
+  "iso": 500,
+  "print_name": "Kodak Vision Color Print 2383",
+  "grain": null
+ }
+]

@@ -18,8 +18,9 @@ from threading import Event,Lock
 
 from .commands import EDIT_FIELDS
 
-FIELDS={**EDIT_FIELDS,'negative_density':('필름 농도',-3,3),'negative_range':('필름 대비',3,10)}   # app.py negative sliders
-NUMERIC=[k for k in FIELDS if k!='monochrome']
+FIELDS={**EDIT_FIELDS,'negative_density':('필름 농도',-3,3),'negative_range':('필름 대비',3,10),   # app.py negative sliders
+        'film_strength':('필름 강도',0,100),'film_look':('필름',0,0)}                                  # film_look: a stock's name
+NUMERIC=[k for k in FIELDS if k not in ('monochrome','film_look')]
 NEGATIVE_ONLY=('negative_density','negative_range')
 MAX_TARGETS=500
 MAX_ID=2**53-1
@@ -61,6 +62,12 @@ def parse_changes(set_values=None,add_values=None):
                 if operation!='set':raise ServiceError('monochrome can only be set (true or false)')
                 if not isinstance(value,bool):raise ServiceError('monochrome must be true or false')
                 changes[key]=value
+            elif key=='film_look':
+                if operation!='set' or not isinstance(value,str):raise ServiceError('film_look can only be set, to a film name')
+                from . import film_look
+                found,close=film_look.find(value)
+                if found is None:raise ServiceError(f'no film named {value!r}'+(f'; close: {", ".join(close)}' if close else ''))
+                changes[key]=found
             else:
                 if not _number(value):raise ServiceError(f'{key} must be a number')
                 if operation=='set' and not low<=value<=high:raise ServiceError(f'{key} must be between {low} and {high}')
@@ -83,8 +90,12 @@ def edited(settings,changes,operations,info,ident):
     if any(key in changes for key in NEGATIVE_ONLY) and not settings.get('negative'):
         raise ServiceError(f'photo {ident} is not an inverted negative; negative_density and negative_range apply only after invert_negatives')
     result=deepcopy(settings);previous_angle=float(result.get('straighten') or 0)
+    if 'film_look' in changes:
+        from .film_look import with_film
+        result=with_film(result,changes['film_look'],explicit=set(changes))
     for key,value in changes.items():
         if key=='monochrome':result[key]=bool(value);continue
+        if key=='film_look':continue
         _,low,high=FIELDS[key]
         if operations.get(key)=='add':value=max(low,min(high,float(result.get(key) or 0)+value))
         result[key]=float(value)
@@ -216,6 +227,7 @@ GROUPS={
             'camera_matrix','lensfun','lensfun_enabled','lensfun_distortion','lensfun_tca','lensfun_vignette','lensfun_scale'),
     'negative':('negative','negative_base','negative_peak'),
     'photo_filter':('photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity'),
+    'film':('film_look','film_strength'),
 }
 COUNTED=('masks','retouch')
 IGNORED=('tone_version','detail_version','video_color','video_time','hdr','hdr_limit','hdr_brightness',

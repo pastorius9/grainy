@@ -1,0 +1,421 @@
+{
+ "id": "ilford-xp2-super",
+ "dpi": 400,
+ "plots": {
+  "curves": {
+   "page": 3,
+   "box": [
+    61.8,
+    94.5,
+    242.6,
+    214.0
+   ],
+   "x": [
+    [
+     101.61,
+     1.0
+    ],
+    [
+     142.11,
+     2.0
+    ],
+    [
+     183.33,
+     3.0
+    ],
+    [
+     224.55,
+     4.0
+    ]
+   ],
+   "y": [
+    [
+     215.37,
+     0.0
+    ],
+    [
+     174.87,
+     1.0
+    ],
+    [
+     134.19,
+     2.0
+    ]
+   ],
+   "mask": [],
+   "step": 0.05,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       0.173,
+       0.269
+      ],
+      [
+       0.336,
+       0.269
+      ],
+      [
+       0.52,
+       0.269
+      ],
+      [
+       0.683,
+       0.269
+      ],
+      [
+       0.845,
+       0.289
+      ],
+      [
+       1.029,
+       0.307
+      ],
+      [
+       1.192,
+       0.362
+      ],
+      [
+       1.354,
+       0.426
+      ],
+      [
+       1.539,
+       0.54
+      ],
+      [
+       1.701,
+       0.668
+      ],
+      [
+       1.863,
+       0.797
+      ],
+      [
+       2.048,
+       0.925
+      ],
+      [
+       2.21,
+       1.047
+      ],
+      [
+       2.373,
+       1.158
+      ],
+      [
+       2.561,
+       1.278
+      ],
+      [
+       2.719,
+       1.38
+      ],
+      [
+       2.882,
+       1.46
+      ],
+      [
+       3.071,
+       1.546
+      ],
+      [
+       3.229,
+       1.602
+      ],
+      [
+       3.391,
+       1.657
+      ],
+      [
+       3.584,
+       1.73
+      ],
+      [
+       3.742,
+       1.786
+      ],
+      [
+       3.905,
+       1.823
+      ],
+      [
+       4.093,
+       1.861
+      ],
+      [
+       4.252,
+       1.879
+      ],
+      [
+       4.414,
+       1.899
+      ]
+     ]
+    }
+   }
+  },
+  "sensitivity": {
+   "page": 2,
+   "box": [
+    61.5,
+    192.0,
+    254.4,
+    271.3
+   ],
+   "x": [
+    [
+     88.74,
+     400
+    ],
+    [
+     116.19,
+     450
+    ],
+    [
+     144.18,
+     500
+    ],
+    [
+     171.63,
+     550
+    ],
+    [
+     199.17,
+     600
+    ],
+    [
+     227.16,
+     650
+    ]
+   ],
+   "y": [
+    [
+     217.62,
+     1.0
+    ],
+    [
+     245.07,
+     0.5
+    ]
+   ],
+   "mask": [],
+   "step": 5,
+   "window": 0.05,
+   "strict": true,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       353.297,
+       0.033
+      ],
+      [
+       360.127,
+       0.115
+      ],
+      [
+       366.958,
+       0.226
+      ],
+      [
+       373.463,
+       0.333
+      ],
+      [
+       380.293,
+       0.436
+      ],
+      [
+       387.123,
+       0.534
+      ],
+      [
+       393.953,
+       0.623
+      ],
+      [
+       400.458,
+       0.679
+      ],
+      [
+       407.288,
+       0.718
+      ],
+      [
+       414.118,
+       0.746
+      ],
+      [
+       420.948,
+       0.767
+      ],
+      [
+       427.453,
+       0.784
+      ],
+      [
+       434.283,
+       0.798
+      ],
+      [
+       441.114,
+       0.81
+      ],
+      [
+       447.944,
+       0.816
+      ],
+      [
+       454.449,
+       0.823
+      ],
+      [
+       461.279,
+       0.825
+      ],
+      [
+       468.109,
+       0.825
+      ],
+      [
+       474.939,
+       0.82
+      ],
+      [
+       481.444,
+       0.813
+      ],
+      [
+       488.274,
+       0.802
+      ],
+      [
+       495.104,
+       0.787
+      ],
+      [
+       501.935,
+       0.78
+      ],
+      [
+       508.44,
+       0.787
+      ],
+      [
+       515.27,
+       0.803
+      ],
+      [
+       522.1,
+       0.828
+      ],
+      [
+       528.93,
+       0.854
+      ],
+      [
+       535.435,
+       0.88
+      ],
+      [
+       542.265,
+       0.907
+      ],
+      [
+       549.095,
+       0.931
+      ],
+      [
+       555.925,
+       0.956
+      ],
+      [
+       562.43,
+       0.97
+      ],
+      [
+       569.261,
+       0.977
+      ],
+      [
+       576.091,
+       0.98
+      ],
+      [
+       582.921,
+       0.97
+      ],
+      [
+       589.426,
+       0.946
+      ],
+      [
+       596.256,
+       0.921
+      ],
+      [
+       603.086,
+       0.91
+      ],
+      [
+       609.916,
+       0.908
+      ],
+      [
+       616.421,
+       0.918
+      ],
+      [
+       623.251,
+       0.934
+      ],
+      [
+       630.082,
+       0.913
+      ],
+      [
+       636.912,
+       0.69
+      ],
+      [
+       643.417,
+       0.428
+      ],
+      [
+       650.247,
+       0.18
+      ],
+      [
+       657.077,
+       0.034
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "meta": {
+  "name": "Ilford XP2 Super",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 400,
+  "balance": "daylight",
+  "log_h_ref": null,
+  "densitometry": null,
+  "process": "C-41",
+  "grain": null,
+  "print_on": null,
+  "document": null,
+  "date": "2018-11",
+  "notes": [
+   "Chromogenic black-and-white film (the image is dye, formed in C-41 colour negative chemistry); the curve is a single neutral density, kind 'bw-negative' with process C-41 as instructed. Characteristic curve is on page 3: 'processed through standard C41 type chemicals', representative of 35mm and roll film.",
+   "Characteristic curve: x axis is RELATIVE log exposure (frame 0 to 4.5, no absolute lux-seconds, no Log H Ref), y is density, frame bottom = 0 (gridlines every 0.5, labelled 1.0 and 2.0). Densitometry type is not stated; balance 'daylight' is the light of the ISO 400/27 speed rating ('to daylight', measured with standard C41 processing). Traced as v; base+fog about 0.27 as read, curve starts at relative log exposure about 0.17 and ends at about 4.45 with density about 1.9 and a shoulder (the lowest top density of the Ilford sheets, the sheet's very wide latitude).",
+   "This sheet is a lower-resolution scan than the other Ilford sheets (soft lines, light jpeg noise), so values are good to about 0.02 density.",
+   "Spectral sensitivity (page 2): 'Wedge spectrogram to tungsten light (2856K)' drawn as a line curve on a 'Sensitivity' axis with ticks 0.5 and 1.0 only (frame bottom = 0 on that scale); traced as sensitivity/v with the numbers as printed (relative; linear or log not stated). The curve runs about 353-657 nm and is essentially the HP5 Plus / FP4-type panchromatic shape.",
+   "The sheet says XP2 can be exposed from EI 50 to 800 with the same processing; the curve is for a single, unstated exposure index. No document code (footer 'Page n of 5, Nov 2018'), no granularity figure."
+  ],
+  "sensitivity_light": "2856K"
+ }
+}

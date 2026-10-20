@@ -1,2 +1,2 @@
 """Grainy — a local, non-destructive photo editor."""
-__version__ = "0.5.97"
+__version__ = "0.5.98"

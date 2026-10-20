@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.98 — 82 film looks
+
+- **A Film panel in Develop.** Choose from 82 films — Kodak Portra, Ektar, Gold, Kodachrome, Ektachrome, Tri-X, T-MAX and Vision3, Fujifilm Velvia, Provia, Astia, Superia, Pro 400H and Acros, Ilford HP5, FP4 and Delta, Fomapan, Agfa and more.
+- Each look is computed from its maker's published technical data (spectral sensitivity, characteristic curves, dye densities): negatives are printed on the paper they were made for, slides are viewed as they are. Film amount blends it with your photo, and the film's grain goes into Effects › Grain.
+- AI programs can choose a film by name in apply_edits (film_look).
+
 ## 0.5.97 — Let an AI program work in Grainy (MCP)
 
 - **AI programs such as Claude Code, Codex, Gemini CLI and Claude Desktop can use Grainy's own tools.** Register Grainy's MCP once with one command, then just ask, e.g. "convert this roll as one roll of negatives, run Auto colour and export it". The commands are under Settings › AI Connection (MCP)… and on pastorius9.github.io/grainy.

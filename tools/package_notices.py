@@ -22,6 +22,7 @@ index = ['Grainy third-party runtime notices', '',
          'Lensfun (LGPL-3.0), lens database (CC BY-SA 3.0), lensfunpy (MIT): see Lensfun/.',
          f'Lensfun {"libraries in Contents/Frameworks/lensfunpy" if MAC else "DLLs in _internal/lensfunpy"} may be replaced with ABI-compatible builds.',
          'LittleCMS 2.19.0 native transform library (MIT): see LittleCMS/.',
+         'Film looks: CIE colorimetric data (CC BY-SA 4.0), film datasheet sources and trademarks: see Film/.',
          'Pinned source: https://github.com/mm2/Little-CMS/tree/lcms2.19',
          'See each distribution directory for its bundled dependency notices.', '']
 for name in names:
@@ -44,6 +45,7 @@ if python_license:
     shutil.copy2(python_license, destination / 'Python-LICENSE.txt')
 shutil.copytree(ROOT/'assets'/'licenses'/'Lensfun',destination/'Lensfun',dirs_exist_ok=True)
 shutil.copytree(ROOT/'assets'/'licenses'/'Color',destination/'Color',dirs_exist_ok=True)
+shutil.copytree(ROOT/'assets'/'licenses'/'Film',destination/'Film',dirs_exist_ok=True)
 native_notice=destination/'LittleCMS';native_notice.mkdir(exist_ok=True)
 for name in ('LICENSE','SOURCE.json'):
     shutil.copy2(ROOT/'vendor/lcms2-2.19'/name,native_notice/name)

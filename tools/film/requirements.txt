@@ -1,0 +1,5 @@
+# Only for reading datasheets again (tools/film/digitize.py) and rebuilding colorimetry.json; the app does not use them.
+pdfplumber==0.11.10
+pdfminer.six==20260107
+pypdfium2==5.14.0
+scipy==1.18.1

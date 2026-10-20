@@ -1,0 +1,21 @@
+Grainy film looks (assets/film)
+
+CIE data
+assets/film/colorimetry.json holds, resampled to 380-780 nm in 5 nm steps:
+- CIE 1931 colour-matching functions, 2 degree observer. CIE (2019). DOI 10.25039/CIE.DS.xvudnb9b
+- Components of the relative spectral distribution of daylight. CIE (2022). DOI 10.25039/CIE.DS.w7zunnny
+Both are published by the International Commission on Illumination (CIE) under the Creative Commons
+Attribution-ShareAlike 4.0 International licence: https://creativecommons.org/licenses/by-sa/4.0/
+The file also holds three reflectance spectra computed from them (tools/film/colorimetry.py); the file as a whole
+is offered under the same licence.
+
+Film and paper data
+assets/film/stocks and assets/film/papers hold numbers read from the makers' published technical data sheets:
+spectral sensitivities, characteristic curves and dye spectral densities. Each file names its source document,
+its address and the checksum of the copy that was read. The looks computed from them are simulations: real film
+also depends on its age, development, printing and scanning.
+
+Trademarks
+Film and paper names are trademarks of their owners, among them Eastman Kodak Company, Kodak Alaris,
+FUJIFILM Corporation, Harman Technology Limited (Ilford), FOMA BOHEMIA, Agfa-Gevaert and CineStill.
+Grainy is an independent project and is not made, sponsored or endorsed by, or affiliated with, any of them.

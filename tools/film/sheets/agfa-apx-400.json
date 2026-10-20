@@ -1,0 +1,30 @@
+{"id": "agfa-apx-400", "dpi": 400,
+ "plots": {
+  "curves": {"page": 2, "box": [66.5, 524.4, 273.9, 628.4], "x": [[65.97, -4.0], [100.35, -3.0], [135.09, -2.0], [169.92, -1.0], [204.75, 0.0], [239.49, 1.0], [274.41, 2.0]], "y": [[629.01, 0.0], [594.09, 1.0], [558.99, 2.0], [523.8, 3.0]], "mask": [], "step": 0.05, "window": 0.05, "strict": true,
+   "lines": {
+    "v": {"hints_pt": [[66.79, 623.64], [70.44, 623.64], [74.77, 623.66], [79.52, 623.66], [84.42, 623.62], [89.21, 623.52], [93.63, 623.33], [97.4, 623.03], [100.27, 622.6], [105.92, 621.22], [110.97, 619.7], [115.55, 618.03], [119.77, 616.22], [123.78, 614.28], [127.7, 612.21], [131.65, 610.01], [135.77, 607.69], [141.51, 604.35], [147.3, 600.78], [152.9, 597.17], [158.11, 593.72], [162.68, 590.6], [166.4, 588.02], [169.03, 586.15], [176.73, 580.56], [182.26, 576.57], [187.07, 573.12], [191.31, 570.12], [195.09, 567.47], [198.54, 565.07], [201.8, 562.83], [205.0, 560.64], [210.52, 556.9], [215.89, 553.39], [221.02, 550.15], [225.8, 547.25], [230.15, 544.73], [233.96, 542.65], [237.14, 541.06], [239.6, 540.01], [241.91, 539.07], [244.72, 537.85], [248.06, 536.42], [251.98, 534.86], [256.51, 533.26], [261.7, 531.69], [267.58, 530.23], [274.2, 528.96]]}
+   }},
+  "sensitivity": {"page": 2, "box": [66, 93.7, 274.4, 262.3], "x": [[85.23, 400], [141.75, 500], [198.27, 600], [254.88, 700]], "y": [[93.15, 2.0], [149.76, 1.0], [206.37, 0.0], [262.89, -1.0]], "mask": [], "step": 5, "window": 0.05, "strict": true,
+   "lines": {
+    "v": {"hints_pt": [[73.95, 111.43], [76.25, 113.17], [78.48, 115.3], [80.66, 117.78], [82.85, 120.57], [85.08, 123.62], [87.4, 126.9], [89.84, 130.36], [92.45, 133.95], [94.03, 136.17], [95.56, 138.43], [97.18, 140.7], [99.03, 143.0], [101.24, 145.32], [103.94, 147.66], [107.26, 150.01], [111.35, 152.37], [114.07, 153.9], [116.74, 155.52], [119.33, 157.13], [121.82, 158.66], [124.18, 160.0], [126.38, 161.07], [128.4, 161.78], [134.19, 161.28], [138.41, 159.29], [142.88, 156.48], [147.59, 153.26], [152.53, 150.05], [157.71, 147.25], [163.12, 145.27], [168.76, 144.54], [174.01, 144.77], [178.36, 145.35], [181.98, 146.19], [185.06, 147.18], [187.79, 148.26], [190.35, 149.31], [192.93, 150.26], [195.71, 151.01], [198.26, 151.36], [200.38, 151.42], [203.78, 151.69], [206.78, 153.97], [208.4, 156.53], [210.26, 160.38], [213.05, 167.25], [215.63, 174.47], [217.94, 181.7], [219.96, 188.6], [221.65, 194.82], [222.98, 200.02], [223.92, 203.86], [224.41, 205.99], [225.26, 210.4], [226.46, 217.28], [227.89, 225.77], [229.47, 235.02], [231.08, 244.18], [232.63, 252.39], [234.01, 258.79], [235.12, 262.55]]}
+   }}
+ },
+ "meta": {
+  "name": "Agfapan APX 400 Professional",
+  "maker": "Agfa",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 400,
+  "balance": null,
+  "log_h_ref": null,
+  "densitometry": "not stated",
+  "process": "not stated for the density curve; the sheet's first-listed developer is REFINAL 6 min at 20 C small tank (ISO 400/27 with it)",
+  "grain": {
+   "rms": 14.0
+  },
+  "print_on": null,
+  "document": "170 72 13",
+  "date": "1995-08",
+  "notes": ["Agfa-Gevaert technical data sheet (Datenblatt, 2 pages, vector: page 1 cover with speed, granularity, resolving power and reciprocity table; page 2 plots and tables), status 08/1995, 1st edition.", "curves: page 2, 'Dichtekurve; Density curve', a single curve. x axis is Ig Exposure (Lx.s), absolute lux-seconds as printed (-4.0 to +2.0); y is density (0 to 3.0). The sheet does not name the developer, time or exposure light of this curve, nor the densitometry; the development tables on the same page list REFINAL first (6 min at 20 C small tank). The curve runs the full width of the plot, -4.0 to +2.0.", "v: base plus fog about 0.16 at the left edge (the sheet gives no D-min value); the curve ends at +2.0 with D about 2.85.", "Speed ISO 400/27 deg on page 1; page 2 gives the exposure index per developer (small tank, 20 C): REFINAL 6 min ISO 400/27, RODINAL 1+25 7 min ISO 320/26, RODINAL 1+50 11 min ISO 320/26, RODINAL SPECIAL and STUDIONAL LIQUID 4 1/2 min ISO 400/27.", "sensitivity: page 2, 'Spektrale Empfindlichkeit', a plotted curve of Ig Sensitivity (numbers -1.0 to 2.0 printed) against wavelength (nm); the exposure light and the density it refers to are not stated. The curve runs from about 380 nm to about 665 nm, where it reaches the bottom of the plot (-1.0) in a steep fall.", "Grain: RMS (x 1000) 14.0 (REFINAL, 6 min, 20 C); aperture and density not stated. Resolving power 110 lines/mm at contrast 1000:1. The document number 170 72 13 is printed rotated at the right edge of page 2. This sheet has a characteristic curve (density curve), so nothing is missing.", "The sheet prints gamma-time curves, a sharpness (transfer factor) curve, a reciprocity table and development tables, not traced."]
+ }
+}

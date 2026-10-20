@@ -37,7 +37,7 @@ class StudioTools:
         self.overlay_paused=False                   # the mask overlay steps aside while the mask's sliders move
         self.healing_strokes=[];self.healing_context=None
         self.healing_mask=None;self.healing_overlay_key=None;self.healing_generation=0
-        self.build_color();self.build_detail();self.build_masks();self.build_retouch()
+        self.build_film();self.build_color();self.build_detail();self.build_masks();self.build_retouch()
         self.w.view.strokeCompleted.connect(self.stroke)
         self.w.view.strokeProgress.connect(self.preview_stroke)
         self.w.view.strokeCancelled.connect(self.cancel_stroke)
@@ -69,6 +69,53 @@ class StudioTools:
         if self.loading:return
         values=deepcopy(self.w.settings[key]);values[index][column]=value
         self.w.set_setting(key,values)
+
+    def build_film(self):
+        """Film panel: a stock (luma/film_look.py), how much of it, and what it is."""
+        from .film_look import catalog,KINDS
+        box=self.w.panel_box('film')
+        self.film_choice=QComboBox();self.film_choice.setAccessibleName(tr('필름'));self.film_choice.setMaxVisibleItems(28)
+        self.film_choice.addItem(tr('필름 없음'),'')
+        model=self.film_choice.model()
+        for kind,title in KINDS:
+            entries=[e for e in catalog() if e['group']==kind]
+            if not entries:continue
+            self.film_choice.insertSeparator(self.film_choice.count())
+            self.film_choice.addItem(tr(title),None);model.item(self.film_choice.count()-1).setEnabled(False)
+            for e in entries:self.film_choice.addItem(e['name'],e['id'])
+        box.addWidget(self.film_choice)
+        self.scalar(box,'film_strength',tr('필름 강도'),0,100)
+        self.film_note=label(box,'')
+        self.film_choice.currentIndexChanged.connect(lambda _:self.change_film(self.film_choice.currentData()))
+
+    def change_film(self,name):
+        if self.loading or self.w.source is None or name is None:return
+        from .film_look import grain_settings
+        old=self.w.settings.get('film_look','')
+        if name==old:return
+        self.w.commit();self.w.set_setting('film_look',name)
+        # The stock's grain goes into Effects › Grain, where it stays editable; it leaves with the film unless changed.
+        before=grain_settings(old)
+        if before and all(abs(float(self.w.settings[k])-v)<1e-6 for k,v in before.items()):
+            for k in before:self.w.set_setting(k,defaults()[k])
+        for k,v in (grain_settings(name) or {}).items():self.w.set_setting(k,v)
+        self.w.commit('필름');self.w.load_controls();self.w.render()
+
+    def load_film(self,s):
+        from .film_look import entry
+        index=self.film_choice.findData(s['film_look'] or '')
+        self.film_choice.setCurrentIndex(max(0,index))
+        e=entry(s['film_look'])
+        self.w.adjustments['film_strength'].setEnabled(e is not None)
+        if e is None and s['film_look']:
+            self.film_note.setText(tr('이 버전에 없는 필름입니다: {0}',s['film_look']))
+        elif e is None:
+            self.film_note.setText(tr('필름을 고르면 그 필름 제조사가 공개한 기술 자료의 곡선으로 계산한 색과 톤이 적용됩니다.'))
+        else:
+            parts=[tr(e['kind_title'])]
+            if e.get('iso'):parts.append(f"ISO {e['iso']}")
+            if e.get('print_name'):parts.append(tr('{0}에 인화',e['print_name']))
+            self.film_note.setText(' · '.join(parts)+'\n'+tr('제조사 기술 자료로 계산한 느낌입니다. 실제 필름 색은 현상·인화·스캔에 따라 달라집니다.'))
 
     def build_color(self):
         self.w.tab_page(tr('색상'));box=self.w.panel_box('photo_filter')
@@ -1358,6 +1405,7 @@ class StudioTools:
         self.photo_filter_luminosity.setChecked(s['photo_filter_luminosity'])
         self.w.adjustments['photo_filter_density'].setEnabled(s['photo_filter_enabled'])
         self.photo_filter_luminosity.setEnabled(s['photo_filter_enabled'])
+        self.load_film(s)
         if self.photo_id!=self.w.current_id:
             self.photo_id=self.w.current_id;self.donor=None;self.guide_points=[];self.layer_index=0;self.component_index=-1
             self.fresh_layer=None

@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QToolButton,QScrol
 from .i18n import tr
 
 PANELS=(('crop','크롭'),('healing','복구'),('masks','마스크'),
-        ('basic','기본'),('curve','톤 곡선'),('mixer','색상 혼합'),('grading','컬러 그레이딩'),
+        ('basic','기본'),('film','필름'),('curve','톤 곡선'),('mixer','색상 혼합'),('grading','컬러 그레이딩'),
         ('detail','디테일'),('lens','렌즈 교정'),('transform','변형'),('effects','효과'),
         ('photo_filter','컬러 필터'),('calibration','카메라 보정'),('metadata','사진 정보·관리'))
 ROUTES=('basic','crop','metadata','mixer','detail','masks','healing')

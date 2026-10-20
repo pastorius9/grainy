@@ -15,7 +15,7 @@ def test_panel_order_solo_mode_and_navigation_do_not_edit_photo(window):
     w=window;p=w.tabs;before=deepcopy(w.settings);history=len(w.catalog.histories(w.current_id))
     assert not isinstance(p,QTabWidget)
     assert [key for key in p.sections if key not in ('crop','healing','masks')]==[
-        'basic','curve','mixer','grading','detail','lens','transform','effects','photo_filter','calibration','metadata']
+        'basic','film','curve','mixer','grading','detail','lens','transform','effects','photo_filter','calibration','metadata']
     assert p.is_open('basic')
     QTest.mouseClick(p.sections['curve'].header,Qt.MouseButton.LeftButton)
     assert p.is_open('curve') and not p.is_open('basic')
@@ -33,13 +33,13 @@ def test_related_controls_grouped_once_and_advanced_controls_reachable(window):
     w=window;s=w.studio;p=w.tabs
     expected={'exposure':'basic','negative_density':'basic','negative_range':'basic','temperature':'basic','texture':'basic','clarity':'basic','dehaze':'basic',
               'sharpen':'detail','noise_luma':'detail','distortion':'lens','perspective_v':'transform',
-              'vignette':'effects','grain':'effects','photo_filter_density':'photo_filter','grading_balance':'grading',
+              'vignette':'effects','grain':'effects','photo_filter_density':'photo_filter','film_strength':'film','grading_balance':'grading',
               'vignette_midpoint':'effects','vignette_highlights':'effects','grain_size':'effects','grain_roughness':'effects'}
     assert all(owner(w.adjustments[key])==panel for key,panel in expected.items())
     assert owner(w.curve)=='curve' and owner(s.channel_curve)=='curve'
     assert owner(s.points)=='mixer' and owner(s.working)=='calibration'
     assert owner(w.keywords)=='metadata' and owner(w.auto_level_button)=='crop'
-    assert len(w.adjustments)==53 and all(owner(c) for c in w.adjustments.values())
+    assert len(w.adjustments)==54 and all(owner(c) for c in w.adjustments.values())
     assert not s.raw_mode.isVisible() and not w.adjustments['raw_kelvin'].isVisible()
     p.currentWidget().ensureWidgetVisible(w.adjustments['distortion']);QApplication.processEvents()
     assert p.is_open('lens') and w.adjustments['distortion'].isVisible()

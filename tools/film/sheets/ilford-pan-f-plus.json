@@ -1,0 +1,436 @@
+{
+ "id": "ilford-pan-f-plus",
+ "dpi": 400,
+ "plots": {
+  "curves": {
+   "page": 4,
+   "box": [
+    60.8,
+    579.7,
+    250.0,
+    706.8
+   ],
+   "x": [
+    [
+     101.88,
+     1.0
+    ],
+    [
+     144.36,
+     2.0
+    ],
+    [
+     187.38,
+     3.0
+    ],
+    [
+     229.95,
+     4.0
+    ]
+   ],
+   "y": [
+    [
+     708.12,
+     0.0
+    ],
+    [
+     664.56,
+     1.0
+    ],
+    [
+     621.18,
+     2.0
+    ]
+   ],
+   "mask": [],
+   "step": 0.05,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       0.041,
+       0.066
+      ],
+      [
+       0.193,
+       0.066
+      ],
+      [
+       0.344,
+       0.066
+      ],
+      [
+       0.517,
+       0.066
+      ],
+      [
+       0.669,
+       0.066
+      ],
+      [
+       0.821,
+       0.066
+      ],
+      [
+       0.972,
+       0.066
+      ],
+      [
+       1.145,
+       0.066
+      ],
+      [
+       1.297,
+       0.066
+      ],
+      [
+       1.448,
+       0.07
+      ],
+      [
+       1.621,
+       0.086
+      ],
+      [
+       1.773,
+       0.113
+      ],
+      [
+       1.924,
+       0.159
+      ],
+      [
+       2.097,
+       0.231
+      ],
+      [
+       2.253,
+       0.318
+      ],
+      [
+       2.405,
+       0.409
+      ],
+      [
+       2.577,
+       0.536
+      ],
+      [
+       2.729,
+       0.639
+      ],
+      [
+       2.881,
+       0.755
+      ],
+      [
+       3.054,
+       0.892
+      ],
+      [
+       3.205,
+       1.026
+      ],
+      [
+       3.357,
+       1.15
+      ],
+      [
+       3.53,
+       1.302
+      ],
+      [
+       3.681,
+       1.432
+      ],
+      [
+       3.833,
+       1.565
+      ],
+      [
+       3.985,
+       1.691
+      ],
+      [
+       4.153,
+       1.819
+      ],
+      [
+       4.305,
+       1.912
+      ]
+     ]
+    }
+   }
+  },
+  "sensitivity": {
+   "page": 1,
+   "box": [
+    56.8,
+    651.8,
+    226.0,
+    722.4
+   ],
+   "x": [
+    [
+     80.37,
+     400
+    ],
+    [
+     105.12,
+     450
+    ],
+    [
+     129.87,
+     500
+    ],
+    [
+     154.44,
+     550
+    ],
+    [
+     179.1,
+     600
+    ],
+    [
+     203.76,
+     650
+    ]
+   ],
+   "y": [
+    [
+     675.36,
+     1.0
+    ],
+    [
+     699.12,
+     0.5
+    ]
+   ],
+   "mask": [],
+   "step": 5,
+   "window": 0.05,
+   "strict": true,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       376.704,
+       0.025
+      ],
+      [
+       382.541,
+       0.119
+      ],
+      [
+       388.378,
+       0.223
+      ],
+      [
+       394.215,
+       0.292
+      ],
+      [
+       400.052,
+       0.377
+      ],
+      [
+       405.889,
+       0.491
+      ],
+      [
+       411.726,
+       0.604
+      ],
+      [
+       417.563,
+       0.676
+      ],
+      [
+       423.4,
+       0.725
+      ],
+      [
+       429.237,
+       0.767
+      ],
+      [
+       435.074,
+       0.807
+      ],
+      [
+       440.911,
+       0.814
+      ],
+      [
+       446.748,
+       0.763
+      ],
+      [
+       452.585,
+       0.741
+      ],
+      [
+       458.422,
+       0.765
+      ],
+      [
+       464.259,
+       0.805
+      ],
+      [
+       470.096,
+       0.828
+      ],
+      [
+       475.933,
+       0.803
+      ],
+      [
+       481.77,
+       0.727
+      ],
+      [
+       487.607,
+       0.676
+      ],
+      [
+       493.444,
+       0.653
+      ],
+      [
+       499.281,
+       0.652
+      ],
+      [
+       505.118,
+       0.672
+      ],
+      [
+       510.955,
+       0.723
+      ],
+      [
+       516.427,
+       0.78
+      ],
+      [
+       522.264,
+       0.82
+      ],
+      [
+       528.101,
+       0.822
+      ],
+      [
+       533.938,
+       0.816
+      ],
+      [
+       539.775,
+       0.816
+      ],
+      [
+       545.612,
+       0.828
+      ],
+      [
+       551.449,
+       0.85
+      ],
+      [
+       557.286,
+       0.867
+      ],
+      [
+       563.123,
+       0.881
+      ],
+      [
+       568.96,
+       0.888
+      ],
+      [
+       574.797,
+       0.898
+      ],
+      [
+       580.634,
+       0.907
+      ],
+      [
+       586.471,
+       0.92
+      ],
+      [
+       592.308,
+       0.945
+      ],
+      [
+       598.145,
+       0.936
+      ],
+      [
+       603.982,
+       0.89
+      ],
+      [
+       609.819,
+       0.816
+      ],
+      [
+       615.655,
+       0.72
+      ],
+      [
+       621.492,
+       0.725
+      ],
+      [
+       627.329,
+       0.737
+      ],
+      [
+       633.166,
+       0.705
+      ],
+      [
+       639.003,
+       0.583
+      ],
+      [
+       644.84,
+       0.354
+      ],
+      [
+       650.677,
+       0.1
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "meta": {
+  "name": "Ilford Pan F Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 50,
+  "balance": "daylight",
+  "log_h_ref": null,
+  "densitometry": null,
+  "process": "Ilfotec HC (1+31), 4 min at 20C, intermittent agitation",
+  "grain": null,
+  "print_on": null,
+  "document": "B26",
+  "date": null,
+  "notes": [
+   "Characteristic curve is on page 4. x axis is RELATIVE log exposure (frame 0 to 4.5, no absolute lux-seconds, no Log H Ref), y is density, frame bottom = 0 (gridlines every 0.5, labelled 1.0 and 2.0). Densitometry type is not stated; balance 'daylight' is the light of the ISO 50/18 speed rating ('to daylight'; the ISO speed itself was measured in ID-11 at 20C).",
+   "One curve only: roll film in ILFORD ILFOTEC HC (1+31), 4 min at 20C, intermittent agitation, representative of 35mm too. Traced as v; base+fog about 0.07 as read (the lowest of the Ilford sheets), the toe is flat to relative log exposure about 1.4, the curve ends at about 4.3 with density about 1.9, still rising.",
+   "Spectral sensitivity: 'Wedge spectrogram to tungsten light (2850K)' drawn as a line curve on a 'Sensitivity' axis with ticks 0.5 and 1.0 only (frame bottom is about 0 here); traced as sensitivity/v with numbers as printed, relative, linear or log not stated. The curve runs about 372-651 nm and falls almost vertically at the red end; the last grid point (655 nm) lies beyond the curve and only repeats the end value. It has several small peaks (about 440, 470, 600 nm) unlike the smoother HP5/Delta curves.",
+   "'B26' is printed at the bottom right of every page where other sheets print a date ('Page n of 6 B26'); it is taken as the document code, no revision date is printed. No granularity figure."
+  ],
+  "sensitivity_light": "2850K"
+ }
+}

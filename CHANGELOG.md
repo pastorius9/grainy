@@ -1,5 +1,15 @@
 # Grainy 변경 기록
 
+## 0.5.98 — 필름 룩 82종
+
+- **현상 화면에 '필름' 패널이 생겼습니다.** 코닥 포트라·엑타·골드·코다크롬·엑타크롬·트라이엑스·T-MAX·비전3, 후지 벨비아·프로비아·아스티아·수페리아·프로 400H·아크로스, 일포드 HP5·FP4·델타, 포마팬, 아그파 등 82가지 필름(컬러 네거티브 34, 슬라이드 16, 흑백 25, 영화용 7)을 고를 수 있습니다.
+  - 각 필름 제조사가 공개한 기술 자료의 분광 감도, 특성 곡선, 염료 분광 농도를 읽어서, 필름이 빛을 받아 현상되고 인화되는 과정을 계산합니다. 네거티브는 그 필름용 인화지(컬러는 Kodak Endura Premier, 영화용은 Kodak Vision 2383, 흑백은 Ilford Multigrade)에 인화한 결과이고, 슬라이드는 필름 그대로 본 결과입니다. 다른 프로그램의 결과에 맞춘 값은 없습니다.
+  - **필름 강도** 슬라이더로 원래 사진과 섞을 수 있고, 필름을 고르면 그 필름의 입자 굵기에 맞춘 그레인이 효과 › 그레인에 들어갑니다(필름을 끄면 함께 빠집니다).
+  - CineStill 800T·50D는 제조사 자료가 없어, 알려진 대로 Kodak Vision3 500T·50D 자료로 만들고 하이라이트 주변의 붉은 번짐(헐레이션)을 더했습니다. 번짐의 크기와 세기는 Grainy가 정한 값입니다.
+  - 필름을 쓰는 동안 이 계산은 그래픽카드가 아니라 CPU로 합니다(미리보기 약 0.2초, 2400만 화소 내보내기 약 3초).
+- **AI 연결**: apply_edits에서 film_look에 필름 이름("Kodak Portra 400", "portra 400")을 주면 그 필름이 적용됩니다. 이름이 정확하지 않으면 가까운 이름을 알려 줍니다.
+- 필름과 인화지 이름은 각 소유자(Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology(Ilford), FOMA BOHEMIA, Agfa-Gevaert, CineStill)의 상표이며, Grainy는 이들과 관련이 없습니다. 색 계산에 쓰는 CIE 데이터는 CC BY-SA 4.0이며 고지문은 THIRD_PARTY_LICENSES/Film에 있습니다.
+
 ## 0.5.97 — AI 프로그램에서 Grainy에게 일 시키기 (MCP)
 
 - **Claude Code, Codex, Gemini CLI, Claude 데스크톱 같은 AI 프로그램이 Grainy의 기능을 직접 쓸 수 있습니다.** AI 프로그램에 Grainy MCP를 명령 한 줄로 한 번 등록하면, "이 롤을 한 롤로 네거티브 반전하고 자동 색 맞춰서 내보내줘"처럼 말로 일을 시킬 수 있습니다. 등록 명령은 설정 › AI 연결 (MCP)…과 웹페이지(pastorius9.github.io/grainy)에 있습니다.

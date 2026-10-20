@@ -59,7 +59,7 @@ def _range(low,high):
 def _edits_description():
     groups={}
     for key,(_,low,high) in FIELDS.items():
-        if key in ('monochrome','straighten','exposure','negative_density','negative_range'):continue
+        if key in ('monochrome','straighten','exposure','negative_density','negative_range','film_look'):continue
         groups.setdefault(_range(low,high),[]).append(key)
     ranges='; '.join(f'{", ".join(keys)} {span}' for span,keys in groups.items())
     return ("Change edit values on many photos as one undoable batch. Each entry targets one of ids, where (list_photos "
@@ -68,7 +68,8 @@ def _edits_description():
         "; straighten "+_range(*FIELDS['straighten'][1:])+" degrees (the crop follows as in the editor); monochrome "
         "true/false (set only); negative_density "+_range(*FIELDS['negative_density'][1:])+" (brightness) and "
         "negative_range "+_range(*FIELDS['negative_range'][1:])+" (contrast), only on photos inverted with "
-        "invert_negatives. Entries apply in order, so later entries refine earlier ones. Original files are never changed.")
+        "invert_negatives; film_look a film by name, e.g. 'Kodak Portra 400', 'Fujifilm Velvia 50', 'Ilford HP5 Plus' "
+        "('' none; brings its grain). Entries apply in order, later ones refine earlier ones. Originals never change.")
 
 
 def _tool(name,title,description,properties,required=(),read_only=False,idempotent=None):
@@ -81,9 +82,10 @@ def _tool(name,title,description,properties,required=(),read_only=False,idempote
 
 EDIT_ENTRY={'type':'object','additionalProperties':False,'properties':{**TARGET(),
     'set':{'type':'object','additionalProperties':False,'minProperties':1,'properties':
-           {k:{'type':'boolean'} if k=='monochrome' else {'type':'number','minimum':lo,'maximum':hi} for k,(_,lo,hi) in FIELDS.items()}},
+           {k:{'type':'boolean'} if k=='monochrome' else {'type':'string'} if k=='film_look' else {'type':'number','minimum':lo,'maximum':hi}
+            for k,(_,lo,hi) in FIELDS.items()}},
     'add':{'type':'object','additionalProperties':False,'minProperties':1,'properties':
-           {k:{'type':'number','minimum':lo-hi,'maximum':hi-lo} for k,(_,lo,hi) in FIELDS.items() if k!='monochrome'}}}}
+           {k:{'type':'number','minimum':lo-hi,'maximum':hi-lo} for k,(_,lo,hi) in FIELDS.items() if k not in ('monochrome','film_look')}}}}
 
 DEFINITIONS=[
     _tool('list_photos','List photos',

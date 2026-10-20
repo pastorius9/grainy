@@ -1,0 +1,6 @@
+{"id": "cinestill-800t",
+ "meta": {"name": "CineStill 800T", "maker": "CineStill", "kind": "colour-negative", "cine": false, "iso": 800,
+          "derived_from": "kodak-vision3-500t",
+          "halation": {"radius": 0.004, "threshold": 1.0, "strength": [0.35, 0.06, 0.0]},
+          "notes": ["CineStill publishes no technical data. CineStill 800T is reported to be Kodak Vision3 500T (5219) with its rem-jet anti-halation backing removed, rated at EI 800 and processed in C-41; this look is the 5219 datasheet curves rated at EI 800 and printed on a colour paper.",
+                    "The red glow around highlights (halation) is modelled; its radius, threshold and strength are Grainy's choice, not published values."]}}

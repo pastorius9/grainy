@@ -93,6 +93,7 @@ summary{cursor:pointer;color:#f4e7d4;font-weight:600}
 details p{color:var(--muted);margin:10px 0 0}
 footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-size:13px}
 footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between}
+footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
 </style>
 </head>
 <body>
@@ -116,8 +117,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-bet
   <div class="wrap hero">
     <h1><span lang="ko">필름 스캔을 위해 만든<br>무료 사진 프로그램</span><span lang="en">A free photo editor<br>made for film scans</span></h1>
     <p class="lead">
-      <span lang="ko">네거티브 반전, 자동 톤과 자동 색, 먼지 감지, 마스크, 사진 보관함까지. 설치 없이 바로 실행하고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.</span>
-      <span lang="en">Negative conversion, Auto tone and Auto colour, dust detection, masks and a photo library. No installer, and your photos never leave your computer.</span>
+      <span lang="ko">네거티브 반전, 자동 톤과 자동 색, 필름 룩 82종, 먼지 감지, 마스크, 사진 보관함까지. 설치 없이 바로 실행하고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.</span>
+      <span lang="en">Negative conversion, Auto tone and Auto colour, 82 film looks, dust detection, masks and a photo library. No installer, and your photos never leave your computer.</span>
     </p>
     <div class="buttons" id="download">
       <a class="btn primary" data-asset="windows" href="https://github.com/pastorius9/grainy/releases/latest"><span lang="ko">Windows용 내려받기</span><span lang="en">Download for Windows</span> <small data-version></small></a>
@@ -164,6 +165,18 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-bet
         </div>
         <figure>
           <img src="site/compare.jpg" alt="" width="1680" height="1000" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <h3><span lang="ko">필름 룩 82종</span><span lang="en">82 film looks</span></h3>
+          <p><span lang="ko">Kodak Portra·Kodachrome·Tri-X·Vision3, Fujifilm Velvia·Provia·Acros, Ilford HP5·Delta 등 82가지 필름을 고를 수 있습니다.</span><span lang="en">Choose from 82 films: Kodak Portra, Kodachrome, Tri-X and Vision3, Fujifilm Velvia, Provia and Acros, Ilford HP5 and Delta, and more.</span></p>
+          <p><span lang="ko">각 필름 제조사가 공개한 기술 자료의 분광 감도·특성 곡선·염료 농도로, 필름이 빛을 받아 현상되고 인화되는 과정을 계산합니다. 강도를 조절할 수 있고, 그 필름의 입자도 함께 들어갑니다.</span><span lang="en">Each look is computed from its maker's published technical data — spectral sensitivity, characteristic curves and dye densities — as the film would be exposed, developed and printed. Set how much of it you want; the film's grain comes with it.</span></p>
+        </div>
+        <figure>
+          <img src="site/film-looks.jpg" alt="" width="1700" height="810" loading="lazy">
+          <figcaption><span lang="ko">위 사진 한 장을 여섯 가지 필름으로</span><span lang="en">The photo above through six films</span></figcaption>
         </figure>
       </div>
 
@@ -231,6 +244,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-bet
   <div class="wrap">
     <div><span lang="ko">Grainy는 MIT 라이선스의 무료 프로그램입니다.</span><span lang="en">Grainy is free software under the MIT licence.</span> <a href="https://github.com/pastorius9/grainy">GitHub</a> · <a href="https://github.com/pastorius9/grainy/releases"><span lang="ko">모든 버전</span><span lang="en">All releases</span></a></div>
     <div><span lang="ko">이 페이지는 쿠키를 쓰지 않습니다.</span><span lang="en">This page uses no cookies.</span></div>
+    <div class="fine"><span lang="ko">필름 이름은 Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert, CineStill 등 각 소유자의 상표이며, Grainy는 이들과 관련이 없습니다. 필름 룩은 공개된 기술 자료로 계산한 시뮬레이션입니다.</span><span lang="en">Film names are trademarks of their owners, among them Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert and CineStill. Grainy is not affiliated with any of them; its film looks are simulations computed from published technical data.</span></div>
   </div>
 </footer>
 

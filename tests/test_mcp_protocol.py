@@ -91,7 +91,7 @@ def test_tools_list_is_deterministic_and_valid():
     edits=next(t for t in first if t['name']=='apply_edits')['description']
     for key,(_,low,high) in FIELDS.items():
         assert key in edits
-        if key!='monochrome':assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
+        if key not in ('monochrome','film_look'):assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
     targeted=[t for t in first if 'ids' in t['inputSchema']['properties'] and 'where' in t['inputSchema']['properties']]
     assert len(targeted)==5 and all(mcp_tools.TARGET_TEXT[:-1] in t['description'] for t in targeted)
     assert "Each entry targets one of ids, where (list_photos filters) or scope ('selection' or 'current')" in edits

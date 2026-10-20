@@ -1,0 +1,396 @@
+{
+ "id": "ilford-fp4-plus",
+ "dpi": 400,
+ "plots": {
+  "curves": {
+   "page": 5,
+   "box": [
+    58.8,
+    90,
+    223.5,
+    188.8
+   ],
+   "x": [
+    [
+     94.68,
+     1.0
+    ],
+    [
+     206.46,
+     4.0
+    ]
+   ],
+   "y": [
+    [
+     189.81,
+     0.0
+    ],
+    [
+     153.09,
+     1.0
+    ],
+    [
+     116.82,
+     2.0
+    ]
+   ],
+   "mask": [],
+   "step": 0.05,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       0.072,
+       0.092
+      ],
+      [
+       0.242,
+       0.092
+      ],
+      [
+       0.411,
+       0.092
+      ],
+      [
+       0.604,
+       0.092
+      ],
+      [
+       0.773,
+       0.092
+      ],
+      [
+       0.942,
+       0.104
+      ],
+      [
+       1.135,
+       0.151
+      ],
+      [
+       1.304,
+       0.222
+      ],
+      [
+       1.473,
+       0.301
+      ],
+      [
+       1.662,
+       0.41
+      ],
+      [
+       1.831,
+       0.494
+      ],
+      [
+       2.019,
+       0.642
+      ],
+      [
+       2.193,
+       0.775
+      ],
+      [
+       2.362,
+       0.908
+      ],
+      [
+       2.551,
+       1.053
+      ],
+      [
+       2.72,
+       1.196
+      ],
+      [
+       2.889,
+       1.339
+      ],
+      [
+       3.077,
+       1.48
+      ],
+      [
+       3.246,
+       1.608
+      ],
+      [
+       3.415,
+       1.707
+      ],
+      [
+       3.609,
+       1.798
+      ],
+      [
+       3.778,
+       1.845
+      ],
+      [
+       3.947,
+       1.867
+      ],
+      [
+       4.14,
+       1.867
+      ]
+     ]
+    }
+   }
+  },
+  "sensitivity": {
+   "page": 1,
+   "box": [
+    60.8,
+    618.0,
+    276.5,
+    710.0
+   ],
+   "x": [
+    [
+     91.26,
+     400
+    ],
+    [
+     121.95,
+     450
+    ],
+    [
+     153.18,
+     500
+    ],
+    [
+     183.78,
+     550
+    ],
+    [
+     215.1,
+     600
+    ],
+    [
+     245.7,
+     650
+    ]
+   ],
+   "y": [
+    [
+     640.62,
+     1.0
+    ],
+    [
+     671.94,
+     0.5
+    ]
+   ],
+   "mask": [],
+   "step": 5,
+   "window": 0.05,
+   "strict": true,
+   "lines": {
+    "v": {
+     "hints": [
+      [
+       364.021,
+       -0.083
+      ],
+      [
+       371.006,
+       0.073
+      ],
+      [
+       378.283,
+       0.175
+      ],
+      [
+       385.268,
+       0.236
+      ],
+      [
+       392.253,
+       0.312
+      ],
+      [
+       399.239,
+       0.382
+      ],
+      [
+       406.515,
+       0.427
+      ],
+      [
+       413.501,
+       0.447
+      ],
+      [
+       420.486,
+       0.463
+      ],
+      [
+       427.471,
+       0.496
+      ],
+      [
+       434.748,
+       0.536
+      ],
+      [
+       441.733,
+       0.589
+      ],
+      [
+       448.719,
+       0.631
+      ],
+      [
+       455.704,
+       0.657
+      ],
+      [
+       462.98,
+       0.674
+      ],
+      [
+       469.966,
+       0.68
+      ],
+      [
+       476.951,
+       0.678
+      ],
+      [
+       483.937,
+       0.674
+      ],
+      [
+       491.213,
+       0.668
+      ],
+      [
+       498.198,
+       0.657
+      ],
+      [
+       505.184,
+       0.645
+      ],
+      [
+       512.169,
+       0.651
+      ],
+      [
+       519.446,
+       0.687
+      ],
+      [
+       526.431,
+       0.726
+      ],
+      [
+       533.416,
+       0.746
+      ],
+      [
+       540.402,
+       0.746
+      ],
+      [
+       547.678,
+       0.744
+      ],
+      [
+       554.664,
+       0.766
+      ],
+      [
+       561.649,
+       0.8
+      ],
+      [
+       568.634,
+       0.836
+      ],
+      [
+       575.911,
+       0.878
+      ],
+      [
+       582.896,
+       0.917
+      ],
+      [
+       589.882,
+       0.945
+      ],
+      [
+       596.867,
+       0.964
+      ],
+      [
+       604.143,
+       0.971
+      ],
+      [
+       611.129,
+       0.964
+      ],
+      [
+       618.114,
+       0.937
+      ],
+      [
+       625.1,
+       0.935
+      ],
+      [
+       632.376,
+       0.917
+      ],
+      [
+       639.361,
+       0.76
+      ],
+      [
+       646.347,
+       0.572
+      ],
+      [
+       653.332,
+       0.352
+      ],
+      [
+       660.609,
+       0.102
+      ],
+      [
+       667.594,
+       -0.093
+      ]
+     ]
+    }
+   }
+  }
+ },
+ "meta": {
+  "name": "Ilford FP4 Plus",
+  "maker": "Ilford",
+  "kind": "bw-negative",
+  "cine": false,
+  "iso": 125,
+  "balance": "daylight",
+  "log_h_ref": null,
+  "densitometry": null,
+  "process": "Ilfotec HC (1+31), 8 min at 20C, intermittent agitation",
+  "grain": null,
+  "print_on": null,
+  "document": null,
+  "date": "2018-11",
+  "notes": [
+   "Characteristic curve: x axis is RELATIVE log exposure (frame 0 to 4.5, no absolute lux-seconds, no Log H Ref), y is density, frame bottom = density 0 (gridlines every 0.5, labelled 1.0 and 2.0). The sheet does not state the densitometry type; balance 'daylight' is the light of the ISO 125/22 speed rating ('speed rating of ISO 125/22 to daylight').",
+   "Only one curve: FP4 Plus roll film in ILFORD ILFOTEC HC (1+31), 8 min at 20C, intermittent agitation, said to represent 35mm and sheet film too. Traced as v; base+fog about 0.09 as read, curve stops at relative log exposure about 4.1 (shoulder near 1.87). The ISO speed itself was measured in ID-11 at 20C, a different developer from the curve.",
+   "Spectral sensitivity: sheet title 'Wedge spectrogram to tungsten light (2850K)', drawn as a line curve on a 'Sensitivity' axis with ticks 0.5 and 1.0 only. Traced as sensitivity/v with numbers as printed; the frame bottom is about -0.12 on that scale (not 0), scale is relative and linear/log is not stated, the curve runs about 364-668 nm.",
+   "No document code (footer 'Page n of 6, Nov 2018'), no granularity figure, no print recommendation on the sheet."
+  ],
+  "sensitivity_light": "2850K"
+ }
+}

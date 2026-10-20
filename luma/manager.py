@@ -23,6 +23,7 @@ EDIT_GROUPS={
  '화이트 밸런스':('temperature','tint','kelvin','wb_reference','kelvin_enabled','raw_mode','raw_kelvin','raw_tint','raw_neutral'),
  'RAW 프로파일':('dcp_profile','dcp_huesat','dcp_look','dcp_tone','dcp_exposure'),
  '색상':('saturation','vibrance','monochrome','mixer_mode','hsl','grading','grading_balance','calibration','point_colors','camera_matrix'),
+ '필름':('film_look','film_strength'),
  '컬러 필터':('photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity'),
  '커브':('curve','rgb_curves','parametric'),
  '디테일':('clarity','texture','dehaze','sharpen','sharpen_radius','sharpen_detail','sharpen_mask','noise_luma','noise_color'),

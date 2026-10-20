@@ -115,6 +115,7 @@ The film scans on this page are the author's own. The other photos are CC0 sampl
 - **Library**: import folders, automatic import of new photos in registered folders, ratings, colour labels and keywords, collections and smart collections, recovery of moved folders
 - **RAW development**: RAW files of the major camera makers, camera profiles (DCP), lens corrections (Lensfun)
 - **Film negatives**: one button turns a scanned negative into a positive (film base removed per channel); every other tool then works on the positive. A roll scanned with the same settings can be measured as one, so every frame is converted with the same colour reference
+- **Film looks**: 82 named films (Kodak Portra, Ektar, Kodachrome, Tri-X, Vision3, Fujifilm Velvia, Provia, Acros, Ilford HP5, Delta and more), each computed from its maker's published technical data — spectral sensitivity, characteristic curves and dye densities — and printed on the paper it was made for (slides are viewed as they are), with an amount slider and the film's grain
 - **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight)
 - **Detail**: sharpening, noise reduction, grain, vignette
 - **Local adjustments**: masks (brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal
@@ -183,6 +184,8 @@ Grainy's own code is under the [MIT License](LICENSE). You may use, modify, redi
 Third-party components keep their own licenses: Qt/PySide6 (LGPL-3.0), LibRaw, OpenCV, Lensfun and others. The full list and terms are in [DISTRIBUTION.md](DISTRIBUTION.md) (Korean); the notices are in the `THIRD_PARTY_LICENSES` folder of a release.
 
 Adobe, Lightroom and Photoshop are trademarks of Adobe Inc. Grainy is an independent project: it is not made, sponsored or endorsed by Adobe and is not affiliated with it.
+
+Film and paper names (Kodak, Portra, Kodachrome, Fujifilm, Velvia, Ilford, HP5 and the others in the Film panel) are trademarks of their owners, among them Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert and CineStill. Grainy is not made, sponsored or endorsed by, or affiliated with, any of them; its film looks are simulations computed from their published technical data. The CIE colorimetric data they use is under CC BY-SA 4.0 (see `THIRD_PARTY_LICENSES/Film`).
 
 ## Code signing policy
 
