@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.5.97 — Let an AI program work in Grainy (MCP)
+
+- **AI programs such as Claude Code, Codex, Gemini CLI and Claude Desktop can use Grainy's own tools.** Register Grainy's MCP once with one command, then just ask, e.g. "convert this roll as one roll of negatives, run Auto colour and export it". The commands are under Settings › AI Connection (MCP)… and on pastorius9.github.io/grainy.
+- Edits show in Grainy at once and the last five AI tasks can be undone. Nothing to switch on in Grainy; only AI programs you register on this computer can connect, while Grainy is open. Grainy itself sends nothing over the internet; what the AI program reads is sent to that AI service.
+- Batch edits from the Photo menu keep each RAW photo's own colour settings.
+
 ## 0.5.96 — Photos no longer go offline after updating on macOS
 
 - **macOS: photos no longer go offline after every update.** macOS remembers per app which folders and disks it may read. Each macOS build of Grainy used to carry a different signature, so macOS took every update for a new app and forgot the permission. All releases are now signed with the same certificate. The first update to this version may ask once more; later ones keep it.

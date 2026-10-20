@@ -35,12 +35,16 @@ class WorkflowTools:
         self.w.commit();self.w.save_keywords()
         return [self.w.catalog.photo(i) for i in self.w.selected_ids()]
 
-    def apply_edits(self,records,values,label):
+    def apply_edits(self,records,values,label,retarget=False):
+        """retarget=True only for settings copied from another photo (previous_edits): a camera profile or a
+        sampled sensor neutral then belongs to another camera. Values computed from a photo's own settings
+        (auto tone, auto colour, negatives, ...) keep its RAW colour settings as they are."""
         from .command_batch import apply
-        from .rawcolor import retarget
         if not records:return []
-        checked=[retarget(v,r['info']) for r,v in zip(records,values)]
-        ids=apply(self.w.catalog,records,checked,label,remember=False)
+        if retarget:
+            from .rawcolor import retarget as fit
+            values=[fit(v,r['info']) for r,v in zip(records,values)]
+        ids=apply(self.w.catalog,records,values,label,remember=False)
         self.w.refresh_command_edits(ids)
         self.w.statusBar().showMessage(tr('{0} · {1}장 변경', tr(label), f'{len(ids):,}'))
         return ids
@@ -166,7 +170,7 @@ class WorkflowTools:
                 from .optics import retarget
                 value=retarget(value,r['info'])
             values.append(value)
-        self.apply_edits(targets,values,'이전 사진 보정')
+        self.apply_edits(targets,values,'이전 사진 보정',retarget=True)
 
     def camera_orientation(self):
         # Only rotated/flipped photos lose their crop; the crop is defined in the rotated frame.

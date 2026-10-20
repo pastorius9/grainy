@@ -31,6 +31,40 @@ def feedback_records(monkeypatch, tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
+def mcp_paths(monkeypatch, tmp_path_factory):
+    """The AI connection's default export folder (Pictures/Grainy) is a temporary folder in tests. The connection is
+    on by default, so every DesktopSession.start() starts one: on a free port (never the 47821 of a Grainy running on
+    this computer), and stopped when the test ends."""
+    from luma import mcp_service
+    made = []
+    def pictures():
+        if not made: made.append(tmp_path_factory.mktemp('pictures'))
+        return made[0]
+    monkeypatch.setattr(mcp_service, 'pictures_folder', pictures)
+    monkeypatch.setattr(mcp_service, 'DEFAULT_PORT', 0)
+    started, original = [], mcp_service.McpService.start
+    def start(self, port=None):
+        if self not in started: started.append(self)
+        return original(self, port)
+    monkeypatch.setattr(mcp_service.McpService, 'start', start)
+    yield
+    for service in started:
+        try: service.stop()
+        except RuntimeError: pass                # its window is already gone; the server and files are stopped first
+
+
+@pytest.fixture(autouse=True)
+def loopback_http_only(monkeypatch):
+    """Tests may open HTTP connections only to this computer."""
+    import http.client
+    original = http.client.HTTPConnection.connect
+    def connect(self):
+        assert self.host in ('127.0.0.1', 'localhost', '::1'), f'tests may only connect to this computer, not {self.host}'
+        return original(self)
+    monkeypatch.setattr(http.client.HTTPConnection, 'connect', connect)
+
+
+@pytest.fixture(autouse=True)
 def offline(monkeypatch):
     """No test reaches the network: feedback.send and the dialog look urllib.request.urlopen up when they send, and
     OpenerDirector.open also stops the urlopen that updater captured as a default argument."""

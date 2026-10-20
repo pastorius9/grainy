@@ -18,6 +18,8 @@ try {
     & $runtime -m PyInstaller --clean --noconfirm --windowed --name Grainy --icon "$PSScriptRoot\assets\brand\grainy.ico" --distpath release --workpath build --specpath build --add-data "$PSScriptRoot\assets;assets" --add-data "$PSScriptRoot\README.html;." --add-data "$PSScriptRoot\FEATURE_GAPS.md;." --add-data "$PSScriptRoot\CHANGELOG.md;." --collect-all imagecodecs --collect-all lensfunpy --exclude-module scipy --exclude-module tkinter "$PSScriptRoot\main.py"
 } finally { $env:PATH = $buildPath }
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+# The AI connection's stdio bridge, which Claude Code, Codex and Claude Desktop start, ships in assets (luma/mcp_service.py copies it out).
+if (-not (Test-Path 'release\Grainy\_internal\assets\mcp\grainy-mcp-bridge.ps1')) { throw 'MCP bridge missing.' }
 # OpenCV's wheel carries an FFmpeg build for video I/O, which Grainy does not use: ship no FFmpeg at all.
 Get-ChildItem -Path "$PSScriptRoot\release\Grainy\_internal\cv2" -Filter 'opencv_videoio_ffmpeg*.dll' -ErrorAction SilentlyContinue | Remove-Item -Force
 if (Get-ChildItem -Path "$PSScriptRoot\release\Grainy" -Recurse -Include '*ffmpeg*','avcodec*','avformat*','avutil*','swscale*' -ErrorAction SilentlyContinue) { throw 'FFmpeg files remain in the release.' }

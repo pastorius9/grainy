@@ -1,4 +1,41 @@
 """Release-binary self-test in an isolated temporary catalog, without account RPCs."""
+def mcp_round_trip():
+    """The AI connection's HTTP endpoint on an ephemeral port with a stub host: the frozen build carries the
+    HTTP modules, and the windowed build's missing stderr breaks nothing."""
+    import http.client,json,threading
+    from . import mcp_http,mcp_protocol,mcp_tools
+
+    class Stub:
+        token='5e1f'*16;calls=threading.BoundedSemaphore(4)
+        class tools:
+            definitions=staticmethod(lambda:mcp_tools.DEFINITIONS)
+            call=staticmethod(lambda name,arguments,*,modern,deadline,gui=None:{'content':[],'isError':False})
+        def note(self,*args):pass
+
+    host=Stub();server=mcp_http.start(0,host);port=server.server_address[1]
+    def post(body,token):
+        connection=http.client.HTTPConnection('127.0.0.1',port,timeout=10)
+        try:
+            headers={'Content-Type':'application/json'}
+            if token is not None:headers['Authorization']=f'Bearer {token}'
+            connection.request('POST','/mcp',json.dumps(body),headers)
+            response=connection.getresponse();data=response.read()
+            return response.status,json.loads(data) if data else None
+        finally:connection.close()
+    try:
+        status,body=post({'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-06-18'}},host.token)
+        assert status==200 and body['result']['protocolVersion']=='2025-06-18',body
+        status,body=post({'jsonrpc':'2.0','id':2,'method':'tools/list'},host.token)
+        assert status==200 and len(body['result']['tools'])==len(mcp_tools.DEFINITIONS)
+        assert post({'jsonrpc':'2.0','id':3,'method':'ping'},None)[0]==401
+        host.token=None
+        assert post({'jsonrpc':'2.0','id':4,'method':'ping'},'None')[0]==401
+        assert mcp_protocol.offline_templates()['offline-tools.json'].count('__ID__')==1
+    finally:
+        server.shutdown();server.close_connections();server.server_close()
+    return True
+
+
 def run():
     import json,os,tempfile,traceback
     from . import engine
@@ -639,6 +676,7 @@ def run():
             assert window.curve.hdr and window.curve.axis(1)==.5
             report.update(hdr_preview_separate=True,hdr_sdr_white_preserved=True,hdr_curve_extended=True)
             window.close();window=None
+            report['mcp_protocol']=mcp_round_trip()
             # The GPU module must ship; a PC without a usable GPU keeps the CPU path.
             from . import native_gpu
             from .engine import _develop_tone_pixels,normalized,defaults

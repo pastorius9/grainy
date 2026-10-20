@@ -11,6 +11,8 @@
   RAW files too. No account, no subscription, and your photos never leave your computer.
 </p>
 
+<p align="center"><b><a href="https://pastorius9.github.io/grainy/">pastorius9.github.io/grainy</a></b></p>
+
 <p align="center">
   <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/pastorius9/grainy?style=flat-square&color=c9a36b"></a>
   <a href="https://github.com/pastorius9/grainy/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/pastorius9/grainy/total?style=flat-square&color=8a6a3b"></a>
@@ -119,6 +121,7 @@ The film scans on this page are the author's own. The other photos are CC0 sampl
 - **Export**: JPEG, PNG, TIFF, AVIF, JPEG XL
 - **Feedback**: a button at the top of the window sends a problem report or an idea
 - **Updates**: the program checks for a new version and replaces itself
+- **AI connection**: install Grainy's MCP once with one command in an AI program on this computer (Claude Code, Codex, Claude Desktop), and while Grainy is running that program can list, look at, edit and export your photos with Grainy's own tools; every AI edit is one batch you can undo
 - **Also**: edit history and undo, Lightroom catalog and preset import, catalog backup (including a Google Drive folder), a GPS map
 
 The full manual ships with the program (`README.html`, in Korean).
@@ -128,6 +131,40 @@ The full manual ships with the program (`README.html`, in Korean).
 - No usage statistics are collected. Only two things go to the internet, and both only when you ask.
 - **Feedback**: pressing Send transmits the text you typed, the Grainy version, a one-line system description (operating system version and graphics adapter name) and a random five-character reference number. The reference is also kept on your computer so that a later update can tell you when your feedback was addressed. Photos, file names and paths, and user names are not sent.
 - **Updates**: the latest version information is read from GitHub only when you press "Check for Updates" or have switched on the automatic check (you are asked at first start, and it can be switched off in Settings). Nothing about you is sent.
+- **AI connection**: the connection is on while Grainy runs (Settings › AI Connection (MCP) can switch it off), but nothing is read and nothing leaves the computer unless you install Grainy's MCP in an AI program on this computer (Claude Code, Codex, Claude Desktop) and ask that program to work. It can then read the photo list and photo details: file names and full file and folder paths (which include your user name), keywords, ratings, camera, lens, exposure settings and capture date, but not GPS location. It can also read edit values and previews up to 1568 pixels, including contact sheets of up to 36 photos. It can change edit values and export copies into the AI export folder (Pictures/Grainy unless you change it, or a subfolder of it) or into the folder of your last export. What it reads goes to that AI program's service under its own terms, and AI programs may keep their own copies, for example in conversation logs. Grainy itself never sends photos anywhere. The connection is open only on this computer and needs a key that Grainy keeps in plain text in its own settings folder; the installed MCP reads it from there, so the key is not put into the AI programs' configuration (unless you set up a direct HTTP connection under Advanced). Original files are never changed. AI edits can be undone, most recent first, for the last 5 AI tasks as long as their photos were not edited again; each photo the AI edits first also gets a "Before AI edits" snapshot. Exports cannot be undone.
+
+## Use Grainy from an AI program (optional)
+
+Grainy only has to be running. Install its MCP once in the AI program you use; the commands are the same on every computer and hold no key. **Settings › AI Connection (MCP)…** in Grainy shows them too, with **Copy** buttons. Run Grainy once first: it puts the bridge that these commands start into its own folder (`%LOCALAPPDATA%\Grainy\mcp` on Windows, `~/Library/Application Support/Grainy/mcp` on macOS).
+
+1. Install it in the program you use:
+   - **Claude Code**, in PowerShell (Windows), then restart Claude Code and check with `claude mcp list`:
+     ```powershell
+     claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Grainy\mcp\grainy-mcp-bridge.ps1"
+     ```
+     in Terminal (macOS):
+     ```bash
+     claude mcp add --scope user grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"
+     ```
+   - **Codex**, in PowerShell (Windows), then restart Codex and check with `codex mcp list`:
+     ```powershell
+     codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Grainy\mcp\grainy-mcp-bridge.ps1"
+     ```
+     in Terminal (macOS):
+     ```bash
+     codex mcp add grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"
+     ```
+   - **Claude Desktop**: open Settings › Developer › Edit Config, put the `"grainy"` entry inside `"mcpServers"` (if the file is empty, paste all of it) and restart Claude Desktop. Windows:
+     ```json
+     {"mcpServers": {"grainy": {"command": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& (Join-Path $env:LOCALAPPDATA 'Grainy\\mcp\\grainy-mcp-bridge.ps1')"]}}}
+     ```
+     macOS:
+     ```json
+     {"mcpServers": {"grainy": {"command": "/bin/sh", "args": ["-c", "exec /bin/sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\""]}}}
+     ```
+2. Ask, for example: "Show me roll 12 as a contact sheet, then invert the negatives as one roll and even out the exposure." Each change is one batch: ask the AI to undo it, or use **Undo Last AI Task** in Grainy's AI Connection window.
+
+On Windows keep the quotes around `'--'`: without them PowerShell drops the `--` when claude or codex was installed with npm. The AI program may be started before Grainy. While Grainy is not running, or its AI connection is switched off, the program still lists Grainy's tools, and a call answers that Grainy is not running and how to fix it. Programs that connect over HTTP directly use the address and the key under **Advanced** in the same window; after **New Key** or **Use Another Port** set those up again, while programs installed as above keep working.
 
 ## Run from source
 

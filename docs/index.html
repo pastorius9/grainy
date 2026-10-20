@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko" data-lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grainy — free photo editor for film scans</title>
+<meta name="description" content="Grainy: a free photo editor and library made for film scans. Negative conversion, Auto tone and Auto colour, dust detection, masks. Windows and macOS, MIT licence. Your photos never leave your computer.">
+<meta property="og:title" content="Grainy — free photo editor for film scans">
+<meta property="og:description" content="Negative conversion, Auto tone and Auto colour, dust detection, masks. Windows and macOS, MIT licence.">
+<meta property="og:image" content="https://pastorius9.github.io/grainy/site/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="site/grainy-icon-256.png">
+<style>
+:root{
+  --bg:#101215; --panel:#171a1e; --panel2:#1d2126; --line:#2b3138; --text:#dce0e4; --muted:#8c949d;
+  --accent:#dec49f; --accent-ink:#211d17; --teal:#8fd3d6; --teal-line:#3f7f86; --code:#0c0e10;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
+img{max-width:100%;display:block;height:auto}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+html[data-lang="ko"] [lang="en"], html[data-lang="en"] [lang="ko"]{display:none !important}
+
+/* header */
+header{position:sticky;top:0;z-index:5;background:rgba(16,18,21,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:22px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;color:#f4e7d4;font-weight:600;letter-spacing:3px;font-size:20px}
+.brand img{width:28px;height:28px}
+nav{display:flex;gap:18px;margin-left:auto;font-size:14px}
+nav a{color:var(--muted)} nav a:hover{color:var(--text);text-decoration:none}
+.lang{display:flex;border:1px solid var(--line)}
+.lang button{background:none;border:0;color:var(--muted);padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--panel2);color:var(--text)}
+@media (max-width:760px){nav{display:none}.bar{gap:12px}.lang{margin-left:auto}}
+
+/* hero */
+.hero{padding:72px 0 40px;text-align:center}
+.hero h1{font-size:clamp(30px,5vw,50px);line-height:1.18;margin:0 0 16px;color:#f4e7d4;font-weight:650;letter-spacing:-.5px}
+.hero p.lead{font-size:clamp(16px,2.2vw,19px);color:var(--muted);max-width:720px;margin:0 auto 28px}
+.buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:600;font-size:15px}
+.btn:hover{text-decoration:none;border-color:#68717a}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{background:#f0d8b5}
+.btn small{font-weight:400;opacity:.75}
+.meta{margin-top:14px;color:var(--muted);font-size:13px}
+.shot{margin:44px auto 0;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.45)}
+
+/* sections */
+section{padding:70px 0;border-top:1px solid var(--line)}
+section h2{font-size:clamp(24px,3.4vw,32px);margin:0 0 10px;color:#f4e7d4;font-weight:620}
+section p.sub{color:var(--muted);margin:0 0 34px;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);padding:22px}
+.card h3{margin:0 0 8px;font-size:17px;color:#f4e7d4}
+.card p{margin:0;color:var(--muted);font-size:15px}
+.feature{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;margin:0 0 56px}
+.feature:last-child{margin-bottom:0}
+.feature.flip .text{order:2}
+.feature h3{font-size:22px;margin:0 0 10px;color:#f4e7d4}
+.feature p{color:var(--muted);margin:0 0 10px}
+.feature figure{margin:0}
+.feature figcaption{color:var(--muted);font-size:13px;margin-top:8px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pair img,.feature figure>img{border:1px solid var(--line)}
+.pair.negative{grid-template-columns:.42fr 1fr}
+.pair.negative img{height:100%;object-fit:cover}
+@media (max-width:820px){.feature{grid-template-columns:1fr;gap:18px}.feature.flip .text{order:0}}
+
+/* AI section */
+.steps{counter-reset:step;display:grid;gap:14px;margin:0 0 30px}
+.step{background:var(--panel);border:1px solid var(--line);padding:18px 20px 18px 62px;position:relative}
+.step::before{counter-increment:step;content:counter(step);position:absolute;left:20px;top:17px;width:28px;height:28px;border:1px solid var(--teal-line);color:var(--teal);display:grid;place-items:center;font-weight:600;font-size:14px}
+.step h3{margin:0 0 4px;font-size:16px;color:#f4e7d4}
+.step p{margin:0;color:var(--muted);font-size:15px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
+.tabs button{background:var(--panel2);color:var(--muted);border:1px solid var(--line);padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}
+.tabs button[aria-selected="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.os{margin-left:auto}
+.cmd{position:relative;margin-top:10px;background:var(--code);border:1px solid var(--line);padding:16px 54px 16px 16px;font:13.5px/1.6 ui-monospace,SFMono-Regular,Consolas,"Cascadia Mono",monospace;white-space:pre-wrap;word-break:break-all;color:#e8e2d6}
+.copy{position:absolute;right:8px;top:8px;background:var(--panel2);color:var(--text);border:1px solid var(--line);padding:4px 10px;font:inherit;font-size:12px;cursor:pointer}
+.note{color:var(--muted);font-size:14px;margin:8px 0 0}
+.examples{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
+.examples div{border-left:2px solid var(--teal-line);padding:6px 12px;color:var(--text);font-size:15px;background:var(--panel)}
+.privacy{border:1px solid var(--teal-line);background:#14252a;padding:16px 18px;margin-top:26px;font-size:15px;color:#cfe9ea}
+
+/* faq + footer */
+details{background:var(--panel);border:1px solid var(--line);padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;color:#f4e7d4;font-weight:600}
+details p{color:var(--muted);margin:10px 0 0}
+footer{border-top:1px solid var(--line);padding:34px 0 50px;color:var(--muted);font-size:13px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:space-between}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top"><img src="site/grainy-icon-256.png" alt="">Grainy</a>
+    <nav>
+      <a href="#features"><span lang="ko">기능</span><span lang="en">Features</span></a>
+      <a href="#ai"><span lang="ko">AI로 보정하기</span><span lang="en">Edit with AI</span></a>
+      <a href="#download"><span lang="ko">내려받기</span><span lang="en">Download</span></a>
+      <a href="https://github.com/pastorius9/grainy">GitHub</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="ko" aria-pressed="true">한국어</button>
+      <button type="button" data-set-lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <div class="wrap hero">
+    <h1><span lang="ko">필름 스캔을 위해 만든<br>무료 사진 프로그램</span><span lang="en">A free photo editor<br>made for film scans</span></h1>
+    <p class="lead">
+      <span lang="ko">네거티브 반전, 자동 톤과 자동 색, 먼지 감지, 마스크, 사진 보관함까지. 설치 없이 바로 실행하고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.</span>
+      <span lang="en">Negative conversion, Auto tone and Auto colour, dust detection, masks and a photo library. No installer, and your photos never leave your computer.</span>
+    </p>
+    <div class="buttons" id="download">
+      <a class="btn primary" data-asset="windows" href="https://github.com/pastorius9/grainy/releases/latest"><span lang="ko">Windows용 내려받기</span><span lang="en">Download for Windows</span> <small data-version></small></a>
+      <a class="btn" data-asset="macos" href="https://github.com/pastorius9/grainy/releases/latest"><span lang="ko">macOS용 내려받기</span><span lang="en">Download for macOS</span> <small data-version></small></a>
+    </div>
+    <p class="meta"><span lang="ko">Windows 10/11 64비트 · macOS 14 이상 (Apple Silicon) · MIT 라이선스 · 무료</span><span lang="en">Windows 10/11 64-bit · macOS 14 or later (Apple Silicon) · MIT licence · free</span></p>
+    <img class="shot" lang="ko" src="screenshots/ko/develop.jpg" alt="Grainy 현상 화면" width="1680" height="1000">
+    <img class="shot" lang="en" src="screenshots/en/develop.jpg" alt="Grainy develop view" width="1680" height="1000">
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2><span lang="ko">필름 사진에 맞춘 도구</span><span lang="en">Tools made for film</span></h2>
+      <p class="sub"><span lang="ko">스캔한 필름을 사진으로 만드는 일부터 정리와 내보내기까지, 한 프로그램에서 끝납니다.</span><span lang="en">From turning a scanned negative into a photo to sorting and exporting a whole roll, in one program.</span></p>
+
+      <div class="feature">
+        <div class="text">
+          <h3><span lang="ko">네거티브 반전</span><span lang="en">Negative conversion</span></h3>
+          <p><span lang="ko">스캔한 네거티브를 버튼 한 번으로 사진으로 바꿉니다. 필름 베이스의 주황색을 채널마다 빼고, 반전 직후의 밝기도 자동으로 맞춥니다.</span><span lang="en">One button turns a scanned negative into a photo. The orange film base is taken out channel by channel, and a first brightness is set for you.</span></p>
+          <p><span lang="ko">같은 설정으로 스캔한 한 롤은 한꺼번에 재서, 모든 컷을 같은 색 기준으로 맞출 수 있습니다. 카메라로 찍은 네거티브(RAW)도 됩니다.</span><span lang="en">A roll scanned with the same settings can be measured as one, so every frame gets the same colours. Negatives photographed with a camera (RAW) work too.</span></p>
+        </div>
+        <figure>
+          <div class="pair negative"><img src="site/negative-scan.jpg" alt="" width="437" height="692" loading="lazy"><img src="site/negative-result.jpg" alt="" width="1007" height="676" loading="lazy"></div>
+          <figcaption><span lang="ko">평판 스캐너로 스캔한 컬러 네거티브 → 반전과 자동 보정</span><span lang="en">A colour negative from a flatbed scanner → converted and auto-corrected</span></figcaption>
+        </figure>
+      </div>
+
+      <div class="feature flip">
+        <div class="text">
+          <h3><span lang="ko">자동 톤과 자동 색</span><span lang="en">Auto tone and Auto colour</span></h3>
+          <p><span lang="ko">스캔마다 다른 노출과 색 틀어짐을 버튼 하나로 잡습니다. 어두운 곳·중간·밝은 곳의 색 틀어짐을 따로 재서 되돌리기 때문에, 필름 특유의 밝기에 따라 달라지는 색 틀어짐에도 맞습니다.</span><span lang="en">One button each for exposure and for the colour cast of a scan. Shadows, midtones and highlights are measured separately, so the cast that changes with brightness — typical of film — is removed too.</span></p>
+        </div>
+        <figure>
+          <img src="screenshots/film-auto.jpg" alt="" width="1922" height="1415" loading="lazy">
+          <figcaption><span lang="ko">왼쪽: 스캔 그대로 · 오른쪽: 자동 톤 + 자동 색</span><span lang="en">Left: the scan as it is · right: Auto tone + Auto colour</span></figcaption>
+        </figure>
+      </div>
+
+      <div class="feature">
+        <div class="text">
+          <h3><span lang="ko">나란히 비교하고, 확대해서 고르기</span><span lang="en">Compare side by side, pick at full zoom</span></h3>
+          <p><span lang="ko">보정 전·후나 다른 사진을 한 창 안에서 좌우·상하로 나란히 봅니다. 한쪽을 확대하면 다른 쪽도 같은 자리를 따라갑니다.</span><span lang="en">See before and after, or two photos, side by side or top and bottom in the same window. Zoom one and the other follows.</span></p>
+          <p><span lang="ko">화이트 밸런스 스포이드는 포인터 주변을 크게 보여 주고, 그 자리의 RGB 값을 함께 알려 줍니다.</span><span lang="en">The white balance eyedropper shows a magnified view around the pointer with the RGB values there.</span></p>
+        </div>
+        <figure>
+          <img src="site/compare.jpg" alt="" width="1680" height="1000" loading="lazy">
+        </figure>
+      </div>
+
+      <div class="grid">
+        <div class="card"><h3><span lang="ko">먼지·흠집 감지</span><span lang="en">Dust and scratches</span></h3><p><span lang="ko">스캔의 먼지와 흠집 후보를 자동으로 찾고, 확인한 것만 지웁니다. 여러 장을 한꺼번에 검사할 수도 있습니다.</span><span lang="en">Finds dust and scratch candidates in a scan and removes only the ones you confirm, also across many photos at once.</span></p></div>
+        <div class="card"><h3><span lang="ko">마스크와 닷지·번</span><span lang="en">Masks, dodge and burn</span></h3><p><span lang="ko">브러시, 선형·방사형 그레이디언트, 색상·광도 범위. 브러시는 어두운 곳·중간·밝은 곳만 고르도록 제한할 수 있습니다.</span><span lang="en">Brush, linear and radial gradients, colour and luminance ranges. A brush can be limited to shadows, midtones or highlights.</span></p></div>
+        <div class="card"><h3><span lang="ko">스캔 테두리 자르기</span><span lang="en">Scan border cropping</span></h3><p><span lang="ko">필름 가장자리와 홀더를 찾아 자동으로 잘라냅니다. 수평과 원근도 자동으로 맞춥니다.</span><span lang="en">Finds the film edge and holder and crops them away; levels and straightens perspective automatically.</span></p></div>
+        <div class="card"><h3><span lang="ko">사진 보관함</span><span lang="en">Photo library</span></h3><p><span lang="ko">모든 롤을 한 곳에서 폴더, 별점, 선택 표시, 색 라벨, 키워드, 컬렉션으로 정리합니다. 원본 파일은 절대 바꾸지 않습니다.</span><span lang="en">Every roll in one place: folders, ratings, flags, colour labels, keywords and collections. Original files are never changed.</span></p></div>
+        <div class="card"><h3><span lang="ko">그레인과 비네팅</span><span lang="en">Grain and vignette</span></h3><p><span lang="ko">양·크기·거칠기를 고르는 필름 그레인과 비네팅을 더합니다.</span><span lang="en">Film grain with amount, size and roughness, and a vignette.</span></p></div>
+        <div class="card"><h3><span lang="ko">빠르고 가볍게</span><span lang="en">Fast</span></h3><p><span lang="ko">그래픽카드를 써서 보정이 바로 보입니다. 설치 과정 없이 압축을 풀고 실행하면 됩니다.</span><span lang="en">Edits show at once, using the graphics card. No installer: unzip and run.</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ai">
+    <div class="wrap">
+      <h2><span lang="ko">AI에게 말로 보정 시키기</span><span lang="en">Tell an AI to edit for you</span></h2>
+      <p class="sub"><span lang="ko">Claude Code, Codex, Gemini CLI, Claude 데스크톱에 Grainy MCP를 한 번 등록하면, "이 롤 네거티브 반전하고 색 맞춰서 내보내줘"처럼 말로 일을 시킬 수 있습니다. AI는 Grainy의 기능을 직접 쓰고, 결과는 Grainy 화면에 바로 보이며, 한 번에 되돌릴 수 있습니다.</span><span lang="en">Register Grainy's MCP once in Claude Code, Codex, Gemini CLI or Claude Desktop, then just ask: "convert this roll from negatives, fix the colours and export it". The AI uses Grainy's own tools, you see the result in Grainy at once, and each AI task can be undone.</span></p>
+
+      <div class="steps">
+        <div class="step"><h3><span lang="ko">Grainy를 실행합니다</span><span lang="en">Open Grainy</span></h3><p><span lang="ko">따로 켤 설정은 없습니다. Grainy가 열려 있는 동안 AI 프로그램이 연결할 수 있습니다.</span><span lang="en">Nothing to switch on: while Grainy is open, your AI program can connect to it.</span></p></div>
+        <div class="step"><h3><span lang="ko">AI 프로그램에 Grainy MCP를 등록합니다 (한 번만)</span><span lang="en">Register Grainy's MCP in your AI program (once)</span></h3>
+          <p><span lang="ko">쓰는 프로그램과 운영체제를 고르고, 명령을 복사해 실행하세요.</span><span lang="en">Pick your program and system, then copy and run the command.</span></p>
+          <div class="tabs" role="tablist" id="clients">
+            <button type="button" role="tab" data-client="claude_code" aria-selected="true">Claude Code</button>
+            <button type="button" role="tab" data-client="codex" aria-selected="false">Codex</button>
+            <button type="button" role="tab" data-client="gemini" aria-selected="false">Gemini CLI</button>
+            <button type="button" role="tab" data-client="claude_desktop" aria-selected="false"><span lang="ko">Claude 데스크톱 · 기타</span><span lang="en">Claude Desktop · others</span></button>
+            <span class="os"></span>
+            <button type="button" role="tab" data-os="windows" aria-selected="true">Windows</button>
+            <button type="button" role="tab" data-os="macos" aria-selected="false">macOS</button>
+          </div>
+          <div class="cmd" id="command"><button type="button" class="copy" id="copy"><span lang="ko">복사</span><span lang="en">Copy</span></button><code id="command-text"></code></div>
+          <p class="note" id="command-note"></p>
+        </div>
+        <div class="step"><h3><span lang="ko">말로 시킵니다</span><span lang="en">Ask in plain words</span></h3>
+          <div class="examples">
+            <div><span lang="ko">"Negatives 폴더를 한 롤로 네거티브 반전하고 자동 색 맞춰줘"</span><span lang="en">"Convert the Negatives folder as one roll and run Auto colour"</span></div>
+            <div><span lang="ko">"이 롤을 밀착 인화로 보고, 어두운 컷만 노출을 조금 올려줘"</span><span lang="en">"Look at this roll on a contact sheet and brighten only the dark frames a little"</span></div>
+            <div><span lang="ko">"별점 4개 이상만 JPEG로 Instagram 폴더에 내보내줘"</span><span lang="en">"Export the four-star and better photos as JPEG to an Instagram folder"</span></div>
+            <div><span lang="ko">"방금 한 작업 되돌려줘"</span><span lang="en">"Undo what you just did"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="privacy">
+        <span lang="ko">Grainy 자체는 이 기능으로 인터넷에 아무것도 보내지 않습니다. 연결은 이 컴퓨터 안에서만 열리고, 등록한 AI 프로그램만 쓸 수 있습니다. 그 AI 프로그램이 읽은 사진 목록·보정값·작은 미리보기는 그 AI 서비스로 전송됩니다. 원본 파일은 바뀌지 않고, AI가 한 보정은 되돌릴 수 있습니다. 쓰지 않으려면 Grainy의 설정 › AI 연결에서 끌 수 있습니다.</span>
+        <span lang="en">Grainy itself sends nothing over the internet for this. The connection opens only inside this computer and only the AI programs you register can use it. What such a program reads — the photo list, edit values, small previews — is sent to that AI service. Originals are never changed and AI edits can be undone. Switch it off under Settings › AI Connection if you do not use it.</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2><span lang="ko">처음 실행할 때</span><span lang="en">First start</span></h2>
+      <details open><summary><span lang="ko">Windows: "Windows의 PC 보호" 경고가 떠요</span><span lang="en">Windows: "Windows protected your PC"</span></summary><p><span lang="ko">개인이 만든 무료 프로그램이라 유료 코드 서명이 없어서 뜨는 경고입니다. "추가 정보" → "실행"을 누르면 됩니다.</span><span lang="en">Grainy has no paid code-signing certificate yet. Choose "More info" → "Run anyway".</span></p></details>
+      <details><summary><span lang="ko">macOS: "확인되지 않은 개발자"라며 열리지 않아요</span><span lang="en">macOS: "unidentified developer"</span></summary><p><span lang="ko">시스템 설정 › 개인정보 보호 및 보안에서 "그래도 열기"를 한 번 누르면 됩니다. 사진 폴더나 외장 디스크 접근을 물으면 허용해 주세요.</span><span lang="en">Open System Settings › Privacy &amp; Security and click "Open Anyway" once. Allow access when macOS asks about your photo folders or external disks.</span></p></details>
+      <details><summary><span lang="ko">업데이트는 어떻게 하나요?</span><span lang="en">How do I update?</span></summary><p><span lang="ko">새 버전이 나오면 Grainy 왼쪽 위에 알림 버튼이 뜹니다. 누르고 "지금 업데이트"를 고르면 사진과 보정 기록은 그대로 두고 새 버전으로 다시 열립니다.</span><span lang="en">When a new version is out, a button appears at the top left of Grainy. Choose "Update now"; your photos and edit history stay as they are.</span></p></details>
+      <details><summary><span lang="ko">문제나 아이디어는 어디에 알리나요?</span><span lang="en">Where do I report a problem or an idea?</span></summary><p><span lang="ko">Grainy 위쪽의 피드백 버튼을 눌러 주세요. 보내면 접수 번호가 나오고, 반영된 버전으로 업데이트하면 Grainy가 알려 줍니다. GitHub에서도 받습니다.</span><span lang="en">Use the Feedback button at the top of Grainy. You get a reference number, and Grainy tells you after the update that addresses it. GitHub works too.</span></p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><span lang="ko">Grainy는 MIT 라이선스의 무료 프로그램입니다.</span><span lang="en">Grainy is free software under the MIT licence.</span> <a href="https://github.com/pastorius9/grainy">GitHub</a> · <a href="https://github.com/pastorius9/grainy/releases"><span lang="ko">모든 버전</span><span lang="en">All releases</span></a></div>
+    <div><span lang="ko">이 페이지는 쿠키를 쓰지 않습니다.</span><span lang="en">This page uses no cookies.</span></div>
+  </div>
+</footer>
+
+<script>
+// Install commands, verified against the current Claude Code and Codex command lines (see docs/mcp-install.json).
+const INSTALL = {
+  "windows": {
+    "claude_code": {
+      "cmd": "claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
+      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
+    },
+    "codex": {
+      "cmd": "codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
+      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
+    },
+    "gemini": {
+      "cmd": "gemini mcp add --scope user grainy powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
+      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
+    },
+    "claude_desktop": {
+      "cmd": "{\n  \"mcpServers\": {\n    \"grainy\": {\n      \"command\": \"powershell\",\n      \"args\": [\n        \"-NoProfile\",\n        \"-ExecutionPolicy\",\n        \"Bypass\",\n        \"-Command\",\n        \"& (Join-Path $env:LOCALAPPDATA 'Grainy\\\\mcp\\\\grainy-mcp-bridge.ps1')\"\n      ]\n    }\n  }\n}",
+      "ko": "Claude 데스크톱의 설정 › 개발자 › 설정 편집에서 claude_desktop_config.json에 넣고 Claude를 다시 여세요. 이미 다른 서버가 있으면 \"grainy\" 항목만 mcpServers 안에 더합니다. Cursor, VS Code, Cherry Studio, LM Studio처럼 MCP를 지원하는 다른 프로그램도 같은 내용을 그 프로그램의 MCP 설정에 넣으면 됩니다.",
+      "en": "Add it to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config) and restart Claude. If other servers are listed, add only the \"grainy\" entry inside mcpServers. Other MCP programs such as Cursor, VS Code, Cherry Studio or LM Studio take the same entry in their MCP settings."
+    }
+  },
+  "macos": {
+    "claude_code": {
+      "cmd": "claude mcp add --scope user grainy -- sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
+      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in Terminal, after opening Grainy once."
+    },
+    "codex": {
+      "cmd": "codex mcp add grainy -- sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
+      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in Terminal, after opening Grainy once."
+    },
+    "gemini": {
+      "cmd": "gemini mcp add --scope user grainy sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
+      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
+      "en": "Run it in Terminal, after opening Grainy once."
+    },
+    "claude_desktop": {
+      "cmd": "{\n  \"mcpServers\": {\n    \"grainy\": {\n      \"command\": \"/bin/sh\",\n      \"args\": [\n        \"-c\",\n        \"exec /bin/sh \\\"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\\\"\"\n      ]\n    }\n  }\n}",
+      "ko": "Claude 데스크톱의 설정 › 개발자 › 설정 편집에서 claude_desktop_config.json에 넣고 Claude를 다시 여세요. 이미 다른 서버가 있으면 \"grainy\" 항목만 mcpServers 안에 더합니다. Cursor, VS Code, Cherry Studio, LM Studio처럼 MCP를 지원하는 다른 프로그램도 같은 내용을 그 프로그램의 MCP 설정에 넣으면 됩니다.",
+      "en": "Add it to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config) and restart Claude. If other servers are listed, add only the \"grainy\" entry inside mcpServers. Other MCP programs such as Cursor, VS Code, Cherry Studio or LM Studio take the same entry in their MCP settings."
+    }
+  }
+};
+
+const state = {lang: 'ko', client: 'claude_code', os: /Mac/i.test(navigator.platform || navigator.userAgent) ? 'macos' : 'windows'};
+function setLang(lang){
+  state.lang = lang; document.documentElement.dataset.lang = lang; document.documentElement.lang = lang;
+  document.querySelectorAll('[data-set-lang]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.setLang === lang)));
+  try { localStorage.setItem('grainy-lang', lang); } catch (e) {}
+  showCommand();
+}
+function showCommand(){
+  const entry = INSTALL[state.os][state.client];
+  document.getElementById('command-text').textContent = entry.cmd;
+  document.getElementById('command-note').textContent = entry[state.lang];
+  document.querySelectorAll('[data-client]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.client === state.client)));
+  document.querySelectorAll('[data-os]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.os === state.os)));
+}
+document.querySelectorAll('[data-set-lang]').forEach(b => b.addEventListener('click', () => setLang(b.dataset.setLang)));
+document.querySelectorAll('[data-client]').forEach(b => b.addEventListener('click', () => { state.client = b.dataset.client; showCommand(); }));
+document.querySelectorAll('[data-os]').forEach(b => b.addEventListener('click', () => { state.os = b.dataset.os; showCommand(); }));
+document.getElementById('copy').addEventListener('click', async () => {
+  const text = document.getElementById('command-text').textContent, button = document.getElementById('copy');
+  try { await navigator.clipboard.writeText(text); button.dataset.done = '1'; button.querySelectorAll('span').forEach(s => s.textContent = s.lang === 'ko' ? '복사됨' : 'Copied'); }
+  catch (e) { const range = document.createRange(); range.selectNodeContents(document.getElementById('command-text')); getSelection().removeAllRanges(); getSelection().addRange(range); }
+});
+let saved = null; try { saved = localStorage.getItem('grainy-lang'); } catch (e) {}
+setLang(saved || (/^ko/i.test(navigator.language || '') ? 'ko' : 'en'));
+
+// Download buttons point straight at the files of the latest release when GitHub answers; otherwise at the release page.
+fetch('https://api.github.com/repos/pastorius9/grainy/releases/latest').then(r => r.ok ? r.json() : null).then(release => {
+  if (!release) return;
+  const find = part => (release.assets || []).find(a => a.name.includes(part));
+  const files = {windows: find('windows-x64.zip'), macos: find('macos-arm64.dmg')};
+  document.querySelectorAll('[data-asset]').forEach(a => { const f = files[a.dataset.asset]; if (f) a.href = f.browser_download_url; });
+  document.querySelectorAll('[data-version]').forEach(s => s.textContent = release.tag_name || '');
+}).catch(() => {});
+</script>
+</body>
+</html>

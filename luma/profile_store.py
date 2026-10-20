@@ -140,10 +140,17 @@ class ProfileCodec:
         return packed
 
     def dumps(self, value):
+        text = json.dumps(value)
+        # Only dicts under a 'dcp_profile' key are packed: without one the packed value is the value itself
+        # and its text is the same. Saves walking every entry of an 80-deep undo stack.
+        if '"dcp_profile": {' not in text:
+            return text
         return json.dumps(self.pack(value))
 
     def loads(self, text):
-        return self.expand(json.loads(text))
+        value = json.loads(text)
+        # Only stored references are expanded; text without one loads as it is.
+        return self.expand(value) if REF in text else value
 
 
 def payload_columns(db, *, all_preferences=False):

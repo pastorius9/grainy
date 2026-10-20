@@ -246,3 +246,135 @@ def test_batch_auto_tone_per_photo_and_failure_atomicity(app,tmp_path):
         with pytest.raises(ValueError,match='변경한 사진은 없습니다'):window.apply_command(snapshot,proposal)
         assert [window.catalog.photo(i)['settings'] for i in ids]==before
     finally:window.close()
+
+
+# --- compact (v2) groups, metadata and conflict kinds (the AI connection's batches) ----------------
+
+from luma.command_batch import BatchConflict,CHANGED,HISTORY,UNDO_DEPTH
+
+
+def photo_states(catalog,ids):
+    return [(catalog.photo(i)['settings'],catalog.preference(f'undo:{i}')) for i in ids]
+
+
+def test_meta_is_kept_and_restore_checks_expect(catalog,tmp_path):
+    ids,_=populate(catalog,tmp_path);rows=targets(capture(catalog,ids[0],ids[:3]),'selection')
+    key='undo:mcp:b123456'
+    apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows],batch_key=key,
+          meta={'id':'b123456','tool':'apply_edits'},compact=True)
+    group=catalog.preference(key)
+    assert group['id']=='b123456' and group['tool']=='apply_edits' and group['v']==2 and group['state']=='applied'
+    with pytest.raises(BatchConflict) as caught:restore(catalog,batch_key=key,expect='bffffff')
+    assert caught.value.kind=='none' and str(caught.value)=='실행 취소할 일괄 작업이 없습니다.'
+    assert all(catalog.photo(i)['settings']['monochrome'] for i in ids[:3])
+    assert restore(catalog,batch_key=key,expect='b123456')==ids[:3]
+    group=catalog.preference(key);assert group['state']=='undone' and group['id']=='b123456' and group['tool']=='apply_edits'
+    assert restore(catalog,True,batch_key=key,expect='b123456')==ids[:3]
+    # The full format keeps meta too.
+    rows=targets(capture(catalog,ids[0],ids[3:5]),'selection')
+    apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows],meta={'id':'x1'})
+    assert catalog.preference(BATCH_KEY)['id']=='x1' and 'v' not in catalog.preference(BATCH_KEY)
+
+
+def test_conflicts_are_batch_conflicts_with_kind_and_same_messages(catalog,tmp_path):
+    ids,_=populate(catalog,tmp_path);rows=targets(capture(catalog,ids[0],ids[:3]),'selection')
+    for redo,text in ((False,'실행 취소할 일괄 작업이 없습니다.'),(True,'다시 실행할 일괄 작업이 없습니다.')):
+        with pytest.raises(BatchConflict) as caught:restore(catalog,redo)
+        assert caught.value.kind=='none' and str(caught.value)==text and isinstance(caught.value,ValueError)
+    catalog.edit(ids[1],{**rows[1]['settings'],'exposure':2})
+    with pytest.raises(BatchConflict) as caught:apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows])
+    assert caught.value.kind=='changed' and str(caught.value)==CHANGED
+    rows=targets(capture(catalog,ids[0],ids[:3]),'selection')
+    apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows])
+    catalog.save_preference(f'undo:{ids[0]}',{'undo':[],'redo':[]})
+    with pytest.raises(BatchConflict) as caught:restore(catalog)
+    assert caught.value.kind=='history' and str(caught.value)==HISTORY
+
+
+def test_codex_groups_keep_the_v1_format(catalog,tmp_path):
+    ids,_=populate(catalog,tmp_path);rows=targets(capture(catalog,ids[0],ids[:3]),'selection')
+    apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows])
+    group=catalog.preference(BATCH_KEY)
+    assert set(group)=={'state','records'} and group['state']=='applied'
+    assert all(set(r)=={'id','path','before','after','undo_before','undo_after'} for r in group['records'])
+    assert group['records'][0]['undo_after']=={'undo':[rows[0]['settings']],'redo':[]}
+
+
+def stacked(catalog,ids,depth,redo,order=False):
+    for ident in ids:
+        base=catalog.photo(ident)['settings']
+        undo=[{**base,'exposure':-i/100} for i in range(depth)]
+        if order and undo:undo[0]=dict(reversed(list(undo[0].items())))    # an older entry in another key order
+        catalog.save_preference(f'undo:{ident}',{'undo':undo,'redo':[{**base,'contrast':float(i)} for i in range(redo)]})
+
+
+@pytest.mark.parametrize('depth,redo,order',[(0,0,False),(79,0,False),(80,0,False),(80,0,True),(5,3,False),(UNDO_DEPTH,2,True)])
+def test_compact_group_undo_redo_matches_full_format(tmp_path,depth,redo,order):
+    from luma.engine import normalized
+    results=[]
+    for name,compact in (('full',False),('compact',True)):
+        catalog=Catalog(tmp_path/name);ids,_=populate(catalog,tmp_path/name);targeted=ids[:3]
+        stacked(catalog,targeted,depth,redo,order)
+        # One photo has never been edited: it has no undo preference at all.
+        catalog.db.execute('DELETE FROM preferences WHERE key=?',(f'undo:{targeted[2]}',));catalog.db.commit()
+        initial=photo_states(catalog,ids)
+        rows=targets(capture(catalog,ids[0],targeted),'selection')
+        apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows],compact=compact)
+        applied=photo_states(catalog,ids)
+        assert restore(catalog)==targeted;undone=photo_states(catalog,ids)
+        assert restore(catalog,True)==targeted;redone=photo_states(catalog,ids)
+        assert restore(catalog)==targeted;again=photo_states(catalog,ids)
+        # Undo gives back exactly what was there (a photo without an undo preference gets the empty state).
+        assert [s for s,_ in undone]==[s for s,_ in initial]
+        assert [u for (_,u),(_,before) in zip(undone,initial) if before is not None]==[before for _,before in initial if before is not None]
+        assert redone==applied and again==undone
+        assert all(len(state['undo'])<=UNDO_DEPTH for _,state in applied if state)
+        results.append((initial,applied,[s for s,_ in undone],redone))
+        catalog.close()
+    assert results[0]==results[1]
+
+
+@pytest.mark.parametrize('mutation',['edit','relink','history','redo-edit'])
+def test_compact_group_refuses_after_member_edit_relink_or_history_change(catalog,tmp_path,mutation):
+    ids,_=populate(catalog,tmp_path);rows=targets(capture(catalog,ids[0],ids[:3]),'selection')
+    stacked(catalog,ids[:3],4,0)
+    apply(catalog,rows,[changed_settings(r['settings'],bw()) for r in rows],compact=True)
+    if mutation=='redo-edit':restore(catalog)
+    if mutation in ('edit','redo-edit'):catalog.edit(ids[2],{**catalog.photo(ids[2])['settings'],'contrast':44})
+    elif mutation=='relink':
+        with catalog.db:catalog.db.execute('UPDATE photos SET path=? WHERE id=?',('moved.png',ids[2]))
+    else:
+        state=catalog.preference(f'undo:{ids[2]}');catalog.save_preference(f'undo:{ids[2]}',{**state,'redo':[state['undo'][0]]})
+    before=photo_states(catalog,ids);group=catalog.preference(BATCH_KEY)
+    with pytest.raises(BatchConflict) as caught:restore(catalog,mutation=='redo-edit')
+    assert caught.value.kind==('history' if mutation=='history' else 'changed')
+    assert photo_states(catalog,ids)==before and catalog.preference(BATCH_KEY)==group
+
+
+def test_compact_group_size_and_speed(tmp_path):
+    """500 photos with full 80-entry undo stacks: one settings object per photo is kept, and apply plus undo
+    take about 5 s on the development PC (i9-12900K); the bound leaves room for a loaded test machine."""
+    import time
+    from luma.engine import defaults
+    catalog=Catalog(tmp_path/'data');base=defaults()
+    try:
+        with catalog.db:
+            for n in range(500):
+                catalog.db.execute('INSERT INTO photos(path,name,edits,metadata,imported) VALUES(?,?,?,?,?)',
+                    (str(tmp_path/f'p{n}.png'),f'p{n}.png',json.dumps({**base,'exposure':n/1000}),'{}','x'))
+            ids=[r[0] for r in catalog.db.execute('SELECT id FROM photos ORDER BY id')]
+            for ident in ids:
+                state={'undo':[{**base,'exposure':-i/100} for i in range(UNDO_DEPTH)],'redo':[]}
+                catalog.db.execute('INSERT OR REPLACE INTO preferences VALUES(?,?)',(f'undo:{ident}',json.dumps(state)))
+        records=[{'id':i,'path':catalog.photo(i)['path'],'settings':catalog.photo(i)['settings']} for i in ids]
+        before=catalog.preference(f'undo:{ids[7]}')
+        started=time.perf_counter()
+        assert len(apply(catalog,records,[{**r['settings'],'contrast':10.} for r in records],batch_key='undo:mcp:big',compact=True))==500
+        applied=time.perf_counter()-started
+        size=len(catalog.db.execute("SELECT value FROM preferences WHERE key='undo:mcp:big'").fetchone()[0])
+        started=time.perf_counter();restore(catalog,batch_key='undo:mcp:big');undone=time.perf_counter()-started
+        print(f'500 photos x {UNDO_DEPTH}: apply {applied:.2f} s, undo {undone:.2f} s, group {size/1e6:.2f} MB')
+        assert size<2_000_000
+        assert applied+undone<15
+        assert catalog.preference(f'undo:{ids[7]}')==before and catalog.photo(ids[7])['settings']==records[7]['settings']
+    finally:catalog.close()

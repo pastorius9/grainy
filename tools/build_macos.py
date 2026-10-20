@@ -160,6 +160,7 @@ def main():
     with info.open('wb') as handle:plistlib.dump(values,handle)
     run(sys.executable,ROOT/'tools/package_notices.py',APP/'Contents/Resources/THIRD_PARTY_LICENSES')
     shutil.copy2(ROOT/'LICENSE',APP/'Contents/Resources/LICENSE.txt')
+    assert (APP/'Contents/Resources/assets/mcp/grainy-mcp-bridge.sh').is_file(),'MCP bridge missing.'
     # The changes above invalidate PyInstaller's signature; Apple Silicon refuses unsigned code. Releases are signed
     # with one self-signed certificate (GRAINY_SIGN_IDENTITY, set up by the CI workflow): macOS keeps the privacy
     # permissions it gave the app (folders, external disks) across updates only while that identity stays the same.

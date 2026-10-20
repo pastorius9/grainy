@@ -18,6 +18,10 @@ class DesktopSession:
         self.translator = None
         app.setQuitOnLastWindowClosed(False)
         app.lastWindowClosed.connect(self.last_window_closed)
+        # The AI connection (MCP) lives as long as the session, across window rebuilds; on unless switched off.
+        from .mcp_service import McpService
+        self.mcp = McpService(self)
+        app.aboutToQuit.connect(self.mcp.stop)
 
     def apply_language(self, value):
         if self.translator is not None:
@@ -47,6 +51,7 @@ class DesktopSession:
         from . import native_gpu
         native_gpu.set_enabled(self.preferences.use_gpu)
         self.open_window()
+        self.mcp.start_if_enabled()      # quiet: a failure shows only in Settings › AI Connection, never a dialog
         from PySide6.QtCore import QTimer
         # After the window is up; the folder check follows those dialogs so its message does not cover them.
         QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.check_folders()))
@@ -74,6 +79,7 @@ class DesktopSession:
         self.window.gpuPreferenceChanged.connect(self.save_gpu)
         from .updater import UpdateController
         self.updates = UpdateController(self.window, self.preferences)
+        self.mcp.attach(self.window)     # its Settings entry goes before the separator: 'Grainy 정보…' stays last
         from PySide6.QtWidgets import QMenu
         menu = self.window.findChild(QMenu, 'settingsMenu'); menu.addSeparator()
         from . import whats_new
@@ -135,4 +141,4 @@ class DesktopSession:
 
     def last_window_closed(self):
         if self.window is not None and not self.switching:
-            QTimer.singleShot(0, self.app.quit)
+            self.mcp.stop(); QTimer.singleShot(0, self.app.quit)

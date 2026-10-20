@@ -2376,8 +2376,11 @@ class MainWindow(QMainWindow):
         if folder:self.start_export(ids,Path(folder),**options)
 
     def start_export(self,ids,folder,format='JPEG',quality=95,longest=0,color_space='sRGB',keep_metadata=False,naming='{stem}_grainy',
-                     grayscale=True,dither=True):
-        if self.export_running or not ids:return
+                     grayscale=True,dither=True,*,remember=True,on_done=None,on_error=None,cancel=None,progress=None):
+        """Export in the worker pool (photo_service.export_records). remember=False leaves the person's
+        "previous export" settings alone (AI exports); on_done/on_error replace the message boxes.
+        Returns False when nothing was started."""
+        if self.export_running or not ids:return False
         self.commit()
         records=[self.catalog.photo(i) for i in ids]
         folder=Path(folder)
@@ -2386,66 +2389,31 @@ class MainWindow(QMainWindow):
             color_space=color_space,keep_metadata=keep_metadata,naming=naming,grayscale=grayscale,dither=dither)
         self.export_running=True
         self.export_button.setEnabled(False)
-        from .workflow_data import edit_signature,record_exports
-        def work():
-            from concurrent.futures import ThreadPoolExecutor
-            from .quick_export import export_concurrency
-            # Choose every file name first, in order, so parallel jobs never claim the same path.
-            plans,failures,reserved=[],[],set()
-            taken=lambda path:path.exists() or path in reserved
-            for n,record in enumerate(records,1):
-                try:
-                    from .quick_export import SUFFIXES
-                    suffix=Path(record['path']).suffix if format=='Original' else SUFFIXES[format]
-                    # A macOS file name may hold characters Windows forbids (Finder shows ':' as '/', as in a
-                    # date); the exported name gets '_' there instead of the export failing.
-                    source_stem=Path(record['path']).stem.translate(str.maketrans({c:'_' for c in '<>:"/\\|?*'}))
-                    stem=naming.format(stem=source_stem,n=n)
-                    if not stem.strip() or Path(stem).name!=stem or any(c in stem for c in '<>:"/\\|?*'):
-                        raise ValueError(tr('유효하지 않은 출력 이름'))
-                    destination=folder/(stem+suffix);index=2
-                    while taken(destination) or (format=='Original' and taken(destination.with_suffix('.xmp'))):
-                        destination=folder/f'{stem}_{index}{suffix}';index+=1
-                    reserved.add(destination)
-                    if format=='Original':reserved.add(destination.with_suffix('.xmp'))
-                    plans.append((record,destination))
-                except Exception as exc:
-                    failures.append(record['name']+': '+str(exc))
-            def one(plan):
-                record,destination=plan
-                try:
-                    if format=='Original':
-                        from .quick_export import copy_original
-                        size=copy_original(record,destination)
-                    else:
-                        size=export_image(record['path'],destination,record['settings'],format,quality,longest or None,
-                            color_space,keep_metadata,record['user_metadata'],record['keywords'],grayscale=grayscale,dither=dither)
-                    return {'path':str(destination),'size':size,'photo_id':record['id'],
-                        'edit_signature':edit_signature(record['settings'])},None
-                except Exception as exc:
-                    return None,record['name']+': '+str(exc)
-            with ThreadPoolExecutor(export_concurrency([record for record,_ in plans]),thread_name_prefix='GrainyExport') as pool:
-                results=list(pool.map(one,plans))
-            outputs=[output for output,_ in results if output]
-            failures+=[failure for _,failure in results if failure]
-            return {'outputs':outputs,'failures':failures}
+        from .workflow_data import record_exports
+        from . import photo_service
+        work=lambda:photo_service.export_records(records,folder,format,quality,longest,color_space,keep_metadata,naming,
+            grayscale,dither,cancel=cancel,progress=progress,exporter=lambda *a,**k:export_image(*a,**k))
         def finished(result):
             self.export_running=False
             self.export_button.setEnabled(True)
             self.last_export=result
             if result['outputs']:
-                from .quick_export import PREFERENCE
-                self.catalog.save_preference(PREFERENCE,options)
+                if remember:
+                    from .quick_export import PREFERENCE
+                    self.catalog.save_preference(PREFERENCE,options)
                 record_exports(self.catalog,[{k:o[k] for k in ('path','photo_id','edit_signature')} for o in result['outputs']])
             self.statusBar().showMessage(tr('내보내기 완료: {0}장  ·  실패: {1}장', f"{len(result['outputs'])}", f"{len(result['failures'])}"))
-            if result['failures']:
+            if on_done is not None:on_done(result)
+            elif result['failures']:
                 QMessageBox.warning(self,tr('일부 파일 내보내기 실패'),'\n'.join(result['failures']))
         def failed(error):
             self.export_running=False
             self.export_button.setEnabled(True)
-            self.show_error(error)
+            if on_error is not None:on_error(error)
+            else:self.show_error(error)
         self.statusBar().showMessage(tr('사진 {0}장 내보내는 중…', f'{len(records)}'))
         self.spawn(work,finished,failed)
+        return True
 
     def update_gpu_action(self):
         from . import native_gpu
@@ -2535,18 +2503,9 @@ class MainWindow(QMainWindow):
         progress.canceled.connect(cancel.set)
         self.command_running=True
         def work():
-            from .preview_store import signature,load_offline
-            values=[]
-            for index,record in enumerate(records):
-                if cancel.is_set():return None
-                settings=record['settings'];path=Path(record['path'])
-                if file_access.present(path):
-                    before=signature(path)
-                    source,_=load_image(path,720,settings['working_space'],raw_options=settings)
-                    if signature(path)!=before:raise ValueError('원본이 변경되었습니다.')
-                else:source,_=load_offline(directory,record['id'],settings)
-                values.append(compute(resize_float(source,720),settings))
-                state['done']=index+1
+            from . import photo_service
+            values,_=photo_service.auto_values(records,compute,directory,cancel=cancel,
+                progress=lambda n:state.__setitem__('done',n),strict=True,loader=lambda *a,**k:load_image(*a,**k))
             return values
         def finished(values):state['values']=values;progress.accept()
         def failed(error):state['failed']=True;progress.accept()
@@ -2560,16 +2519,20 @@ class MainWindow(QMainWindow):
         if state.get('failed'):raise ValueError('일부 사진을 읽거나 계산할 수 없습니다. 변경한 사진은 없습니다.')
         return state['values']
 
-    def refresh_command_edits(self,ids):
+    def refresh_command_edits(self,ids,label=None):
+        """Show edits a batch wrote to the catalog (Codex commands, photo workflow menu, AI connection)."""
         self.photo_model.invalidate_thumbnails(ids)
         if self.current_id in ids:
             self.studio.cancel_stroke()
             self.settings=deepcopy(self.catalog.photo(self.current_id)['settings']);self.last_saved=deepcopy(self.settings)
             state=self.catalog.preference(f'undo:{self.current_id}',{})
-            self.undo_stack=state.get('undo',[]);self.redo_stack=state.get('redo',[])
+            self.undo_stack=[normalized(s) for s in state.get('undo',[])];self.redo_stack=[normalized(s) for s in state.get('redo',[])]
             self.before_button.setChecked(False);self.render_version+=1
-            self.load_controls();self.render()
-        self.statusBar().showMessage(tr('Codex 명령 · {0}장 변경', f'{len(ids):,}'))
+            self.load_controls()
+            if self.view.crop_mode:self.view.show_crop(self.settings['crop'])
+            self.render()
+        count=f'{len(ids):,}'
+        self.statusBar().showMessage(tr('Codex 명령 · {0}장 변경', count) if label is None else tr('{0} · {1}장 변경', tr(label), count))
 
     def restore_command_batch(self,redo=False):
         from .command_batch import restore
@@ -2618,6 +2581,8 @@ class MainWindow(QMainWindow):
             return
         self.commit()
         self.closing=True;self.library_cancel.set();self.photo_model.closed=True
+        # AI connection: a running job is cancelled (it has written nothing yet) and its worker pool emptied.
+        if hasattr(self,'mcp'):self.mcp.shutdown()
         self.studio.cancel_stroke()
         self.preview_queue.shutdown();self.photo_model.check_timer.stop()
         self.display_color.shutdown()

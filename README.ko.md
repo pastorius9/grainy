@@ -11,6 +11,8 @@
   RAW 파일도 됩니다. 계정도 구독도 없고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.
 </p>
 
+<p align="center"><b><a href="https://pastorius9.github.io/grainy/">pastorius9.github.io/grainy</a></b></p>
+
 <p align="center">
   <a href="https://github.com/pastorius9/grainy/releases/latest"><img alt="release" src="https://img.shields.io/github/v/release/pastorius9/grainy?style=flat-square&color=c9a36b"></a>
   <a href="https://github.com/pastorius9/grainy/releases"><img alt="downloads" src="https://img.shields.io/github/downloads/pastorius9/grainy/total?style=flat-square&color=8a6a3b"></a>
@@ -117,6 +119,7 @@
 - **내보내기**: JPEG, PNG, TIFF, AVIF, JPEG XL
 - **피드백**: 화면 위쪽 버튼으로 문제점이나 개선 아이디어를 바로 보낼 수 있습니다
 - **업데이트**: 프로그램 안에서 새 버전을 확인하고 바로 교체합니다
+- **AI 연결**: 이 컴퓨터의 AI 프로그램(Claude Code, Codex, Claude 데스크톱)에 명령 한 줄로 Grainy의 MCP를 한 번 설치하면, Grainy가 실행 중일 때 그 프로그램이 Grainy의 기능으로 사진을 찾아보고, 보고, 보정하고, 내보낼 수 있습니다. AI가 한 보정은 한 번에 하나씩 되돌릴 수 있습니다
 - **기타**: 편집 이력과 실행 취소, Lightroom 카탈로그·프리셋 가져오기, 카탈로그 백업(Google Drive 폴더 포함), GPS 지도
 
 자세한 사용법은 프로그램에 들어 있는 도움말(`README.html`)에 있습니다.
@@ -126,6 +129,40 @@
 - 사용 통계를 수집하지 않습니다. 인터넷으로 나가는 것은 아래 두 가지뿐이고, 둘 다 직접 요청했을 때만 동작합니다.
 - **피드백 보내기**: 보내기를 누를 때만 입력한 글, Grainy 버전, 컴퓨터 사양 한 줄(운영체제 버전, 그래픽카드 이름), 무작위로 정하는 접수 번호 5자리가 전송됩니다. 접수 번호는 이 컴퓨터에도 남아, 나중에 업데이트하면 보내신 피드백이 반영되었는지 알려 드립니다. 사진, 파일 이름과 경로, 사용자 이름은 보내지 않습니다.
 - **업데이트**: "업데이트 확인"을 누르거나 "새 버전 자동 확인"을 켰을 때만 GitHub에서 최신 버전 정보를 읽습니다(자동 확인은 처음 실행할 때 켤지 묻고, 설정에서 끌 수 있습니다). 사용자에 관한 정보는 보내지 않습니다.
+- **AI 연결**: Grainy가 실행 중이면 연결은 켜져 있습니다(설정 › AI 연결 (MCP)…에서 끌 수 있습니다). 하지만 이 컴퓨터의 AI 프로그램(Claude Code, Codex, Claude 데스크톱)에 Grainy의 MCP를 설치하고 그 프로그램에 일을 시키지 않으면 아무것도 읽히지 않고 컴퓨터 밖으로 나가지도 않습니다. 설치한 프로그램은 사진 목록과 사진 정보를 읽을 수 있습니다. 사진 정보는 파일 이름과 전체 파일·폴더 경로(사용자 이름 포함), 키워드, 별점, 카메라, 렌즈, 노출 정보, 촬영 날짜이며 GPS 위치는 빠집니다. 보정값과 최대 1568픽셀 미리보기, 최대 36장짜리 밀착 이미지도 읽을 수 있습니다. 또 보정값을 바꾸고, AI 내보내기 폴더(바꾸지 않았다면 사진/Grainy)나 그 하위 폴더, 또는 마지막으로 내보낸 폴더로 사본을 내보낼 수 있습니다. 그 프로그램이 읽은 내용은 그 AI 서비스로 전송되며 대화 기록 등으로 그 프로그램에도 남을 수 있습니다. Grainy 자체는 사진을 어디로도 보내지 않습니다. 연결은 이 컴퓨터 안에서만 열리고 연결 키가 있어야 합니다. 키는 Grainy의 설정 폴더에 그대로 저장되고 설치한 MCP가 거기서 읽으므로, AI 프로그램의 설정에는 들어가지 않습니다(고급에서 HTTP로 직접 연결하도록 설정한 경우는 제외). 원본 파일은 바뀌지 않습니다. AI가 한 보정은 최근 5개 작업까지 최근 것부터 되돌릴 수 있고, 그 뒤 해당 사진을 다시 보정하지 않았을 때만 됩니다. AI가 처음 손댄 사진에는 'AI 작업 전' 스냅샷도 남습니다. 내보낸 파일은 되돌릴 수 없습니다.
+
+## AI 프로그램에서 Grainy 쓰기 (선택)
+
+Grainy는 실행만 되어 있으면 됩니다. 쓰는 AI 프로그램에 Grainy의 MCP를 한 번 설치하세요. 명령은 어느 컴퓨터에서나 같고 연결 키가 들어가지 않습니다. Grainy의 **설정 › AI 연결 (MCP)…** 창에도 같은 명령이 **복사** 버튼과 함께 나옵니다. 설치 전에 Grainy를 한 번 실행하세요. 이 명령이 시작하는 중계 스크립트를 Grainy가 자기 폴더(Windows는 `%LOCALAPPDATA%\Grainy\mcp`, macOS는 `~/Library/Application Support/Grainy/mcp`)에 넣어 둡니다.
+
+1. 쓰는 프로그램에 설치합니다.
+   - **Claude Code**: Windows는 PowerShell에서 실행한 뒤 Claude Code를 다시 시작합니다. 확인은 `claude mcp list`.
+     ```powershell
+     claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Grainy\mcp\grainy-mcp-bridge.ps1"
+     ```
+     macOS는 터미널에서:
+     ```bash
+     claude mcp add --scope user grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"
+     ```
+   - **Codex**: Windows는 PowerShell에서 실행한 뒤 Codex를 다시 시작합니다. 확인은 `codex mcp list`.
+     ```powershell
+     codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File "$env:LOCALAPPDATA\Grainy\mcp\grainy-mcp-bridge.ps1"
+     ```
+     macOS는 터미널에서:
+     ```bash
+     codex mcp add grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"
+     ```
+   - **Claude 데스크톱**: 설정 › 개발자 › 구성 편집을 열고, `"mcpServers"` 안에 아래 `"grainy"` 항목을 넣은 뒤(파일이 비어 있으면 전체를 그대로 붙여 넣습니다) Claude 데스크톱을 다시 시작합니다. Windows:
+     ```json
+     {"mcpServers": {"grainy": {"command": "powershell", "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "& (Join-Path $env:LOCALAPPDATA 'Grainy\\mcp\\grainy-mcp-bridge.ps1')"]}}}
+     ```
+     macOS:
+     ```json
+     {"mcpServers": {"grainy": {"command": "/bin/sh", "args": ["-c", "exec /bin/sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\""]}}}
+     ```
+2. 예를 들어 이렇게 부탁합니다: "12번 롤을 밀착 이미지로 보여 주고, 한 롤로 네거티브 반전한 뒤 노출을 고르게 맞춰 줘." 바꾼 내용은 작업마다 한 묶음이라, AI에게 되돌려 달라고 하거나 Grainy의 AI 연결 창에서 **마지막 AI 작업 되돌리기**를 누르면 됩니다.
+
+Windows에서는 `'--'`의 따옴표를 지우지 마세요. claude나 codex를 npm으로 설치했다면 따옴표 없는 `--`를 PowerShell이 빼 버립니다. AI 프로그램은 Grainy보다 먼저 켜 두어도 됩니다. Grainy가 실행 중이 아니거나 AI 연결을 꺼 두었으면 AI 프로그램에는 Grainy의 도구가 그대로 보이고, 도구를 부르면 Grainy가 실행 중이 아니라는 것과 해결 방법을 알려 줍니다. HTTP로 직접 연결하는 프로그램은 같은 창의 **고급**에 있는 주소와 연결 키를 씁니다. **새 키 만들기**나 **다른 포트로 바꾸기**를 한 뒤에는 그런 프로그램만 다시 설정하면 되고, 위 방법으로 설치한 프로그램은 그대로 쓸 수 있습니다.
 
 ## 소스에서 실행
 

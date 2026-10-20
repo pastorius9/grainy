@@ -333,3 +333,34 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
 - 막힌 사진: 썸네일 상태가 `오프라인`/`원본 없음` 대신 `접근 권한 필요`(`preview_store.snapshot`의 `denied`)이고, 저장된 미리보기는 지금처럼 보여 준다. `누락 원본만` 필터, 카탈로그 검사의 누락 수(막힌 수는 따로 적는다), 폴더 목록의 `?`(위치 다시 지정), 이름이 바뀐 폴더 자동 찾기에 들어가지 않는다(`library.matches`, `folder_locations.scan_folders`).
 - 안내 창(`file_access.guide`)은 세션당 한 번: 사진을 열 때(`MainWindow.original_unreadable`), 폴더 동기화를 고를 때, 그리고 시작 1.5초 뒤 달라진 점·업데이트 창 다음에 등록 폴더의 루트만 `os.scandir`로 열어 보는 검사(`file_access.check_folders`, 데몬 스레드라 창은 기다리지 않는다)에서. 맥에서는 `시스템 설정 열기` 버튼이 `x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders`를 연다. Windows는 폴더 보안 권한을 확인하라는 짧은 문구만.
 - 맥에서 확인할 것: 외장 디스크의 사진 폴더를 등록해 둔 상태에서 시스템 설정 › 개인정보 보호 및 보안 › 파일 및 폴더에서 Grainy의 `이동식 볼륨`을 끄고 Grainy를 연다 → 안내 창이 한 번 뜨고, 썸네일에 `접근 권한 필요`, 폴더 목록에 `?`가 없어야 한다. `시스템 설정 열기`가 그 화면을 여는지. 다시 켜고 Grainy를 다시 열면 가져오기 없이 사진과 보정이 그대로 돌아와야 한다. 데스크탑·문서 폴더의 사진으로도 한 번. 시작할 때 macOS가 접근을 묻는 창을 띄우는지, 그리고 막혔을 때 `stat`부터 EPERM인지(열 때만 막히면 이 구분이 걸리지 않고 오류 창이 뜬다)도 적어 둔다.
+
+## 2026-10-20 — AI 연결(MCP) — macOS에서 확인할 것 (Windows 쪽에서, 아직 배포 전)
+
+- 먼저 따로 커밋한 버그 수정: `사진 작업` 메뉴의 자동톤·자동 색·네거티브 반전(한 롤 포함)·자동 화이트 밸런스 등이 `rawcolor.retarget`를 거치면서 RAW의 스포이드 화이트밸런스(`raw_mode='sample'`)를 `custom`으로 바꾸고 중립점을 지우던 문제, 카탈로그 정보에 `format`이 없는(가져오기만 하고 열지 않은) RAW에서 `dcp_profile`·`raw_neutral`을 지우던 문제를 고쳤다. 이제 `retarget`는 다른 사진의 보정을 붙이는 `이전 사진 보정 붙이기`에서만 쓴다(`WorkflowTools.apply_edits(..., retarget=False)`).
+- 새 기능: `설정 › AI 연결 (MCP)…`(이 절을 쓸 때는 기본 꺼짐·동의 창이었다. 지금은 기본으로 켜지고 동의 창이 없다: 다음 절). 켜면 `127.0.0.1`에만 HTTP 서버(`luma/mcp_http.py`)를 열고, Claude Code·Codex는 `http://127.0.0.1:<포트>/mcp`에 연결 키(64자리 16진수)를 붙여 바로 접속한다. 도구 12개(`luma/mcp_tools.py`): 목록·사진 정보·미리보기·밀착 이미지(최대 36장 한 장), 여러 장에 사진마다 다른 값을 한 번에 넣는 `apply_edits`, 자동톤·자동 색·네거티브 반전(한 롤 포함), 최근 AI 묶음 되돌리기·다시 실행(최근 5개), 내보내기(AI 내보내기 폴더, 기본 `사진/Grainy`), 사진 열기, 작업 진행 확인. 모든 호출은 53초 안에 답한다(요청 시한 45초 + 이미 시작한 GUI 작업 8초).
+- 구조: GUI와 무관한 사진 작업은 `luma/photo_service.py`·`luma/photo_images.py`로 모았다(메뉴의 일괄 자동톤 계산과 내보내기 본문도 이것을 쓴다). 카탈로그 접근은 모두 `GuiCall`(`luma/mcp_service.py`)로 GUI 스레드에서 하고, 열린 대화상자·슬라이더 조작·브러시·크롭·가져오기·내보내기 중이면 아무것도 바꾸지 않고 "busy"로 답한다. `DesktopSession.mcp`가 앱 실행 동안 살아 있어 언어를 바꿔 창을 다시 만들어도 서버는 그대로다. 진행 중인 AI 작업은 창이 닫히면 취소된다.
+- 일괄 실행 취소 기록: `command_batch.apply(..., compact=True)`의 v2 묶음은 사진마다 보정값 한 벌만 저장한다(500장 80단계 실행 취소 스택에서 1.5MB). 사진별 실행 취소 기록은 저장된 글자 그대로의 SHA-256으로 비교한다. Codex 명령의 v1 묶음 형식은 그대로다. `ProfileCodec.dumps/loads`는 카메라 프로파일이 없는 값을 다시 훑지 않는다(결과는 같다).
+- macOS 쪽 중계 스크립트: Claude 데스크톱은 stdio 서버만 띄우므로 `assets/mcp/grainy-mcp-bridge.sh`(ASCII, LF)를 앱이 `~/Library/Application Support/Grainy/mcp`에 복사하고, AI 프로그램은 `/bin/sh`나 `sh`로 그 파일을 시작한다(실행 권한 비트는 필요 없다. 설치 명령은 다음 절). `/bin/sh` + `/usr/bin/curl`(`-H @파일`이라 키가 `ps`에 보이지 않는다, curl 7.55 이상) + `awk`만 쓴다. 요청마다 `endpoint`·`auth-header`를 다시 읽고, Grainy가 꺼져 있거나 키가 바뀌어 401이면 `offline-*.json`으로 답한다. 이 폴더는 0700, 파일은 0600으로 만든다(임시 파일을 `O_EXCL`·0600으로 만든 뒤 `os.replace`).
+- macOS에는 `SO_EXCLUSIVEADDRUSE`가 없다. `allow_reuse_address=False`라 `SO_REUSEADDR` 없이 같은 포트에 두 번째 bind는 어차피 거부된다. 연결을 끄면 같은 포트를 바로 다시 쓸 수 있는지(TIME_WAIT)도 본다.
+- 빌드: `tools/build_macos.py`가 서명 전에 `Contents/Resources/assets/mcp/grainy-mcp-bridge.sh`가 있는지 확인한다. 두 중계 스크립트는 두 플랫폼 모두에 들어간다.
+- 맥에서 확인할 것: Claude 데스크톱으로 끝까지 한 번(Grainy를 끈 채로 시작해 도구 목록이 보이는지, 켠 뒤 호출, 사용 중에 `새 키 만들기`), 설정 창 `설정 방법` 탭의 고정폭 글꼴과 `복사`(클립보드), 기본 내보내기 폴더(`QStandardPaths` PicturesLocation → `~/Pictures/Grainy`), 상태 표시줄의 `AI 연결 켜짐` 단추와 `AI 작업 중단` 단추의 모양. 시험 `tests/test_mcp_bridge.py::test_sh_bridge_forwards_and_answers_offline`은 맥에서만 돈다.
+
+## 2026-10-20 — AI 연결: 기본으로 켜짐, 명령 한 줄 설치 — macOS에서 확인할 것 (Windows 쪽에서, 아직 배포 전)
+
+- 바뀐 것: 소유자 요청으로 다른 앱의 MCP처럼 Grainy가 실행 중이기만 하면 되게 했다. AI 연결은 기본으로 켜진다. 설정의 `mcp_enabled`가 없으면 켜짐, `false`면 꺼짐이다(`McpService.enabled`). 동의 창과 `mcp_consent`는 없앴고, 예전 설정 파일에 남은 `mcp_consent`는 읽지 않는다. 끄는 스위치(`AI 연결 켜기`)는 설정 창에 남아 있고, 끈 상태는 다음 실행에도 유지된다.
+- 시작은 조용히 한다(`McpService.start_if_enabled`). 포트 사용 중, 설정 폴더에 쓸 수 없음, 같은 설정을 쓰는 다른 Grainy가 연결을 쓰는 중, 그 밖의 예외 모두 창이나 상태 표시줄 메시지 없이 설정 창의 상태와 `최근 AI 작업`에만 남고, Grainy 시작을 막지 않는다.
+- 설치는 중계 스크립트로 한다. 키도 포트도 들어가지 않는 같은 명령을 모든 컴퓨터에서 쓴다(`docs/mcp-install.json`, 설정 창의 `AI 프로그램에 설치하기` 탭과 같은 값, `luma/mcp_dialog.py`의 `install_commands`). macOS:
+  - Claude Code: `claude mcp add --scope user grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"`
+  - Codex: `codex mcp add grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"`
+  - Claude 데스크톱(`claude_desktop_config.json`): `{"mcpServers": {"grainy": {"command": "/bin/sh", "args": ["-c", "exec /bin/sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\""]}}}`. JSON은 `$HOME`을 풀지 못하므로 `/bin/sh -c`가 푼다. MCP SDK가 넘기는 기본 환경 변수(HOME, LOGNAME, PATH, SHELL, TERM, USER)에 HOME이 있다.
+- 중계 스크립트와 `offline-*.json`은 연결이 켜진 채 시작할 때마다 `~/Library/Application Support/Grainy/mcp`에 다시 쓴다(포트를 못 열어도 쓴다). 연결을 끄면 `endpoint`·`auth-header`만 지우고, 중계 스크립트는 Grainy가 실행 중이 아니거나 연결이 꺼져 있다는 것과 해결 방법을 영어·한국어로 답한다(`mcp_protocol.OFFLINE_TEXT`; 파일마저 없을 때의 답은 스크립트 안의 `OFFLINE_ERROR`, ASCII로 이스케이프).
+- 설정 창: 상태(`켜짐 · 포트 N` / `꺼짐` / 오류), 끄는 스위치, 프로그램별 설치 명령과 `복사`, AI 내보내기 폴더, `마지막 AI 작업 되돌리기`, 최근 활동. 연결 키·`새 키 만들기`·`다른 포트로 바꾸기`와 HTTP 주소는 접힌 `고급`으로 옮겼다(HTTP 방식도 그대로 지원하고, 키·Host/Origin 검사·제한은 그대로다). 포트를 못 열면 `고급`이 한 번 저절로 펼쳐진다.
+- Windows 쪽에서 확인한 것: macOS 줄 세 개를 Git의 sh로 실행했다. HOME에 한글과 공백이 든 임시 폴더를 두고 claude·codex 대역이 받는 인자, Claude 데스크톱 줄과 그 인자로 띄운 중계 스크립트의 오프라인 답을 봤다(`tests/test_mcp_bridge.py::test_documented_macos_lines_start_the_bridge_from_home`). 맥에서 돌면 진짜 `/bin/sh`를 쓴다.
+- 맥에서 확인할 것:
+  1. 새로 받은 앱을 처음 열면 `~/Library/Application Support/Grainy/mcp`에 `grainy-mcp-bridge.sh`, `offline-*.json`, `endpoint`, `auth-header`, `owner.lock`이 생기는지(폴더 0700, 파일 0600), 그리고 시작할 때 창이 하나도 뜨지 않는지. 특히 macOS 방화벽이 켜진 맥에서 "들어오는 네트워크 연결을 허용할까요?"가 뜨지 않는지(서버는 127.0.0.1에만 bind한다). 뜬다면 기본으로 켜는 결정과 충돌하므로 바로 알린다.
+  2. 터미널(zsh)에서 Claude Code·Codex 명령 한 줄 → `claude mcp list`, `codex mcp list`에 연결됨으로 보이는지. 저장된 설정(`~/.claude.json`, `~/.codex/config.toml`)의 args에 홈 경로가 풀려 들어갔는지. Grainy를 끈 채로 시작해 안내 문구가 나오는지, 그 뒤 Grainy를 켜면 다시 시작하지 않고 호출되는지.
+  3. Claude 데스크톱에 위 JSON을 넣고 다시 시작 → 도구 목록, 호출, Grainy를 끈 상태의 안내, 사용 중 `새 키 만들기`.
+  4. 설정 창: 탭 안내가 `터미널에서 아래 한 줄을…`로 나오는지, `고급` 화살표·펼치기, 고정폭 글꼴과 `복사`(클립보드).
+  5. `tests/test_mcp_*.py` 전체. 맥에서는 curl로 전달하는 시험(`test_sh_bridge_forwards_and_answers_offline`)도 돈다.
+
+- 2026-10-20: 상태 표시줄의 상시 `AI 연결 켜짐` 표시를 없앴다(다른 앱의 MCP처럼 기다리는 동안은 아무것도 보이지 않음). AI 작업이 돌아가는 동안에만 `AI 작업 중단` 버튼이 보인다.

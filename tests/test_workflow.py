@@ -152,3 +152,38 @@ def test_secondary_window_follows_current_photo_and_closes_with_app(window,tmp_p
     w.workflow.reference();reference=w.workflow.windows[-1]
     assert not reference.follow and reference.reference['id']==ids[0]
     w.workflow.shutdown();assert second.closed and reference.closed and not w.workflow.windows
+
+
+def raw_colour(values):
+    from test_rawcolor import make_dcp,record
+    return {**values,'raw_mode':'sample','raw_neutral':[.52,1.,.71],'dcp_profile':record(make_dcp())}
+
+
+def test_menu_auto_edits_keep_raw_colour_settings(window,tmp_path):
+    """Auto tone, auto colour, negatives and the other menu tools compute values from each photo's own settings:
+    its sampled RAW neutral and camera profile stay, also when the catalog info has no format (never opened)."""
+    import json
+    w=window;ids=add_photos(w,tmp_path,[(90,120,150),(150,120,90)])
+    for ident in ids:w.catalog.set_settings(ident,raw_colour(w.catalog.photo(ident)['settings']))
+    w.catalog.update(ids[0],metadata=json.dumps({}))
+    w.catalog.update(ids[1],metadata=json.dumps({'format':'NEF','camera':'Other Camera'}))
+    records=[w.catalog.photo(i) for i in ids]
+    w.workflow.apply_edits(records,[{**r['settings'],'exposure':.4} for r in records],'자동톤')
+    for ident,before in zip(ids,records):
+        after=w.catalog.photo(ident)['settings']
+        assert after['exposure']==pytest.approx(.4)
+        assert after['raw_mode']=='sample' and after['raw_neutral']==[.52,1.,.71]
+        assert after['dcp_profile']==before['settings']['dcp_profile']
+
+
+def test_previous_edits_still_retargets_between_cameras(window,tmp_path,monkeypatch):
+    """Settings copied from another photo still drop what belongs to the other camera."""
+    import json
+    w=window;source,target=add_photos(w,tmp_path,[(90,120,150),(150,120,90)])
+    w.catalog.set_settings(source,{**raw_colour(w.catalog.photo(source)['settings']),'exposure':.6})
+    w.catalog.update(target,metadata=json.dumps({'format':'NEF','camera':'Other Camera'}))
+    w.workflow.previous_id=source;monkeypatch.setattr(w,'selected_ids',lambda:[target])
+    w.workflow.previous_edits()
+    after=w.catalog.photo(target)['settings']
+    assert after['exposure']==pytest.approx(.6)
+    assert after['dcp_profile'] is None and after['raw_mode']=='custom' and after['raw_neutral'] is None
