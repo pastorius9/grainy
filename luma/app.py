@@ -13,13 +13,13 @@ from collections import deque
 
 import numpy as np
 from PySide6.QtCore import Qt, QObject, Signal, QRunnable, QThreadPool, QTimer, QSize, QItemSelectionModel
-from PySide6.QtGui import QIcon, QPixmap, QImage, QShortcut, QKeySequence, QDesktopServices, QFontDatabase, QFont, QColor, QBrush, QActionGroup
+from PySide6.QtGui import QIcon, QPixmap, QImage, QDesktopServices, QFontDatabase, QFont, QColor, QBrush, QActionGroup
 from PySide6.QtCore import QUrl
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QPushButton, QLineEdit, QListWidget, QListWidgetItem, QAbstractItemView, QStackedWidget,
     QScrollArea, QTabWidget, QComboBox, QCheckBox, QFileDialog, QMessageBox, QInputDialog,
     QDialog, QFormLayout, QSpinBox, QDialogButtonBox, QFrame, QSplitter,
-    QTreeWidget, QTreeWidgetItem, QHeaderView, QToolButton, QMenu, QStyle,QProgressDialog)
+    QTreeWidget, QTreeWidgetItem, QHeaderView, QToolButton, QMenu, QStyle,QProgressDialog,QAbstractSpinBox,QTextEdit,QPlainTextEdit)
 
 from .catalog import Catalog
 from .engine import defaults, normalized, load_image, develop, resize_float, to_srgb, thumbnail, export_image, auto_tone_settings, PRESETS, IMAGE_EXTENSIONS
@@ -33,6 +33,7 @@ from .photo_browser import PhotoModel,PhotoListView
 from .library_query import query as library_query,QueryCancelled
 from . import __version__, file_access
 from .user_paths import MAC
+from .shortcut_list import key_hint
 
 
 # Windows' Korean UI font; macOS has its own, and naming a missing family costs Qt a slow alias search.
@@ -55,6 +56,7 @@ QLabel#brand { color:#f4e7d4; font-size:28px; font-weight:600; letter-spacing:3p
 QLabel#muted { color:#89929d; }
 QLabel#section { color:#d2b991; font-size:10px; font-weight:600; letter-spacing:2px; padding-top:12px; padding-bottom:6px; }
 QLabel#shipped { background:#1f3a3f; border:1px solid #3f7f86; color:#c9f1f2; padding:8px 10px; }
+QLabel#shortcutKey { color:#f7dfbc; font-weight:600; }
 QPushButton { background:#272d34; border:1px solid #373e47; padding:7px 11px; border-radius:0px; }
 QPushButton:hover { background:#363e47; border-color:#68717a; }
 QPushButton:pressed, QPushButton:checked { background:#4d453a; border-color:#b89c76; color:#ffe7c8; }
@@ -89,6 +91,7 @@ QTreeWidget::item:hover { background:#29313a; }
 QToolButton#foldout { border:0; background:transparent; text-align:left; color:#d2b991; padding:9px 0; font-weight:600; }
 QToolButton#developPanelHeader { background:#25292e; border:0; border-top:1px solid #3a3e43; color:#d9dcdf; padding:10px 8px; text-align:left; font-weight:600; }
 QToolButton#developPanelHeader:hover { background:#30353b; }
+QToolButton#developPanelHeader[panelOff="true"] { color:#6f767e; }
 QWidget#developPanelBody { background:#1d2126; }
 QToolButton#developTool { background:transparent; border:0; border-bottom:2px solid transparent; padding:9px 6px; color:#a4aab2; }
 QToolButton#developTool:checked { color:#f0d6b2; border-bottom-color:#dec49f; }
@@ -267,6 +270,7 @@ def button(text, action, check=False, primary=False):
 
 
 BACKGROUNDS={'black':'#101215','dark_grey':'#2b2e33','mid_grey':'#808080','white':'#ffffff'}
+LEARN_URL='https://pastorius9.github.io/grainy/learn/'      # the interactive tutorial (docs/learn)
 
 
 class MainWindow(QMainWindow):
@@ -410,6 +414,8 @@ class MainWindow(QMainWindow):
         self.folder_sync_action=settings_menu.addAction(tr('등록한 폴더의 새 사진 자동으로 가져오기'))
         self.folder_sync_action.setCheckable(True);self.folder_sync_action.setChecked(self.folder_sync.enabled())
         self.folder_sync_action.toggled.connect(self.folder_sync.set_enabled)
+        settings_menu.addAction(tr('단축키 목록…')+'\t'+key_hint('Shift+/'),self.show_shortcuts)
+        settings_menu.addAction(tr('Grainy 배우기 (웹 튜토리얼)…'),lambda:QDesktopServices.openUrl(QUrl(LEARN_URL)))
         settings_menu.aboutToShow.connect(self.update_gpu_action)
         self.auth.changed.connect(self.update_codex_button)
         self.update_codex_button()
@@ -585,6 +591,7 @@ class MainWindow(QMainWindow):
         self.view.straightenDragged.connect(self.drag_straighten)
         self.view.straightenFinished.connect(self.finish_interaction)
         self.view.sampled.connect(self.sample_wb)
+        self.view.sampledArea.connect(self.sample_wb_area)
         self.view.fullResolutionRequested.connect(self.load_full_resolution)
         from .compare_view import CompareLayout
         self.compare = CompareLayout(self)      # the view, and a second picture beside it when comparing
@@ -684,10 +691,16 @@ class MainWindow(QMainWindow):
         self.wb_box=QVBoxLayout();edits.addLayout(self.wb_box)
         self.wb_box.addWidget(section(tr('화이트 밸런스')))
         self.wb_button = button(tr('화이트 밸런스 스포이드'), self.toggle_wb, True)
+        self.wb_button.setToolTip(tr('사진에서 중성 회색이나 흰색을 클릭하거나, 드래그해 사각형 영역의 평균으로 맞춥니다. ({0})',key_hint('W')))
         self.view.sampleCancelled.connect(lambda:self.wb_button.setChecked(False))
         self.wb_box.addWidget(self.wb_button)
         for key,label in [('temperature','색온도 (상대값)'),('tint','색조')]:self.add_adjustment(self.wb_box,key,label)
         edits.addWidget(section(tr('톤')))
+        self.tone_mapping=QComboBox();self.tone_mapping.setAccessibleName(tr('톤 매핑'))
+        self.tone_mapping.addItem(tr('톤 매핑 · 기본'),'classic');self.tone_mapping.addItem(tr('톤 매핑 · 부드러운 하이라이트 (DRT)'),'drt')
+        self.tone_mapping.setToolTip(tr('부드러운 하이라이트: 밝은 하늘과 조명이 색을 지킨 채 천천히 흰색에 다가가고, 아주 밝은 색은 자연스럽게 흰색으로 빠집니다. 중간 밝기는 기본과 같습니다. 필름을 고르면 필름의 인화가 대신 쓰입니다.'))
+        self.tone_mapping.currentIndexChanged.connect(self.change_tone_mapping)
+        edits.addWidget(self.tone_mapping)
         for key,label,low,high,scale in [('exposure','노출',-5,5,100),('contrast','대비',-100,100,1),('highlights','하이라이트',-100,100,1),('shadows','그림자',-100,100,1),('whites','흰색 계열',-200,200,1),('blacks','검정 계열',-200,200,1)]:
             self.add_adjustment(edits,key,label,low,high,scale)
         self.hdr_panel=QWidget();hdr_layout=QVBoxLayout(self.hdr_panel);hdr_layout.setContentsMargins(0,0,0,0)
@@ -905,20 +918,26 @@ class MainWindow(QMainWindow):
         menu.deleteLater()
 
     def shortcuts(self):
-        quick=QShortcut(QKeySequence('Ctrl+E'),self)
-        quick.activated.connect(lambda:self.safe_shortcut(lambda:self.quick_export('previous')))
-        for key,action in [('Ctrl+O',self.import_files),('Ctrl+Shift+E',self.export_dialog),('Ctrl+Z',self.undo),('Ctrl+Shift+Z',self.redo),('Ctrl+Y',self.redo),('Ctrl+Shift+C',self.copy_edits),('Ctrl+Shift+V',self.paste_edits),('\\',lambda:self.before_button.click()),('C',lambda:self.compare_button.click()),('G',lambda:self.set_mode(1)),('D',lambda:self.set_mode(0)),('R',lambda:self.crop_button.click()),('P',lambda:self.set_flag(1)),('X',lambda:self.set_flag(-1)),('U',lambda:self.set_flag(0)),
-                ('B',lambda:self.manager.run(self.workflow.quick_toggle)),('Ctrl+Alt+V',lambda:self.manager.run(self.workflow.previous_edits)),('[',lambda:self.view.resize_brush(False)),(']',lambda:self.view.resize_brush(True))]:
-            shortcut = QShortcut(QKeySequence(key),self)
-            shortcut.activated.connect(lambda fn=action:self.safe_shortcut(fn))
-        for i in range(6):
-            shortcut = QShortcut(QKeySequence(str(i)),self)
-            shortcut.activated.connect(lambda value=i:self.safe_shortcut(lambda:self.set_rating(value)))
+        from .shortcut_list import bind
+        bind(self)          # every key is a row of luma/shortcut_list.TABLE, which is also what the shortcut list shows
 
     def safe_shortcut(self, action):
-        if isinstance(QApplication.focusWidget(), (QLineEdit,QSpinBox)):
+        if isinstance(QApplication.focusWidget(), (QLineEdit,QAbstractSpinBox,QTextEdit,QPlainTextEdit)):
             return
         action()
+
+    def show_shortcuts(self):
+        from .shortcut_list import ShortcutDialog
+        dialog=ShortcutDialog(self);dialog.exec();dialog.deleteLater()
+
+    def wb_shortcut(self):
+        """W: the white balance eyedropper on or off. The button sits in the Basic panel, so from the library or
+        another tool the window goes there first, as a click on the Develop tool strip would."""
+        if self.source is None:return
+        if not self.wb_button.isChecked():
+            self.set_mode(0)
+            if self.tabs.currentIndex()!=0:self.tabs.select_tool(0)
+        self.wb_button.click()
 
     def set_view_background(self,key):
         """Apply background to photo view and comparison view; save preference."""
@@ -1062,7 +1081,7 @@ class MainWindow(QMainWindow):
         self.refine_timer.stop()
         self.view.clear_photo()
         self.end_crop()
-        self.tabs.setEnabled(False)
+        self.tabs.setEnabled(False);self.tabs.update_states()
         self.histogram.clear()
         self.info_label.setText(tr('이 범위에 표시할 사진이 없습니다.'))
         self.filename.setText(tr('표시할 사진 없음'))
@@ -1352,9 +1371,13 @@ class MainWindow(QMainWindow):
         self.bw.blockSignals(True)
         self.bw.setChecked(self.settings['monochrome'])
         self.bw.blockSignals(False)
+        self.tone_mapping.blockSignals(True)
+        self.tone_mapping.setCurrentIndex(max(0,self.tone_mapping.findData(self.settings.get('tone_mapping','classic'))))
+        self.tone_mapping.blockSignals(False)
         self.sync_hdr_controls()
         self.curve.set_points(self.settings['curve'])
         self.update_hsl()
+        self.tabs.update_states()
         if self.current_id:
             p=self.catalog.photo(self.current_id)
             self.rating.blockSignals(True)
@@ -1389,6 +1412,8 @@ class MainWindow(QMainWindow):
         self.settings[key]=deepcopy(value)
         # Moving Highlights or Shadows takes the photo to the current process for them (roll-off photos only).
         if key in ('highlights','shadows') and self.settings.get('tone_version')==2:self.settings['tone_version']=3
+        from .panel_keys import switch_on
+        switch_on(self.settings,(key,));self.tabs.update_states()
         self.auto_tone_note.setText(tr('자동톤: 검정·흰색 양끝 3% 여유\n목표 밝기 약 8–247 / 255'))
         self.before_button.setChecked(False)
         self.render_version+=1
@@ -1931,8 +1956,8 @@ class MainWindow(QMainWindow):
             self.set_mode(0)
             if self.view.crop_mode:
                 self.cancel_crop()
-            self.view.set_tool('')
-            self.statusBar().showMessage(tr('사진에서 중성 회색이나 흰색 부분을 클릭하세요.'))
+            self.view.set_tool('');self.negative_base_button.setChecked(False)
+            self.statusBar().showMessage(tr('사진에서 중성 회색이나 흰색 부분을 클릭하거나, 드래그해 영역을 고르세요.'))
         self.view.sample_mode=checked
         if checked:self.view.setFocus()
 
@@ -1942,6 +1967,8 @@ class MainWindow(QMainWindow):
         from .engine import resize_float
         measured=negative.converted(resize_float(self.source,1200),self.settings)
         for key in ('negative_base','negative_peak','negative_density','exposure','blacks'):self.settings[key]=measured[key]
+        from .panel_keys import switch_on
+        switch_on(self.settings,('exposure','blacks'))
 
     def toggle_negative(self,checked):
         """Turn the scanned negative into a positive, or back. The scan is measured the first time only."""
@@ -1977,33 +2004,46 @@ class MainWindow(QMainWindow):
         self.view.sample_mode=checked
         if checked:self.view.setFocus()
 
-    def sample_negative_base(self,x,y):
-        """The clicked spot of the scan (before the conversion) becomes the film base."""
+    def sample_negative_base(self,x,y,area=None):
+        """The clicked spot of the scan (before the conversion), or the median of the dragged rectangle, becomes the film base."""
         from . import negative
         from .rawcolor import develop_camera
         point=self.studio.source_point([x,y])
         self.negative_base_button.setChecked(False);self.view.sample_mode=False
-        if point is None:return
+        if point is None and area is None:return
         scan=develop_camera(self.source,self.settings)
-        px=min(scan.shape[1]-1,int(point[0]*scan.shape[1]));py=min(scan.shape[0]-1,int(point[1]*scan.shape[0]))
-        base=negative.base_from(scan[max(0,py-4):py+5,max(0,px-4):px+5])
+        if area is None:
+            px=min(scan.shape[1]-1,int(point[0]*scan.shape[1]));py=min(scan.shape[0]-1,int(point[1]*scan.shape[0]))
+            base=negative.base_from(scan[max(0,py-4):py+5,max(0,px-4):px+5])
+        else:
+            pixels=self.studio.area_pixels(scan,area)
+            if not len(pixels):return
+            base=negative.base_from(pixels)
         peak=self.settings['negative_peak']
         if peak is None or any(b<=p*1.1 for b,p in zip(base,peak)):
             self.statusBar().showMessage(tr('빈 필름으로 보기에는 너무 어두운 곳입니다. 촬영되지 않은 가장 밝은 부분을 클릭하세요.'),8000);return
         self.commit();self.settings['negative_base']=base;self.commit('필름 베이스 지정')
         self.render_version+=1;self.render()
 
-    def sample_wb(self,x,y):
-        if self.negative_base_button.isChecked():return self.sample_negative_base(x,y)
+    def sample_wb(self,x,y,area=None):
+        """The eyedropper. A click reads around one point; a drag reads the average of its rectangle (area = x0,y0,x1,y1,
+        as fractions of the shown frame), leaving out clipped and black pixels, which carry no colour."""
+        if self.negative_base_button.isChecked():return self.sample_negative_base(x,y,area)
         from .rawcolor import CameraSource,neutral_white,default_profile
+        from .eyedropper import mean_colour,area_block
         if isinstance(self.source,CameraSource) and not self.settings['negative']:      # a negative has no camera white balance
-            point=self.studio.source_point([x,y])
-            if point is None:return
-            px=min(self.source.shape[1]-1,int(point[0]*self.source.shape[1]))
-            py=min(self.source.shape[0]-1,int(point[1]*self.source.shape[0]))
-            neutral=np.asarray(self.source[max(0,py-3):py+4,max(0,px-3):px+4]).mean(axis=(0,1))
-            if neutral.min()<1e-5:
-                self.statusBar().showMessage(tr('너무 어두운 영역입니다. 밝은 중성 회색을 선택하세요.'));return
+            if area is None:
+                point=self.studio.source_point([x,y])
+                if point is None:return
+                px=min(self.source.shape[1]-1,int(point[0]*self.source.shape[1]))
+                py=min(self.source.shape[0]-1,int(point[1]*self.source.shape[0]))
+                neutral=np.asarray(self.source[max(0,py-3):py+4,max(0,px-3):px+4]).mean(axis=(0,1))
+                if neutral.min()<1e-5:
+                    self.statusBar().showMessage(tr('너무 어두운 영역입니다. 밝은 중성 회색을 선택하세요.'));return
+            else:
+                neutral=mean_colour(self.studio.area_pixels(self.source,area),1e-4)
+                if neutral is None:
+                    self.statusBar().showMessage(tr('이 영역은 모두 너무 밝거나 어둡습니다. 색이 남아 있는 중성 회색이나 흰색 영역을 고르세요.'));return
             from .dcp import compiled
             p=compiled(self.settings['dcp_profile']) if self.settings['dcp_profile'] else default_profile(self.source.raw_info)
             _,kelvin,tint=neutral_white(p,neutral,self.source.raw_info)
@@ -2016,27 +2056,42 @@ class MainWindow(QMainWindow):
         if self.view.on_screen is None:
             return
         a=self.view.on_screen
-        px,py=min(a.shape[1]-1,int(x*a.shape[1])),min(a.shape[0]-1,int(y*a.shape[0]))
-        rgb=a[max(0,py-3):py+4,max(0,px-3):px+4].mean(axis=(0,1))+.001
+        if area is None:
+            px,py=min(a.shape[1]-1,int(x*a.shape[1])),min(a.shape[0]-1,int(y*a.shape[0]))
+            rgb=a[max(0,py-3):py+4,max(0,px-3):px+4].mean(axis=(0,1))+.001
+        else:
+            rgb=mean_colour(area_block(a,area))
+            if rgb is None:
+                self.statusBar().showMessage(tr('이 영역은 모두 너무 밝거나 어둡습니다. 색이 남아 있는 중성 회색이나 흰색 영역을 고르세요.'));return
+            rgb=rgb+.001
+        # The shown pixels are display-encoded; their colour ratios in light are what the white balance gains
+        # (processing.white_balance: 2**(±T/180 + t/400), 2**(-t/250)) have to undo, so one sample neutralises.
+        from .engine import to_linear
+        rgb=np.maximum(to_linear(np.asarray(rgb,np.float32)),1e-4)
         self.set_setting('temperature',float(np.clip(self.settings['temperature']+90*np.log2(rgb[2]/rgb[0]),-100,100)))
-        self.set_setting('tint',float(np.clip(self.settings['tint']+100*np.log2(rgb[1]/np.sqrt(rgb[0]*rgb[2])),-100,100)))
+        self.set_setting('tint',float(np.clip(self.settings['tint']+np.log2(rgb[1]/np.sqrt(rgb[0]*rgb[2]))/(1/400+1/250),-100,100)))
         self.wb_button.setChecked(False)
         self.view.sample_mode=False
         self.load_controls()
         self.commit()
+
+    def sample_wb_area(self,x0,y0,x1,y1):
+        self.sample_wb((x0+x1)/2,(y0+y1)/2,(x0,y0,x1,y1))
 
     def auto_slider(self,key):
         """Shift+double-click on exposure/whites/blacks: only that slider's automatic value (undoable)."""
         if self.source is None:return
         from .engine import auto_slider_value
         self.commit()
-        settings=deepcopy(self.settings)
+        from .panel_keys import switch_on
+        settings=switch_on(deepcopy(self.settings),(key,))     # measured as it will show
         if self.view.crop_mode:settings['crop']=self.view.crop_values()
         value=auto_slider_value(self.live_source,settings,key)
         if value is None:
             self.statusBar().showMessage(tr('이 사진에서는 자동 값을 찾지 못했습니다.'),5000);return
         self.settings[key]=value
         if key=='exposure':self.settings['tone_version']=max(2,self.settings.get('tone_version',2))
+        switch_on(self.settings,(key,));self.tabs.update_states()
         self.adjustments[key].set_value(value)
         self.commit({'exposure':'자동 노출','whites':'자동 흰색 계열','blacks':'자동 검정 계열'}[key])
         self.render()
@@ -2054,7 +2109,8 @@ class MainWindow(QMainWindow):
             return
         # Crop remains a draft until the user applies it.
         adjusted['crop']=self.settings['crop']
-        self.settings=adjusted
+        from .panel_keys import switch_on,changed_keys
+        self.settings=switch_on(adjusted,changed_keys(self.settings,adjusted))
         self.commit('자동톤')
         self.load_controls()
         self.before_button.setChecked(False)
@@ -2080,6 +2136,8 @@ class MainWindow(QMainWindow):
                 .get(report['status'],'색을 판단할 영역이 부족해 자동 색을 적용하지 않았습니다.')),6000)
             return
         self.settings['rgb_curves']=adjusted['rgb_curves']
+        from .panel_keys import switch_on
+        switch_on(self.settings,('rgb_curves',))
         self.commit('자동 색')
         self.load_controls()
         self.before_button.setChecked(False)
@@ -2143,6 +2201,11 @@ class MainWindow(QMainWindow):
         if kind=='folder':item.setExpanded(not item.isExpanded())
         elif kind=='film':self.studio.change_film(rest[0])
         elif kind=='preset':self.apply_preset(rest[0])
+
+    def change_tone_mapping(self,_=None):
+        value=self.tone_mapping.currentData()
+        if self.source is None or self.settings.get('tone_mapping')==value:return
+        self.commit();self.set_setting('tone_mapping',value);self.commit('톤 매핑');self.render()
 
     def apply_preset(self,name):
         if self.source is None:
@@ -2213,6 +2276,8 @@ class MainWindow(QMainWindow):
             value=deepcopy(original)
             keys=self.manager.copy_keys if hasattr(self,'manager') else self.copied.keys()
             value.update({k:deepcopy(self.copied[k]) for k in keys})
+            from .panel_keys import carried,panels_of
+            value['panels_off']=carried(original,self.copied,panels_of(keys))
             if 'lensfun' in keys:
                 from .optics import retarget
                 value=retarget(value,self.catalog.photo(photo_id)['info'])

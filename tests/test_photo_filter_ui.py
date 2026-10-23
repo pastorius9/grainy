@@ -8,11 +8,12 @@ from luma.manager import EDIT_GROUPS
 
 
 def test_filter_controls_pixels_histogram_undo_sidecar_export(window,tmp_path):
-    w=window;s=w.studio;before=w.view.on_screen.copy()
+    w=window;s=w.studio;before=w.view.on_screen.copy();switch=w.tabs.sections['photo_filter'].switch
     assert s.photo_filter_choice.count()==17 and tuple(EDIT_GROUPS['컬러 필터'])==KEYS
+    assert not switch.isChecked()      # the panel's header switch is photo_filter_enabled: off by default
     s.photo_filter_choice.setCurrentIndex(s.photo_filter_choice.findData('cooling80'))
     wait(lambda:not w.render_running)
-    assert s.photo_filter_enabled.isChecked() and not np.allclose(w.view.on_screen,before)
+    assert switch.isChecked() and w.settings['photo_filter_enabled'] and not np.allclose(w.view.on_screen,before)
     w.adjustments['photo_filter_density'].slider.setValue(72);w.finish_interaction()
     wait(lambda:not w.render_running)
     np.testing.assert_allclose(w.view.on_screen,develop(w.source,w.settings),atol=1e-6)
@@ -23,6 +24,10 @@ def test_filter_controls_pixels_histogram_undo_sidecar_export(window,tmp_path):
     out=tmp_path/'filtered.tif';export_image(record['path'],out,restored,'TIFF 16-bit')
     actual,_=load_image(out)
     np.testing.assert_allclose(to_srgb(actual),w.view.on_screen,atol=3e-5)
-    s.photo_filter_enabled.setChecked(False);wait(lambda:not w.render_running)
+    switch.click();wait(lambda:not w.render_running)
     np.testing.assert_allclose(w.view.on_screen,before,atol=1e-6)
     assert w.settings['photo_filter']=='cooling80' and w.settings['photo_filter_density']==72
+    assert not w.settings['photo_filter_enabled'] and w.settings['panels_off']==[]
+    # Changing a value of the switched-off filter switches it on again (the density slider stays usable).
+    w.adjustments['photo_filter_density'].slider.setValue(60);w.finish_interaction();wait(lambda:not w.render_running)
+    assert switch.isChecked() and w.settings['photo_filter_enabled'] and not np.allclose(w.view.on_screen,before)

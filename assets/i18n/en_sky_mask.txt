@@ -1,0 +1,5 @@
+하늘 선택 => Select Sky
+하늘 => Sky
+하늘 다듬기 => Refine Sky
+민감도를 올리면 옅은 구름과 안개까지 넓어집니다. 경계 흐림은 나뭇가지와 지붕선 경계의 부드러움입니다. => Raise Sensitivity to reach into thin cloud and haze. Feather softens the edge along branches and rooflines.
+하늘을 선택했습니다. 민감도와 경계 흐림으로 다듬으세요. => Sky selected. Refine it with Sensitivity and Feather.

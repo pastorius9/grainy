@@ -47,6 +47,11 @@ from . import negative
 DEFAULTS.update(deepcopy(negative.DEFAULTS))
 # Film look (luma/film_look.py): a stock's id ('' = none) and how much of it, blended over the ordinary rendering.
 DEFAULTS.update(film_look='', film_strength=100.)
+# Display rendering after exposure and white balance: 'classic' (roll-off above half of white) or 'drt'
+# (luma/tone_mapping.py). A film look renders its own print instead of either.
+DEFAULTS.update(tone_mapping='classic')
+# Develop panels switched off with their header switch (luma/panel_keys.py): their values stay, unrendered.
+DEFAULTS.update(panels_off=[])
 SHOULDER_KNEE = .5   # linear light; values below are never changed by the highlight roll-off
 ROLLOFF_WHITE = 4.   # at most two stops of highlights are rolled off; stronger gains still clip (and warn)
 
@@ -83,6 +88,11 @@ def normalized(settings):
         result['tone_version'] = 3          # identical pixels; the sliders then start with the current process
     if 'detail_version' not in settings:
         result['detail_version'] = 1 if result['sharpen'] else 2 if result['noise_luma'] else 3
+    if result['panels_off']:
+        # One order and only known panels, so equal states compare equal.
+        from .panel_keys import OFF_PANELS
+        off = result['panels_off']
+        result['panels_off'] = [p for p in OFF_PANELS if p in off] if isinstance(off, list) else []
     return result
 
 
@@ -407,7 +417,10 @@ def _tone_encoded(a, s):
     strength = float(np.clip(s['film_strength'], 0, 100))/100
     if film is not None and strength >= 1:
         return film
-    if s.get('tone_version',1) >= 2 and not s['hdr']:
+    from . import tone_mapping
+    if tone_mapping.active(s):
+        a = tone_mapping.render(a)
+    elif s.get('tone_version',1) >= 2 and not s['hdr']:
         a = highlight_rolloff(a, rolloff_white(s))
     plain = to_srgb(a)
     return plain if film is None else (plain + (film - plain)*np.float32(strength)).astype(np.float32)
@@ -661,7 +674,7 @@ GEOMETRY_KEYS=('retouch','rotation','straighten','flip','crop','distortion',
                'upright','upright_crop')
 TONE_KEYS=('exposure','temperature','tint','kelvin','wb_reference','kelvin_enabled',
            'lens_vignette','shadows','highlights','blacks','whites','contrast','curve','hdr','tone_version',
-           'film_look','film_strength','working_space')
+           'film_look','film_strength','working_space','tone_mapping')
 COLOR_KEYS=('saturation','vibrance','mixer_mode','hsl','rgb_curves','parametric',
             'calibration','point_colors','grading','grading_balance','camera_matrix',
             'photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity','monochrome')
@@ -682,8 +695,9 @@ def develop(source, settings, use_crop=True,output_space='sRGB', *, cache=None,o
     their existing math. Filtering a reduced source remains an approximation.
     """
     from .render_cache import settings_key
+    from .panel_keys import effective
     if on_point is not None or on_layer_input is not None:cache=None
-    s = normalized(settings)
+    s = effective(normalized(settings))
     pixel_scale=1.
     if original_size is not None:
         size=np.asarray(original_size,dtype=float)
@@ -713,7 +727,7 @@ def develop(source, settings, use_crop=True,output_space='sRGB', *, cache=None,o
             ('color',COLOR_KEYS,color_function),
             ('detail',DETAIL_KEYS,lambda a,s:_develop_detail(a,s,pixel_scale))]
     color_source=None
-    if s['masks'] and any(c.get('auto_mask') for layer in s['masks'] for c in layer.get('components',[])):
+    if s['masks'] and any(c.get('auto_mask') or c.get('type')=='sky' for layer in s['masks'] for c in layer.get('components',[])):
         color_source=cache.evaluate('mask-source',(raw_key,negative_key),lambda:to_srgb(linear)) if cache else to_srgb(linear)
     finished=False
     if cache and on_point is None:

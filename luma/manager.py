@@ -14,11 +14,12 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButto
 from .library import matches,move_files,move_folder,relink,duplicate_groups,restore_backup,write_sidecar,read_sidecar
 from .engine import normalized,defaults,load_image,develop,resize_float
 from .widgets import PhotoView
+from .panel_keys import carried,panels_of
 
 
 EDIT_GROUPS={
  '작업 색공간':('working_space',),
- '빛':('exposure','contrast','highlights','shadows','whites','blacks'),
+ '빛':('exposure','contrast','highlights','shadows','whites','blacks','tone_mapping'),
  'HDR':('hdr','hdr_limit','hdr_brightness','sdr_exposure','sdr_compression'),
  '화이트 밸런스':('temperature','tint','kelvin','wb_reference','kelvin_enabled','raw_mode','raw_kelvin','raw_tint','raw_neutral'),
  'RAW 프로파일':('dcp_profile','dcp_huesat','dcp_look','dcp_tone','dcp_exposure'),
@@ -84,7 +85,8 @@ class FilterDialog(QDialog):
 class LibraryManager:
     def __init__(self,w):
         self.w=w;self.rules={};self.collection=None;self.collapsed=False;self.syncing=False;self.dialogs=[]
-        self.copy_keys=set(defaults())-set(EDIT_GROUPS['크롭·회전'])
+        # panels_off is no copy item of its own: a pasted panel takes its on/off state along (panel_keys.carried).
+        self.copy_keys=set(defaults())-set(EDIT_GROUPS['크롭·회전'])-{'panels_off'}
         self.auto_sync=False
         self.build_collections();self.build_menus()
         self.smart_timer=QTimer(w);self.smart_timer.setInterval(60000)
@@ -516,6 +518,7 @@ class LibraryManager:
         ids=[i for i in self.w.selected_ids() if i!=self.w.current_id]
         for ident in ids:
             settings=self.w.catalog.photo(ident)['settings'];settings.update({k:deepcopy(values[k]) for k in self.copy_keys})
+            settings['panels_off']=carried(settings,values,panels_of(self.copy_keys))
             if 'lensfun' in self.copy_keys:
                 from .optics import retarget
                 settings=retarget(settings,self.w.catalog.photo(ident)['info'])
@@ -529,12 +532,16 @@ class LibraryManager:
     def after_commit(self,previous):
         if not self.auto_sync or self.syncing:return
         changes={k:deepcopy(v) for k,v in self.w.settings.items() if k in self.copy_keys and previous.get(k)!=v}
-        if not changes:return
+        # A panel switched on or off syncs too when its values are synced.
+        moved=set(previous.get('panels_off') or ())^set(self.w.settings.get('panels_off') or ())
+        panels=panels_of(changes)|(moved&panels_of(self.copy_keys))
+        if not changes and not panels:return
         self.syncing=True
         try:
             ids=[i for i in self.w.selected_ids() if i!=self.w.current_id]
             for ident in ids:
                 values=self.w.catalog.photo(ident)['settings'];values.update(changes)
+                values['panels_off']=carried(values,self.w.settings,panels)
                 if 'lensfun' in changes:
                     from .optics import retarget
                     values=retarget(values,self.w.catalog.photo(ident)['info'])

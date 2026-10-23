@@ -223,7 +223,8 @@ def _tone_params(shape,s,frame=None,memo=None):
     optional (holder, key of the frame) that keeps the analysis while the two sliders move."""
     from .processing import white_balance
     from . import film_look
-    if film_look.active(s):return None          # film looks run on the CPU
+    from . import tone_mapping
+    if film_look.active(s) or tone_mapping.active(s):return None          # film looks and the DRT run on the CPU
     curve=np.ascontiguousarray(s['curve'],dtype=np.float32)
     if curve.ndim!=2 or curve.shape[1]!=2 or len(curve)<2:return None
     local=None

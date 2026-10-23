@@ -228,10 +228,12 @@ GROUPS={
     'negative':('negative','negative_base','negative_peak'),
     'photo_filter':('photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity'),
     'film':('film_look','film_strength'),
+    'tone_mapping':('tone_mapping',),
 }
 COUNTED=('masks','retouch')
 IGNORED=('tone_version','detail_version','video_color','video_time','hdr','hdr_limit','hdr_brightness',
-         'sdr_exposure','sdr_compression','upright_crop')
+         'sdr_exposure','sdr_compression','upright_crop',
+         'panels_off')      # listed by itself, as off
 INFO=(('format','format'),('camera','camera'),('lens','lens'),('iso','iso'),('shutter','shutter'),
       ('aperture','aperture'),('focal','focal_length'),('date','date'))
 
@@ -254,6 +256,7 @@ def summary(record):
     other=[name for name,keys in GROUPS.items() if any(settings.get(k)!=base.get(k) for k in keys)]
     other+=[f'{key}:{len(settings[key])}' for key in COUNTED if settings.get(key)]
     if other:result['other']=other
+    if settings.get('panels_off'):result['off']=list(settings['panels_off'])
     return result
 
 

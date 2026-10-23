@@ -208,6 +208,21 @@ def test_film_base_can_be_picked_on_the_photo(window, tmp_path):
     assert w.settings['negative_base'] == picked
 
 
+def test_film_base_can_be_picked_with_a_rectangle(window, tmp_path):
+    w = window; frame = scanned(scene(200, 300)); frame[:, :12] = np.float32(BASE)*np.float32(1.3)
+    path = tmp_path/'strip.png'; Image.fromarray(np.uint8(np.clip(to_srgb(frame), 0, 1)*255+.5)).save(path)
+    ident = w.catalog.add(path); w.activate(ident); wait(lambda: w.source is not None); idle(w)
+    w.negative_button.click(); idle(w)
+    automatic = list(w.settings['negative_base'])
+    w.negative_base_button.click(); assert w.view.sample_mode
+    w.sample_wb_area(0., .3, .035, .7); idle(w)                                              # dragged over the clear film at the edge
+    assert not w.view.sample_mode and not w.negative_base_button.isChecked()
+    picked = w.settings['negative_base']
+    assert picked != automatic and picked[0] == pytest.approx(float(w.source[100, 6, 0]), rel=.02)
+    w.negative_base_button.click(); w.sample_wb_area(.9, .3, 1., .7); idle(w)                 # the densest corner is refused, as for a click
+    assert w.settings['negative_base'] == picked
+
+
 def test_selected_photos_are_inverted_each_on_its_own(window, tmp_path):
     w = window; ids = []
     for index, gain in enumerate((1., .5)):

@@ -1,0 +1,5 @@
+기본값과 다른 보정이 있습니다 => Edited: some values differ from the defaults
+{0} 켜기·끄기 => Turn {0} on or off
+이 패널의 보정을 켜고 끕니다. 꺼도 값은 그대로 남습니다. => Turns this panel's edits on or off. The values are kept while it is off.
+{0} 켜기 => {0} on
+{0} 끄기 => {0} off

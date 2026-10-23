@@ -4,7 +4,7 @@ from copy import deepcopy
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QFormLayout,QDialogButtonBox,
     QDoubleSpinBox,QComboBox,QCheckBox,QLabel)
 
-NAMES={'brush':'브러시','linear':'선형 그레이디언트','radial':'방사형 그레이디언트','luma':'광도 범위','color':'색상 범위'}
+NAMES={'brush':'브러시','linear':'선형 그레이디언트','radial':'방사형 그레이디언트','luma':'광도 범위','color':'색상 범위','sky':'하늘'}
 
 
 class MaskComponentDialog(QDialog):
@@ -34,6 +34,9 @@ class MaskComponentDialog(QDialog):
             low,high=component.get('range',[.25,.75]);number('low','최소 밝기',low*100);number('high','최대 밝기',high*100)
             number('softness','범위 경계 흐림',component.get('softness',.1)*100,.1,100)
         if kind=='color':number('tolerance','색상 범위 허용량',component.get('tolerance',.3),.02,1.7,2)
+        if kind=='sky':
+            from .sky_mask import DEFAULTS
+            for key,title in (('sensitivity','민감도'),('feather','경계 흐림')):number(key,title,component.get(key,DEFAULTS[key]))
         if kind in ('linear','radial'):
             points=component.get('points',[[.25,.25],[.75,.75]])
             for i,point in enumerate((points[0],points[-1])):     # off the photo is allowed: below 0 or above 100
@@ -45,7 +48,7 @@ class MaskComponentDialog(QDialog):
     def result_component(self):
         result=deepcopy(self.component);values={key:field.value() for key,field in self.fields.items()}
         result.update(enabled=self.enabled.isChecked(),invert=self.invert.isChecked(),operation=self.operation.currentData())
-        for key in ('feather','flow','density','tolerance'):
+        for key in ('feather','flow','density','tolerance','sensitivity'):
             if key in values:result[key]=values[key]
         if 'radius' in values:
             result['radius']=values['radius']/100

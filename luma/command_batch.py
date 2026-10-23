@@ -126,19 +126,23 @@ def _rebuilt_after(item):
     return _undiff(item['before'],change)
 
 
-def apply(catalog,records,values,label='Codex 일괄 명령',remember=True,*,batch_key=BATCH_KEY,after_apply=None,meta=None,compact=False):
+def apply(catalog,records,values,label='Codex 일괄 명령',remember=True,*,batch_key=BATCH_KEY,after_apply=None,meta=None,compact=False,switch=True):
     """Write every changed photo in one transaction. remember=True keeps the batch under batch_key for
     restore(): the full (v1) group, or with compact=True a v2 group that stores about one settings object
-    per photo. meta is merged into the group (restore keeps it)."""
+    per photo. meta is merged into the group (restore keeps it). switch=True: the values are edits of each
+    photo's own settings, so a switched-off panel they change comes on as in the editor; False for settings
+    copied from another photo, which bring their own panel states."""
     if len(records)!=len(values) or len({r['id'] for r in records})!=len(records):
         raise ValueError('일괄 보정 대상이 올바르지 않습니다.')
     if catalog.db.in_transaction:raise RuntimeError('다른 저장 작업이 진행 중입니다.')
+    from .panel_keys import switch_on,changed_keys
     changed=[];now=datetime.now(timezone.utc).isoformat()
     with catalog.db:
         catalog.db.execute('BEGIN IMMEDIATE')
         verify(catalog,records)
         for item,value in zip(records,values):
             value=normalized(value)
+            if switch:switch_on(value,changed_keys(item['settings'],value))
             if value==item['settings']:continue
             ident=item['id']
             if compact:before_text=_undo_text(catalog,ident);before=catalog.profiles.loads(before_text)

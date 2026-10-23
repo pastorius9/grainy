@@ -100,6 +100,19 @@ def test_native_offline_preview_and_camera_sample(window):
     wait(lambda:isinstance(w.source,rawcolor.CameraSource) and not w.render_running)
 
 
+def test_camera_sample_over_an_area_averages_the_rectangle_without_clipped_pixels(window):
+    w,calls,path=window
+    w.studio.raw_mode.setCurrentIndex(w.studio.raw_mode.findData('as_shot'))
+    wait(lambda:isinstance(w.source,rawcolor.CameraSource) and not w.render_running)
+    w.source=rawcolor.CameraSource(np.array(w.source),w.source.raw_info);w.source[40:50,60:90]=1.      # a blown part inside the rectangle
+    block=np.asarray(w.source[20:80,30:120]).reshape(-1,3);block=block[block.max(axis=1)<.98].mean(axis=0)
+    w.wb_button.click();w.sample_wb_area(.2,.2,.8,.8);wait(lambda:not w.render_running)
+    assert w.settings['raw_mode']=='sample' and not w.view.sample_mode and not w.wb_button.isChecked()
+    np.testing.assert_allclose(w.settings['raw_neutral'],block/block[1],rtol=.015)
+    before=list(w.settings['raw_neutral']);w.wb_button.click();w.sample_wb_area(.42,.41,.58,.49);wait(lambda:not w.render_running)
+    assert w.view.sample_mode and w.settings['raw_neutral']==before            # only the blown part: nothing to read, the eyedropper stays on
+
+
 def test_different_camera_profile_rejected_before_edit(window,tmp_path):
     w,_,_=window;old=w.settings.copy()
     p=tmp_path/'other.dcp';p.write_bytes(make_dcp([(50708,2,'Other Camera\0')]))

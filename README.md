@@ -116,16 +116,17 @@ The film scans on this page are the author's own. The other photos are CC0 sampl
 - **RAW development**: RAW files of the major camera makers, camera profiles (DCP), lens corrections (Lensfun)
 - **Film negatives**: one button turns a scanned negative into a positive (film base removed per channel); every other tool then works on the positive. A roll scanned with the same settings can be measured as one, so every frame is converted with the same colour reference
 - **Film looks**: 82 named films (Kodak Portra, Ektar, Kodachrome, Tri-X, Vision3, Fujifilm Velvia, Provia, Acros, Ilford HP5, Delta and more), each computed from its maker's published technical data — spectral sensitivity, characteristic curves and dye densities — and printed on the paper it was made for (slides are viewed as they are), with an amount slider and the film's grain
-- **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight)
+- **Adjustments**: exposure, tone curve, channel curves, colour mixer, colour grading, auto tone, auto colour (colour-cast correction), film colour-temperature conversion (tungsten ↔ daylight), a choice of tone mapping (classic or smooth highlights), and an on/off switch on every panel
 - **Detail**: sharpening, noise reduction, grain, vignette
-- **Local adjustments**: masks (brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal
+- **Local adjustments**: masks (Select Sky, brush, linear and radial gradients, colour and luminance ranges, add / subtract / intersect), healing, dust removal
+- **Shortcuts**: for the tools and masks (W, K, M, Shift+M, Q…); press ? for the list
 - **Export**: JPEG, PNG, TIFF, AVIF, JPEG XL
 - **Feedback**: a button at the top of the window sends a problem report or an idea
 - **Updates**: the program checks for a new version and replaces itself
 - **AI connection**: install Grainy's MCP once with one command in an AI program on this computer (Claude Code, Codex, Claude Desktop), and while Grainy is running that program can list, look at, edit and export your photos with Grainy's own tools; every AI edit is one batch you can undo
 - **Also**: edit history and undo, Lightroom catalog and preset import, catalog backup (including a Google Drive folder), a GPS map
 
-The full manual ships with the program (`README.html`, in Korean).
+Learn it hands-on in your browser: **[pastorius9.github.io/grainy/learn](https://pastorius9.github.io/grainy/learn/)**. The full manual ships with the program (`README.html`, in Korean).
 
 ## Privacy
 

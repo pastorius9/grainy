@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="ko" data-lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn Grainy — interactive tutorial</title>
+<meta name="description" content="Learn Grainy by doing: convert a negative, fix colour, try film looks, mask the sky and learn the shortcuts, right in your browser.">
+<meta property="og:title" content="Learn Grainy — interactive tutorial">
+<meta property="og:description" content="Convert a negative, fix colour, try film looks, mask the sky and learn the shortcuts, right in your browser.">
+<meta property="og:image" content="https://pastorius9.github.io/grainy/site/og.jpg">
+<link rel="icon" href="../site/grainy-icon-256.png">
+<style>
+:root{
+  --bg:#101215; --panel:#171a1e; --panel2:#1d2126; --line:#2b3138; --text:#dce0e4; --muted:#8c949d;
+  --accent:#dec49f; --accent-ink:#211d17; --teal:#8fd3d6; --teal-line:#3f7f86; --code:#0c0e10;
+  --app:#15181d; --app2:#1c2025; --done:#9fd59a;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
+img{max-width:100%;display:block;height:auto}
+html[data-lang="ko"] [lang="en"], html[data-lang="en"] [lang="ko"]{display:none !important}
+kbd{display:inline-block;min-width:22px;padding:1px 6px;border:1px solid #4a525b;border-bottom-width:2px;background:var(--panel2);color:#f4e7d4;font:600 12.5px/1.5 ui-monospace,Consolas,monospace;text-align:center}
+
+header{position:sticky;top:0;z-index:20;background:rgba(16,18,21,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:22px;height:60px;max-width:1280px;margin:0 auto;padding:0 20px}
+.brand{display:flex;align-items:center;gap:10px;color:#f4e7d4;font-weight:600;letter-spacing:3px;font-size:20px}
+.brand img{width:28px;height:28px}
+.bar nav{display:flex;gap:18px;margin-left:auto;font-size:14px}
+.bar nav a{color:var(--muted)} .bar nav a.here{color:var(--text)}
+.lang{display:flex;border:1px solid var(--line)}
+.lang button{background:none;border:0;color:var(--muted);padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--panel2);color:var(--text)}
+@media (max-width:760px){.bar nav{display:none}.bar{gap:12px}.lang{margin-left:auto}}
+
+.layout{max-width:1280px;margin:0 auto;padding:0 20px;display:grid;grid-template-columns:250px 1fr;gap:36px}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr);gap:0}}
+.toc,main{min-width:0}
+
+/* lesson list */
+.toc{position:sticky;top:76px;align-self:start;padding:24px 0}
+.toc h1{font-size:15px;letter-spacing:2px;color:var(--muted);font-weight:600;margin:0 0 6px;text-transform:uppercase}
+.progress{height:4px;background:var(--line);margin:0 0 14px}
+.progress span{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.toc ol{list-style:none;margin:0;padding:0}
+.toc li a{display:flex;gap:10px;align-items:center;padding:8px 10px;color:var(--muted);border-left:2px solid transparent}
+.toc li a:hover{color:var(--text);text-decoration:none;background:var(--panel)}
+.toc li a[aria-current="true"]{color:#f4e7d4;border-left-color:var(--accent);background:var(--panel)}
+.toc .num{width:22px;height:22px;flex:none;border:1px solid var(--line);display:grid;place-items:center;font-size:12px}
+.toc li.done .num{border-color:var(--done);color:var(--done)}
+.toc li.done .num::before{content:"✓"} .toc li.done .num b{display:none}
+.toc .reset{margin-top:14px;background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:0 10px}
+@media (max-width:980px){
+  .toc{position:static;padding:16px 0 0}
+  .toc ol{display:flex;overflow-x:auto;gap:6px;padding-bottom:8px}
+  .toc li a{white-space:nowrap;border:1px solid var(--line);border-left-width:1px;padding:6px 10px}
+  .toc li a[aria-current="true"]{border-color:var(--accent)}
+  .toc .label{display:none} .toc li a[aria-current="true"] .label{display:inline}
+  .toc .reset{display:none}
+}
+
+/* lessons */
+main{padding:24px 0 80px;min-width:0}
+.lesson{display:none}
+.lesson.on{display:block}
+.lesson .kicker{color:var(--accent);font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0}
+.lesson h2{font-size:clamp(24px,3.2vw,32px);margin:4px 0 8px;color:#f4e7d4;font-weight:640;line-height:1.25}
+.lesson .lead{color:var(--muted);margin:0 0 22px;max-width:760px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;align-items:start}
+@media (max-width:1180px){.cols{grid-template-columns:minmax(0,1fr)}}
+.tasks{background:var(--panel);border:1px solid var(--line);padding:16px 18px}
+.tasks h3{margin:0 0 10px;font-size:14px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase}
+.tasks ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.tasks li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:15px;line-height:1.5}
+.tasks li::before{content:"";width:18px;height:18px;margin-top:2px;border:1px solid #4a525b}
+.tasks li.done{color:var(--muted)}
+.tasks li.done::before{content:"✓";border-color:var(--done);color:var(--done);display:grid;place-items:center;font-size:13px;font-weight:700}
+.tip{margin-top:14px;border-left:2px solid var(--teal-line);background:var(--panel);padding:10px 14px;color:#cfe3e4;font-size:14.5px}
+.tip b{color:var(--teal)}
+.cheer{display:none;margin-top:14px;border:1px solid var(--done);color:var(--done);padding:10px 14px;font-size:15px}
+.lesson.complete .cheer{display:block}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:28px;border-top:1px solid var(--line);padding-top:18px}
+.pager a{display:inline-flex;gap:8px;align-items:center;padding:10px 16px;border:1px solid var(--line);background:var(--panel2);color:var(--text);font-weight:600;font-size:15px}
+.pager a:hover{text-decoration:none;border-color:#68717a}
+.pager a.next{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.prose{max-width:760px;color:var(--text)} .prose p{margin:0 0 12px} .prose p.muted{color:var(--muted)}
+
+/* the practice window, in Grainy's own colours */
+.mini{background:var(--app);border:1px solid #2a3037;box-shadow:0 24px 70px rgba(0,0,0,.45);user-select:none}
+.mini-top{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #262b31;font-size:13px;color:var(--muted)}
+.mini-top b{color:#f4e7d4;letter-spacing:2px;font-size:14px}
+.mini-top .sp{flex:1}
+.mini-body{display:grid;grid-template-columns:minmax(0,1fr) 250px}
+@media (max-width:700px){.mini-body{grid-template-columns:minmax(0,1fr)}.mini-top{flex-wrap:wrap}}
+.stage{position:relative;background:#0f1114;display:grid;place-items:center;padding:14px;min-height:280px}
+.stage canvas{max-width:100%;max-height:560px;width:auto;height:auto;display:block;touch-action:none}
+.stage.pick canvas{cursor:crosshair}
+.stage .hint{position:absolute;left:14px;bottom:10px;font-size:12px;color:#c8ccd0;background:rgba(0,0,0,.55);padding:3px 8px;pointer-events:none}
+.stage .badge{position:absolute;right:14px;top:12px;font-size:12px;color:var(--accent-ink);background:var(--accent);padding:2px 8px;pointer-events:none;display:none}
+.panel{background:var(--app2);border-left:1px solid #262b31;padding:10px 12px 14px;font-size:13px}
+@media (max-width:700px){.panel{border-left:0;border-top:1px solid #262b31}}
+.panel .sec{color:var(--accent);font-size:11.5px;letter-spacing:2px;margin:12px 0 6px}
+.panel .sec:first-child{margin-top:2px}
+.row{display:grid;grid-template-columns:78px 1fr 44px;align-items:center;gap:8px;height:28px}
+.row label{color:#cfd3d7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row output{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:#3b424a}
+input[type=range]::-moz-range-track{height:2px;background:#3b424a}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:13px;margin-top:-6px;background:var(--accent);border:0}
+input[type=range]::-moz-range-thumb{width:11px;height:13px;background:var(--accent);border:0;border-radius:0}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0}
+.btns.one{grid-template-columns:1fr}
+.panel button,.tool{background:#23282e;color:#dfe3e7;border:1px solid #333a42;padding:6px 8px;font:inherit;font-size:13px;cursor:pointer}
+.panel button:hover,.tool:hover{border-color:#5a636c}
+.panel button[aria-pressed="true"],.tool[aria-pressed="true"]{background:#3d3831;border-color:#907b60;color:#f4e7d4}
+.panel button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.panel select{width:100%;background:#23282e;color:#dfe3e7;border:1px solid #333a42;padding:5px 6px;font:inherit;font-size:13px}
+.panel .note{color:var(--muted);font-size:12px;line-height:1.45;margin:6px 0 0}
+.films{border:1px solid #2b3138;background:#15181d;max-height:250px;overflow:auto;margin:4px 0 6px}
+.films details{border:0;margin:0;padding:0;background:none}
+.films summary{list-style:none;cursor:pointer;padding:5px 8px;color:#cfd3d7;font-weight:500}
+.films summary::-webkit-details-marker{display:none}
+.films summary::before{content:"▸ ";color:var(--muted)} .films details[open]>summary::before{content:"▾ "}
+.films button{display:block;width:100%;text-align:left;background:none;border:0;border-left:2px solid transparent;padding:4px 8px 4px 24px;color:#c3c8cd}
+.films button:hover{background:#1f242a}
+.films button[aria-pressed="true"]{border-left-color:var(--accent);color:#f4e7d4;background:#2a2620}
+.layers{display:grid;gap:4px;margin:4px 0}
+.layers button{text-align:left}
+
+/* tour */
+.tour{position:relative;border:1px solid var(--line)}
+.tour img{width:100%}
+.spot{position:absolute;border:2px solid transparent;cursor:pointer;background:none;padding:0}
+.spot .dot{position:absolute;left:-11px;top:-11px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 12px/22px sans-serif;text-align:center;box-shadow:0 0 0 3px rgba(16,18,21,.7)}
+.spot.seen .dot{background:#5f6b62;color:#e7efe8}
+.spot[aria-pressed="true"]{border-color:var(--accent);background:rgba(222,196,159,.08)}
+.tour-info{margin-top:12px;background:var(--panel);border:1px solid var(--line);padding:14px 16px;min-height:86px}
+.tour-info h3{margin:0 0 4px;color:#f4e7d4;font-size:17px}
+.tour-info p{margin:0;color:var(--muted);font-size:15px}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.legend button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+.legend button.seen{color:var(--text)}
+.legend button[aria-pressed="true"]{border-color:var(--accent);color:#f4e7d4}
+
+/* keys */
+.keys{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:14px}
+.key{display:flex;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);padding:8px 10px;font-size:14px;color:var(--muted);cursor:pointer;text-align:left;font-family:inherit}
+.key.hit{border-color:var(--done);color:var(--text)}
+.key.flash{background:#24321f}
+.toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(16,18,21,.9);border:1px solid var(--accent);color:#f4e7d4;padding:6px 14px;font-size:14px;pointer-events:none;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%}
+.split canvas{width:100%;max-height:none}
+
+/* library */
+.lib-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px;border-bottom:1px solid #262b31}
+.grid6{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;padding:12px;background:#0f1114}
+.tile{background:#1b1f24;border:2px solid transparent;padding:6px;cursor:pointer;position:relative;outline:0}
+.tile img{aspect-ratio:3/2;object-fit:cover;width:100%}
+.tile.sel{border-color:var(--accent)}
+.tile .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;min-height:18px}
+.tile .stars{color:var(--accent);letter-spacing:1px}
+.tile .flag{font-weight:700}
+.tile .flag.pick{color:var(--done)} .tile .flag.reject{color:#e59a8f}
+.tile.rejected img{opacity:.35}
+.tile.hidden{display:none}
+.exports{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}
+.exports div{background:var(--panel);border:1px solid var(--line);padding:12px 14px;font-size:14.5px;color:var(--muted)}
+.exports b{color:#f4e7d4;display:block;margin-bottom:2px}
+
+footer{border-top:1px solid var(--line);padding:30px 20px 46px;color:var(--muted);font-size:13px;max-width:1280px;margin:0 auto}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="brand" href="../"><img src="../site/grainy-icon-256.png" alt="">Grainy</a>
+    <nav>
+      <a href="../#features"><span lang="ko">기능</span><span lang="en">Features</span></a>
+      <a class="here" href="./"><span lang="ko">배우기</span><span lang="en">Learn</span></a>
+      <a href="../#ai"><span lang="ko">AI로 보정하기</span><span lang="en">Edit with AI</span></a>
+      <a href="../#download"><span lang="ko">내려받기</span><span lang="en">Download</span></a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-set-lang="ko" aria-pressed="true">한국어</button>
+      <button type="button" data-set-lang="en" aria-pressed="false">English</button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="toc">
+    <h1><span lang="ko">Grainy 배우기</span><span lang="en">Learn Grainy</span></h1>
+    <div class="progress" aria-hidden="true"><span id="progress"></span></div>
+    <ol id="toc"></ol>
+    <button class="reset" type="button" id="reset"><span lang="ko">진행 상황 지우기</span><span lang="en">Clear progress</span></button>
+  </aside>
+
+  <main id="lessons">
+
+  <!-- 1 -->
+  <section class="lesson" id="tour" data-title-ko="화면 둘러보기" data-title-en="Find your way">
+    <p class="kicker"><span lang="ko">레슨 1</span><span lang="en">Lesson 1</span></p>
+    <h2><span lang="ko">화면 둘러보기</span><span lang="en">Find your way around</span></h2>
+    <p class="lead"><span lang="ko">Grainy 화면은 왼쪽 보관함, 가운데 사진, 오른쪽 보정 패널로 나뉩니다. 번호를 눌러 각 부분이 무엇을 하는지 알아보세요.</span><span lang="en">Grainy has your library on the left, the photo in the middle and the edit panels on the right. Click the numbers to see what each part does.</span></p>
+    <div class="cols">
+      <div>
+        <div class="tour" id="tour-shot"><img alt="" width="1600" height="1000" data-ko="img/screen-develop-ko.jpg" data-en="img/screen-develop-en.jpg"></div>
+        <div class="legend" id="tour-legend"></div>
+        <div class="tour-info" id="tour-info" aria-live="polite"><h3><span lang="ko">번호를 눌러 보세요</span><span lang="en">Click a number</span></h3><p><span lang="ko">사진 위 번호나 아래 버튼 어느 쪽을 눌러도 됩니다.</span><span lang="en">Either on the screen or in the row below.</span></p></div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="tour.six"><span lang="ko">여섯 군데 이상 눌러 보기</span><span lang="en">Open six or more parts</span></li>
+          <li data-task="tour.panels"><span lang="ko">오른쪽 보정 패널 설명 읽기</span><span lang="en">Read about the edit panels</span></li>
+          <li data-task="tour.library"><span lang="ko">라이브러리와 현상 화면의 차이 알아보기</span><span lang="en">See how Library and Develop differ</span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>원본은 바뀌지 않습니다.</b> Grainy는 보정값만 따로 저장해서, 언제든 처음으로 돌아갈 수 있습니다.</span><span lang="en"><b>Your originals never change.</b> Grainy keeps your edits separately, so you can always go back.</span></div>
+        <div class="cheer"><span lang="ko">좋습니다! 이제 네거티브를 사진으로 바꿔 봅시다.</span><span lang="en">Great! Now let's turn a negative into a photo.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section class="lesson" id="negative" data-title-ko="네거티브를 사진으로" data-title-en="Negative to photo">
+    <p class="kicker"><span lang="ko">레슨 2</span><span lang="en">Lesson 2</span></p>
+    <h2><span lang="ko">네거티브를 사진으로</span><span lang="en">Turn a negative into a photo</span></h2>
+    <p class="lead"><span lang="ko">평판 스캐너로 스캔한 컬러 네거티브입니다. Grainy는 필름 베이스(주황색)를 채널마다 빼고, 농도를 빛으로 되돌립니다. 아래 계산은 Grainy와 같습니다.</span><span lang="en">A colour negative from a flatbed scanner. Grainy takes the orange film base out channel by channel and turns density back into light — the page below does the same maths as Grainy.</span></p>
+    <div class="cols">
+      <div class="mini" id="neg-mini">
+        <div class="mini-top"><b>Grainy</b><span><span lang="ko">현상</span><span lang="en">Develop</span></span><span class="sp"></span><span>roll-01_07.jpg</span></div>
+        <div class="mini-body">
+          <div class="stage"><canvas id="neg-canvas"></canvas><span class="badge" id="neg-badge"><span lang="ko">원본</span><span lang="en">Original</span></span></div>
+          <div class="panel">
+            <div class="sec"><span lang="ko">기본</span><span lang="en">BASIC</span></div>
+            <div class="btns one"><button type="button" id="neg-invert" aria-pressed="false"><span lang="ko">네거티브 반전</span><span lang="en">Invert Negative</span></button></div>
+            <div class="row"><label for="neg-density"><span lang="ko">필름 농도</span><span lang="en">Film density</span></label><input type="range" id="neg-density" min="-3" max="3" step="0.05" disabled><output for="neg-density"></output></div>
+            <div class="row"><label for="neg-range"><span lang="ko">필름 대비</span><span lang="en">Film contrast</span></label><input type="range" id="neg-range" min="3" max="10" step="0.1" disabled><output for="neg-range"></output></div>
+            <p class="note"><span lang="ko">필름 농도는 밝기, 필름 대비는 밝고 어두운 차이입니다. 슬라이더 이름을 두 번 누르면 처음 값으로 돌아갑니다.</span><span lang="en">Film density is brightness, film contrast the spread between light and dark. Double-click a slider's name to reset it.</span></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="negative.invert"><span lang="ko"><b>네거티브 반전</b> 누르기</span><span lang="en">Press <b>Invert Negative</b></span></li>
+          <li data-task="negative.density"><span lang="ko">필름 농도로 밝기 맞추기</span><span lang="en">Set the brightness with Film density</span></li>
+          <li data-task="negative.range"><span lang="ko">필름 대비 바꿔 보기</span><span lang="en">Change Film contrast</span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>한 롤을 한꺼번에.</b> 같은 설정으로 스캔한 한 롤은 사진 작업 메뉴의 <b>네거티브 반전 · 한 롤로 맞춤</b>으로 모든 컷의 색 기준을 같게 맞춥니다.</span><span lang="en"><b>A whole roll at once.</b> Frames scanned with the same settings can be converted together (Photo Workflow › Invert negatives as one roll), so every frame gets the same colours.</span></div>
+        <div class="cheer"><span lang="ko">반전 완료! 다음 레슨에서 이 사진의 색을 맞춥니다.</span><span lang="en">Converted! Next, we fix this photo's colour.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 -->
+  <section class="lesson" id="basic" data-title-ko="노출과 색 맞추기" data-title-en="Exposure and colour">
+    <p class="kicker"><span lang="ko">레슨 3</span><span lang="en">Lesson 3</span></p>
+    <h2><span lang="ko">노출과 색 맞추기</span><span lang="en">Fix exposure and colour</span></h2>
+    <p class="lead"><span lang="ko">레슨 2에서 반전한 사진입니다. 하늘이 하얗게 날아가고 전체가 푸르게 틀어져 있습니다. 자동 버튼으로 먼저 잡고, 스포이드와 슬라이더로 다듬어 보세요.</span><span lang="en">The photo from lesson 2: the sky is blown out and everything leans blue. Let the Auto buttons start, then refine with the eyedropper and sliders.</span></p>
+    <div class="cols">
+      <div class="mini">
+        <div class="mini-top"><b>Grainy</b><span><span lang="ko">현상</span><span lang="en">Develop</span></span><span class="sp"></span><button type="button" class="tool" id="basic-before" title="\"><span lang="ko">원본 비교</span><span lang="en">Before / after</span> <kbd>\</kbd></button></div>
+        <div class="mini-body">
+          <div class="stage" id="basic-stage"><canvas id="basic-canvas"></canvas><span class="badge" id="basic-badge"><span lang="ko">보정 전</span><span lang="en">Before</span></span><span class="hint" id="basic-hint" hidden><span lang="ko">흰색이나 회색이어야 할 곳을 누르거나, 넓게 끌어서 상자를 그리세요</span><span lang="en">Click something that should be white or grey, or drag a box over it</span></span></div>
+          <div class="panel">
+            <div class="sec"><span lang="ko">기본</span><span lang="en">BASIC</span></div>
+            <div class="btns"><button type="button" id="basic-auto-tone"><span lang="ko">자동 톤</span><span lang="en">Auto tone</span></button><button type="button" id="basic-auto-color"><span lang="ko">자동 색</span><span lang="en">Auto colour</span></button></div>
+            <div class="sec"><span lang="ko">화이트 밸런스</span><span lang="en">WHITE BALANCE</span></div>
+            <div class="btns one"><button type="button" id="basic-picker" aria-pressed="false"><span lang="ko">화이트 밸런스 스포이드</span><span lang="en">White balance eyedropper</span> <kbd>W</kbd></button></div>
+            <div class="row"><label for="basic-temperature"><span lang="ko">색온도</span><span lang="en">Temperature</span></label><input type="range" id="basic-temperature" min="-100" max="100" step="1"><output></output></div>
+            <div class="row"><label for="basic-tint"><span lang="ko">색조</span><span lang="en">Tint</span></label><input type="range" id="basic-tint" min="-100" max="100" step="1"><output></output></div>
+            <div class="sec"><span lang="ko">톤</span><span lang="en">TONE</span></div>
+            <div class="row"><label for="basic-exposure"><span lang="ko">노출</span><span lang="en">Exposure</span></label><input type="range" id="basic-exposure" min="-5" max="5" step="0.05"><output></output></div>
+            <div class="row"><label for="basic-contrast"><span lang="ko">대비</span><span lang="en">Contrast</span></label><input type="range" id="basic-contrast" min="-100" max="100" step="1"><output></output></div>
+            <div class="row"><label for="basic-whites"><span lang="ko">흰색 계열</span><span lang="en">Whites</span></label><input type="range" id="basic-whites" min="-200" max="200" step="1"><output></output></div>
+            <div class="row"><label for="basic-blacks"><span lang="ko">검정 계열</span><span lang="en">Blacks</span></label><input type="range" id="basic-blacks" min="-200" max="200" step="1"><output></output></div>
+            <div class="sec"><span lang="ko">색상</span><span lang="en">COLOUR</span></div>
+            <div class="row"><label for="basic-saturation"><span lang="ko">채도</span><span lang="en">Saturation</span></label><input type="range" id="basic-saturation" min="-100" max="100" step="1"><output></output></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="basic.autotone"><span lang="ko"><b>자동 톤</b> 누르기</span><span lang="en">Press <b>Auto tone</b></span></li>
+          <li data-task="basic.autocolor"><span lang="ko"><b>자동 색</b>으로 색 틀어짐 없애기</span><span lang="en">Remove the cast with <b>Auto colour</b></span></li>
+          <li data-task="basic.picker"><span lang="ko">스포이드로 회색·흰색 찍기 (끌어서 상자도 됩니다)</span><span lang="en">Use the eyedropper on something grey or white (a dragged box works too)</span></li>
+          <li data-task="basic.before"><span lang="ko"><kbd>\</kbd> 키나 <b>원본 비교</b>로 전후 비교하기</span><span lang="en">Compare before and after with <kbd>\</kbd> or <b>Before / after</b></span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>자동 색은 밝기마다 따로 맞춥니다.</b> 어두운 곳·중간·밝은 곳의 색 틀어짐을 각각 재서 되돌리기 때문에, 필름 스캔처럼 밝기에 따라 색이 다르게 틀어진 사진에 잘 맞습니다.</span><span lang="en"><b>Auto colour works per brightness.</b> It measures shadows, midtones and highlights separately, which suits film scans whose cast changes with brightness.</span></div>
+        <div class="cheer"><span lang="ko">좋아요! 이제 필름 룩을 입혀 봅시다.</span><span lang="en">Nice! Now let's add a film look.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 -->
+  <section class="lesson" id="film" data-title-ko="필름 룩 입히기" data-title-en="Film looks">
+    <p class="kicker"><span lang="ko">레슨 4</span><span lang="en">Lesson 4</span></p>
+    <h2><span lang="ko">필름 룩 입히기</span><span lang="en">Try film looks</span></h2>
+    <p class="lead"><span lang="ko">Grainy의 필름 룩 82종은 각 제조사가 공개한 기술 자료로 필름의 노출·현상·인화를 계산합니다. 아래 이미지는 Grainy가 실제로 계산한 결과입니다.</span><span lang="en">Grainy's 82 film looks compute exposure, development and printing from each maker's published technical data. The images below are what Grainy itself renders.</span></p>
+    <div class="cols">
+      <div class="mini">
+        <div class="mini-top"><b>Grainy</b><span><span lang="ko">현상</span><span lang="en">Develop</span></span><span class="sp"></span><span id="film-current"></span></div>
+        <div class="mini-body">
+          <div class="stage"><canvas id="film-canvas"></canvas></div>
+          <div class="panel">
+            <div class="sec"><span lang="ko">프리셋 · 필름</span><span lang="en">PRESETS · FILM</span></div>
+            <div class="films" id="film-list"></div>
+            <div class="row"><label for="film-strength"><span lang="ko">필름 강도</span><span lang="en">Film amount</span></label><input type="range" id="film-strength" min="0" max="100" step="1" value="100" disabled><output></output></div>
+            <p class="note" id="film-note"></p>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="film.negative"><span lang="ko">컬러 네거티브 필름 하나 고르기</span><span lang="en">Choose a colour negative film</span></li>
+          <li data-task="film.slide"><span lang="ko">슬라이드 필름(벨비아·코다크롬 등) 고르기</span><span lang="en">Choose a slide film (Velvia, Kodachrome…)</span></li>
+          <li data-task="film.bw"><span lang="ko">흑백 필름 고르기</span><span lang="en">Choose a black-and-white film</span></li>
+          <li data-task="film.strength"><span lang="ko">필름 강도를 절반쯤으로 줄여 보기</span><span lang="en">Bring Film amount down to about half</span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>RAW에 기본값 그대로 적용하세요.</b> 노출과 화이트 밸런스만 맞춘 RAW 사진에 가장 잘 맞습니다. 대비·커브는 필름 다음에 더해지고, 자동 색은 필름 색을 지워 버리니 함께 쓰지 마세요. Grainy에서는 오른쪽 <b>필름</b> 패널과 왼쪽 <b>프리셋</b>의 회사별 폴더에 있습니다.</span><span lang="en"><b>Use it on RAW with default settings.</b> It suits a RAW photo with only exposure and white balance set. Contrast and curves are added after the film, and Auto colour would undo its colour. In Grainy: the <b>Film</b> panel on the right, or the maker folders under <b>Presets</b> on the left.</span></div>
+        <div class="cheer"><span lang="ko">필름 고르기 끝! 다음은 하늘만 따로 보정하기입니다.</span><span lang="en">Done! Next: editing just the sky.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 -->
+  <section class="lesson" id="masks" data-title-ko="부분 보정" data-title-en="Masks">
+    <p class="kicker"><span lang="ko">레슨 5</span><span lang="en">Lesson 5</span></p>
+    <h2><span lang="ko">부분 보정: 하늘과 브러시</span><span lang="en">Local edits: sky and brush</span></h2>
+    <p class="lead"><span lang="ko">마스크를 쓰면 사진의 일부만 보정할 수 있습니다. <b>하늘 선택</b>은 하늘을 자동으로 찾고, <b>브러시</b>로는 원하는 곳을 직접 칠합니다. 하늘 마스크는 Grainy가 계산한 결과입니다.</span><span lang="en">Masks edit part of a photo. <b>Select Sky</b> finds the sky for you, the <b>Brush</b> paints where you want. The sky mask here is the one Grainy computes.</span></p>
+    <div class="cols">
+      <div class="mini">
+        <div class="mini-top"><b>Grainy</b><span><span lang="ko">마스크</span><span lang="en">Masks</span></span><span class="sp"></span><button type="button" class="tool" id="mask-overlay" aria-pressed="true"><span lang="ko">마스크 표시</span><span lang="en">Show mask</span> <kbd>O</kbd></button></div>
+        <div class="mini-body">
+          <div class="stage" id="mask-stage"><canvas id="mask-canvas"></canvas><span class="hint" id="mask-hint" hidden><span lang="ko">사진 위를 끌어서 칠하세요</span><span lang="en">Drag on the photo to paint</span></span></div>
+          <div class="panel">
+            <div class="sec"><span lang="ko">새 마스크</span><span lang="en">NEW MASK</span></div>
+            <div class="btns"><button type="button" id="mask-sky"><span lang="ko">하늘 선택</span><span lang="en">Select Sky</span></button><button type="button" id="mask-brush"><span lang="ko">브러시</span><span lang="en">Brush</span> <kbd>K</kbd></button></div>
+            <div class="layers" id="mask-layers"></div>
+            <div id="mask-controls" hidden>
+              <div class="sec" id="mask-title"></div>
+              <div class="row"><label for="mask-exposure"><span lang="ko">노출</span><span lang="en">Exposure</span></label><input type="range" id="mask-exposure" min="-2" max="2" step="0.05"><output></output></div>
+              <div class="row"><label for="mask-contrast"><span lang="ko">대비</span><span lang="en">Contrast</span></label><input type="range" id="mask-contrast" min="-100" max="100" step="1"><output></output></div>
+              <div class="row"><label for="mask-temperature"><span lang="ko">색온도</span><span lang="en">Temperature</span></label><input type="range" id="mask-temperature" min="-100" max="100" step="1"><output></output></div>
+              <div class="row"><label for="mask-saturation"><span lang="ko">채도</span><span lang="en">Saturation</span></label><input type="range" id="mask-saturation" min="-100" max="100" step="1"><output></output></div>
+              <div class="row" id="mask-size-row"><label for="mask-size"><span lang="ko">브러시 크기</span><span lang="en">Brush size</span></label><input type="range" id="mask-size" min="2" max="20" step="1" value="7"><output></output></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="masks.sky"><span lang="ko"><b>하늘 선택</b> 누르기 (빨간 부분이 선택 영역)</span><span lang="en">Press <b>Select Sky</b> (red shows the selection)</span></li>
+          <li data-task="masks.darken"><span lang="ko">하늘 노출을 내려 구름 살리기</span><span lang="en">Lower the sky's exposure to bring out the clouds</span></li>
+          <li data-task="masks.brush"><span lang="ko"><b>브러시</b>로 가운데 섬을 칠하고 밝게 하기</span><span lang="en">Paint the island with the <b>Brush</b> and brighten it</span></li>
+          <li data-task="masks.overlay"><span lang="ko"><kbd>O</kbd>로 마스크 표시 끄고 결과 보기</span><span lang="en">Hide the mask with <kbd>O</kbd> and look at the result</span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>더하고, 빼고, 겹치기.</b> Grainy의 마스크는 하늘·브러시·선형·방사형·색상 범위·광도 범위를 더하거나 빼거나 겹쳐서 만들 수 있습니다. 브러시는 어두운 곳·중간·밝은 곳만 칠하도록 제한할 수도 있습니다.</span><span lang="en"><b>Add, subtract, intersect.</b> Grainy's masks combine sky, brush, linear and radial gradients, colour and luminance ranges. A brush can also be limited to shadows, midtones or highlights.</span></div>
+        <div class="cheer"><span lang="ko">멋져요! 이제 단축키를 익혀 봅시다.</span><span lang="en">Lovely! Now the shortcuts.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 -->
+  <section class="lesson" id="keys" data-title-ko="비교와 단축키" data-title-en="Compare and keys">
+    <p class="kicker"><span lang="ko">레슨 6</span><span lang="en">Lesson 6</span></p>
+    <h2><span lang="ko">비교와 단축키</span><span lang="en">Compare, and the keys that save time</span></h2>
+    <p class="lead"><span lang="ko">이 레슨에서는 키보드를 눌러 보세요. 누를 때마다 무엇을 하는 키인지 알려 줍니다. 휴대폰에서는 아래 키 버튼을 누르면 됩니다.</span><span lang="en">Press keys on your keyboard during this lesson; each one tells you what it does. On a phone, tap the key buttons below.</span></p>
+    <div class="cols">
+      <div>
+        <div class="mini">
+          <div class="mini-top"><b>Grainy</b><span id="keys-mode"></span><span class="sp"></span><span><span lang="ko">키를 눌러 보세요</span><span lang="en">Press a key</span></span></div>
+          <div class="stage" id="keys-stage" style="min-height:300px"><div class="toast" id="keys-toast"></div><canvas id="keys-canvas"></canvas></div>
+        </div>
+        <div class="keys" id="keys-list"></div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="keys.before"><span lang="ko"><kbd>\</kbd>로 보정 전후 바꿔 보기</span><span lang="en">Toggle before / after with <kbd>\</kbd></span></li>
+          <li data-task="keys.compare"><span lang="ko"><kbd>C</kbd>로 나란히 비교하기</span><span lang="en">Compare side by side with <kbd>C</kbd></span></li>
+          <li data-task="keys.five"><span lang="ko">서로 다른 단축키 다섯 개 눌러 보기</span><span lang="en">Press five different shortcuts</span></li>
+          <li data-task="keys.help"><span lang="ko"><kbd>?</kbd>로 단축키 목록 열기</span><span lang="en">Open the shortcut list with <kbd>?</kbd></span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>단축키 목록은 언제든.</b> Grainy에서 <kbd>?</kbd>를 누르거나 설정 메뉴의 <b>단축키 목록…</b>을 고르세요.</span><span lang="en"><b>The list is always there.</b> Press <kbd>?</kbd> in Grainy, or Settings › <b>Shortcuts…</b>.</span></div>
+        <div class="cheer"><span lang="ko">손이 빨라졌네요! 마지막으로 사진을 고르고 내보내 봅시다.</span><span lang="en">Fast hands! Finally, picking and exporting.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 -->
+  <section class="lesson" id="library" data-title-ko="고르고 내보내기" data-title-en="Pick and export">
+    <p class="kicker"><span lang="ko">레슨 7</span><span lang="en">Lesson 7</span></p>
+    <h2><span lang="ko">고르고 내보내기</span><span lang="en">Pick the keepers, then export</span></h2>
+    <p class="lead"><span lang="ko">한 롤을 훑어보며 별점과 표시를 붙이면, 좋은 컷만 골라 내보낼 수 있습니다. 사진을 누르고 키를 눌러 보세요.</span><span lang="en">Go through a roll giving stars and flags, and you can export just the keepers. Click a photo and press keys.</span></p>
+    <div class="cols">
+      <div class="mini" id="lib-mini">
+        <div class="mini-top"><b>Grainy</b><span><span lang="ko">라이브러리</span><span lang="en">Library</span></span><span class="sp"></span><span id="lib-count"></span></div>
+        <div class="lib-bar" id="lib-filters">
+          <button type="button" class="tool" data-filter="all" aria-pressed="true"><span lang="ko">모든 사진</span><span lang="en">All photos</span></button>
+          <button type="button" class="tool" data-filter="picked" aria-pressed="false"><span lang="ko">선택 표시한 사진</span><span lang="en">Picked</span></button>
+          <button type="button" class="tool" data-filter="four" aria-pressed="false"><span lang="ko">별점 4개 이상</span><span lang="en">4 stars and above</span></button>
+          <button type="button" class="tool" data-filter="rejected" aria-pressed="false"><span lang="ko">제외 표시한 사진</span><span lang="en">Rejected</span></button>
+        </div>
+        <div class="grid6" id="lib-grid" tabindex="0"></div>
+        <div class="lib-bar"><span style="color:var(--muted);font-size:12.5px"><span lang="ko"><kbd>1</kbd>–<kbd>5</kbd> 별점 · <kbd>0</kbd> 별점 지우기 · <kbd>P</kbd> 선택 · <kbd>X</kbd> 제외 · <kbd>U</kbd> 표시 지우기 · <kbd>←</kbd><kbd>→</kbd> 이동</span><span lang="en"><kbd>1</kbd>–<kbd>5</kbd> stars · <kbd>0</kbd> no stars · <kbd>P</kbd> pick · <kbd>X</kbd> reject · <kbd>U</kbd> unflag · <kbd>←</kbd><kbd>→</kbd> move</span></span></div>
+      </div>
+      <div>
+        <div class="tasks"><h3><span lang="ko">해 볼 일</span><span lang="en">Try it</span></h3><ol>
+          <li data-task="library.five"><span lang="ko">마음에 드는 사진에 별 5개 (<kbd>5</kbd>)</span><span lang="en">Give your favourite five stars (<kbd>5</kbd>)</span></li>
+          <li data-task="library.pick"><span lang="ko">사진 두 장 선택 표시 (<kbd>P</kbd>)</span><span lang="en">Pick two photos (<kbd>P</kbd>)</span></li>
+          <li data-task="library.reject"><span lang="ko">한 장 제외 표시 (<kbd>X</kbd>)</span><span lang="en">Reject one (<kbd>X</kbd>)</span></li>
+          <li data-task="library.filter"><span lang="ko"><b>선택 표시한 사진</b>만 보기</span><span lang="en">Show only <b>Picked</b></span></li>
+        </ol></div>
+        <div class="tip"><span lang="ko"><b>그다음 내보내기.</b> 고른 사진을 모두 선택하고 위쪽 <b>내보내기</b>를 누르면 됩니다. 지난번 설정으로 바로 내보내려면 <kbd>Ctrl</kbd>+<kbd>E</kbd>.</span><span lang="en"><b>Then export.</b> Select the keepers and press <b>Export</b> at the top; <kbd>Ctrl</kbd>+<kbd>E</kbd> exports again with your last settings.</span></div>
+        <div class="cheer"><span lang="ko">이제 Grainy의 기본을 모두 익혔습니다!</span><span lang="en">You now know the essentials of Grainy!</span></div>
+      </div>
+    </div>
+    <div class="exports">
+      <div><b>JPEG · AVIF · JPEG XL</b><span lang="ko">공유와 웹용. 품질과 크기를 고릅니다.</span><span lang="en">For sharing and the web; choose quality and size.</span></div>
+      <div><b>TIFF · PNG</b><span lang="ko">인쇄와 보관용. 16비트도 됩니다.</span><span lang="en">For print and archive; 16-bit too.</span></div>
+      <div><b><span lang="ko">원본은 그대로</span><span lang="en">Originals stay</span></b><span lang="ko">내보내기는 새 파일을 만들 뿐, 원본은 바꾸지 않습니다.</span><span lang="en">Export writes new files; it never changes your originals.</span></div>
+    </div>
+  </section>
+
+  <!-- 8 -->
+  <section class="lesson" id="ai" data-title-ko="AI에게 맡기기" data-title-en="Let an AI help">
+    <p class="kicker"><span lang="ko">레슨 8 · 선택</span><span lang="en">Lesson 8 · optional</span></p>
+    <h2><span lang="ko">AI 프로그램에게 일 시키기</span><span lang="en">Let an AI program do the work</span></h2>
+    <div class="prose">
+      <p><span lang="ko">Claude Code, Codex, Gemini CLI, Claude 데스크톱 같은 AI 프로그램에 Grainy MCP를 한 번 등록하면, 말로 일을 시킬 수 있습니다.</span><span lang="en">Register Grainy's MCP once in an AI program such as Claude Code, Codex, Gemini CLI or Claude Desktop, and just tell it what to do.</span></p>
+      <div class="tasks" style="margin:14px 0"><h3><span lang="ko">이렇게 말해 보세요</span><span lang="en">For example</span></h3><ol style="gap:8px">
+        <li data-task="ai.read"><span lang="ko">"Negatives 폴더를 한 롤로 네거티브 반전하고 자동 색 맞춰줘"</span><span lang="en">"Convert the Negatives folder as one roll and run Auto colour"</span></li>
+        <li data-task="ai.read2"><span lang="ko">"이 롤을 밀착 인화로 보고, 어두운 컷만 노출을 조금 올려줘"</span><span lang="en">"Look at this roll as a contact sheet and brighten only the dark frames a little"</span></li>
+        <li data-task="ai.read3"><span lang="ko">"별점 4개 이상만 Kodak Portra 400으로 바꿔서 JPEG로 내보내줘"</span><span lang="en">"Give the 4-star photos Kodak Portra 400 and export them as JPEG"</span></li>
+      </ol></div>
+      <p class="muted"><span lang="ko">AI가 한 작업은 Grainy 화면에 바로 보이고, 최근 5개까지 되돌릴 수 있습니다. 원본 파일은 바뀌지 않습니다.</span><span lang="en">What the AI does shows in Grainy at once, and the last five tasks can be undone. Original files never change.</span></p>
+      <p><a class="btnlink" href="../#ai"><span lang="ko">프로그램별 설치 명령 보기 →</span><span lang="en">See the install command for your program →</span></a></p>
+    </div>
+    <div class="cheer" style="display:block;max-width:760px"><span lang="ko">튜토리얼을 마쳤습니다. 궁금한 점이나 아이디어는 Grainy 위쪽 <b>피드백</b> 버튼으로 알려 주세요.</span><span lang="en">That's the tutorial. Questions or ideas? Use the <b>Feedback</b> button at the top of Grainy.</span></div>
+  </section>
+
+  <nav class="pager" id="pager"></nav>
+  </main>
+</div>
+
+<footer><span lang="ko">연습 화면은 Grainy의 계산식을 그대로 옮긴 것이고, 필름 룩과 하늘 선택 이미지는 Grainy가 직접 만든 결과입니다. 진행 상황은 이 브라우저에만 저장됩니다.</span><span lang="en">The practice windows redo Grainy's own maths; the film-look and sky images are rendered by Grainy itself. Your progress is kept in this browser only.</span> · <a href="../">Grainy</a> · <a href="https://github.com/pastorius9/grainy">GitHub</a></footer>
+
+<script src="learn.js"></script>
+</body>
+</html>

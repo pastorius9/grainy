@@ -98,9 +98,9 @@ DEFINITIONS=[
          'sort':{'type':'string','enum':list(photo_service.SORTS)},'descending':{'type':'boolean'},
          'offset':{'type':'integer','minimum':0},'limit':{'type':'integer','minimum':1,'maximum':200}},read_only=True),
     _tool('get_photo','Photo details',
-        "Details and current edit values of up to 50 photos. Folders are in dirs with d as in list_photos; file only "
-        "when it is not name. edits lists only values that differ from Grainy's defaults (the keys apply_edits "
-        "accepts); other names other changed tool groups.",
+        "Details and edit values of up to 50 photos. Folders are in dirs with d as in list_photos; file only "
+        "when it is not name. edits: non-default values (keys apply_edits accepts); other: other changed tool groups; "
+        "off: panels switched off (values kept, not rendered).",
         {'ids':{**TARGET(50)['ids']}},required=['ids'],read_only=True),
     _tool('get_preview','Photo previews',
         "Developed JPEG (current edits) of 1-4 photos, long side size px (default 512). For many photos use contact_sheet.",

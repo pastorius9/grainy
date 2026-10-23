@@ -2,6 +2,14 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.0 — Panel switches, more shortcuts, Select Sky, smooth highlights, a hands-on tutorial
+
+- **Every edit panel has the same on/off switch in its header**, and a small dot when it holds edits, so you can see at a glance what is active. Switching a panel off leaves its values as they are.
+- **More shortcuts:** W white balance eyedropper, K new brush mask, M new linear gradient, Shift+M new radial gradient, Q healing, ? the shortcut list. Drag the eyedropper to average a box; one sample now removes the whole cast on ordinary photos.
+- **Select Sky** in the Masks tool finds the sky (no AI model) with edges refined to the photo, plus Sensitivity and Edge softness.
+- **Tone mapping · Smooth highlights (DRT)** in Basic: bright skies and lights keep their colour as they approach white.
+- **Learn Grainy hands-on** at pastorius9.github.io/grainy/learn (Settings › Learn Grainy).
+
 ## 0.5.99 — Film looks in the Presets panel
 
 - **The Presets panel now has folders.** The 82 film looks are in a folder per maker (Kodak and Fujifilm split again into colour negative, colour slide, black and white and motion picture); your own and the built-in presets are in Other presets.

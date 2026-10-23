@@ -1,0 +1,185 @@
+{
+ "negative": {
+  "base": [
+   0.03434,
+   0.022174,
+   0.0185
+  ],
+  "peak": [
+   0.000911,
+   0.000304,
+   0.000607
+  ],
+  "density": 1.0,
+  "range": 6.5,
+  "floor": 1e-05
+ },
+ "auto_tone": {
+  "exposure": -1.152,
+  "blacks": -7.7317,
+  "whites": 6.9087,
+  "curve": [
+   [
+    0.0,
+    0.03
+   ],
+   [
+    0.25,
+    0.265
+   ],
+   [
+    0.5,
+    0.5
+   ],
+   [
+    0.75,
+    0.735
+   ],
+   [
+    1.0,
+    0.97
+   ]
+  ]
+ },
+ "auto_color": {
+  "rgb_curves": [
+   [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.1861,
+     0.1853
+    ],
+    [
+     0.3874,
+     0.4097
+    ],
+    [
+     1.0,
+     1.0
+    ]
+   ],
+   [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.1839,
+     0.1853
+    ],
+    [
+     0.411,
+     0.4097
+    ],
+    [
+     1.0,
+     1.0
+    ]
+   ],
+   [
+    [
+     0.0,
+     0.0
+    ],
+    [
+     0.1965,
+     0.1853
+    ],
+    [
+     0.4621,
+     0.4097
+    ],
+    [
+     1.0,
+     1.0
+    ]
+   ]
+  ]
+ },
+ "garden": {
+  "width": 939,
+  "height": 606
+ },
+ "films": [
+  {
+   "id": "kodak-portra-400",
+   "name": "Kodak Portra 400",
+   "maker": "Kodak",
+   "kind": "colour-negative",
+   "iso": 400
+  },
+  {
+   "id": "kodak-ektar-100",
+   "name": "Kodak Ektar 100",
+   "maker": "Kodak",
+   "kind": "colour-negative",
+   "iso": 100
+  },
+  {
+   "id": "kodak-gold-200",
+   "name": "Kodak Gold 200",
+   "maker": "Kodak",
+   "kind": "colour-negative",
+   "iso": 200
+  },
+  {
+   "id": "fuji-superia-xtra-400",
+   "name": "Fujicolor Superia X-TRA 400",
+   "maker": "Fujifilm",
+   "kind": "colour-negative",
+   "iso": 400
+  },
+  {
+   "id": "fuji-velvia-50",
+   "name": "Fujifilm Velvia 50",
+   "maker": "Fujifilm",
+   "kind": "colour-slide",
+   "iso": 50
+  },
+  {
+   "id": "kodak-kodachrome-64",
+   "name": "Kodak Kodachrome 64",
+   "maker": "Kodak",
+   "kind": "colour-slide",
+   "iso": 64
+  },
+  {
+   "id": "kodak-ektachrome-e100",
+   "name": "Kodak Ektachrome E100",
+   "maker": "Kodak",
+   "kind": "colour-slide",
+   "iso": 100
+  },
+  {
+   "id": "kodak-vision3-500t",
+   "name": "Kodak Vision3 500T 5219",
+   "maker": "Kodak",
+   "kind": "colour-negative",
+   "iso": 500
+  },
+  {
+   "id": "cinestill-800t",
+   "name": "CineStill 800T",
+   "maker": "CineStill",
+   "kind": "colour-negative",
+   "iso": 800
+  },
+  {
+   "id": "kodak-tri-x-400",
+   "name": "Kodak Tri-X 400",
+   "maker": "Kodak",
+   "kind": "bw-negative",
+   "iso": 400
+  },
+  {
+   "id": "ilford-hp5-plus",
+   "name": "Ilford HP5 Plus",
+   "maker": "Ilford",
+   "kind": "bw-negative",
+   "iso": 400
+  }
+ ]
+}

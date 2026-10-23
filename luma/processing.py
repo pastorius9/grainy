@@ -403,6 +403,11 @@ def _layer_component(image,source_shape,component,transform,source_image):
             return color_coverage(image,component['samples'],component.get('tolerance',.3))
         reference=np.asarray(component.get('rgb',[.5,.5,.5]),np.float32)
         return np.clip(1-np.linalg.norm(image-reference,axis=-1)/max(.01,component.get('tolerance',.3)),0,1)
+    if kind=='sky':
+        # Found in the developed colour source like an auto-masked brush, so global edits do not move it.
+        from .sky_mask import sky_mask
+        if source_image is None:return sky_mask(image,component)
+        return transform(sky_mask(source_image,component,transform)[...,None])[...,0]
     source_mask=component_mask(source_shape,component)
     if kind=='brush' and component.get('auto_mask'):
         source_mask=limit_brush_color(source_image if source_image is not None else image,component,source_mask)

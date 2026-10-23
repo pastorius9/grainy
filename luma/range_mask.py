@@ -26,10 +26,13 @@ def sample_selection(source,settings,points,layer=None,*,use_crop=True,original_
     layer samples before its own edits. The input and settings remain untouched.
     """
     from .engine import develop,geometry
+    from .panel_keys import effective
     positions=np.asarray(points,np.float64)
     if positions.ndim!=2 or positions.shape[1]!=2 or not len(positions) or not np.isfinite(positions).all() or np.any((positions<0)|(positions>1)):
         raise ValueError('사진 안쪽의 점이나 작은 사각형을 선택하세요.')
     s=deepcopy(settings);layers=s.setdefault('masks',[])
+    # Sampling works with the masks switched off; the new range switches them on again.
+    s['panels_off']=[p for p in s.get('panels_off') or () if p!='masks']
     if layer is None:layer=len(layers);layers.append(dict(components=[],adjustments={}))
     if not isinstance(layer,(int,np.integer)) or not 0<=layer<len(layers):raise ValueError('선택한 마스크를 찾을 수 없습니다.')
     def read(index,image):
@@ -38,7 +41,7 @@ def sample_selection(source,settings,points,layer=None,*,use_crop=True,original_
         x0,x1=sorted(min(w-1,int(p[0]*w)) for p in (start,end))
         y0,y1=sorted(min(h-1,int(p[1]*h)) for p in (start,end))
         # Exclude the empty border introduced by rotation, perspective or optics.
-        valid=geometry(np.ones((*source.shape[:2],1),np.float32),s,use_crop)[y0:y1+1,x0:x1+1,0]>.9
+        valid=geometry(np.ones((*source.shape[:2],1),np.float32),effective(s),use_crop)[y0:y1+1,x0:x1+1,0]>.9
         patch=image[y0:y1+1,x0:x1+1]
         if not valid.any():raise ValueError('변형 후 생긴 빈 가장자리 대신 사진 안쪽을 선택하세요.')
         luminance=patch@np.array([.2126,.7152,.0722],np.float32)

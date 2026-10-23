@@ -1,7 +1,10 @@
 """One scrollable Develop column with collapsible panels and a tool strip."""
 from PySide6.QtCore import Qt,Signal,QTimer
+from PySide6.QtGui import QPainter,QColor
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QToolButton,QScrollArea,QMenu,QSizePolicy
 from .i18n import tr
+from .shortcut_list import key_hint
+from .panel_keys import PANEL_KEYS,SWITCHES,OFF_PANELS,is_on,edited
 
 PANELS=(('crop','크롭'),('healing','복구'),('masks','마스크'),
         ('basic','기본'),('film','필름'),('curve','톤 곡선'),('mixer','색상 혼합'),('grading','컬러 그레이딩'),
@@ -9,6 +12,36 @@ PANELS=(('crop','크롭'),('healing','복구'),('masks','마스크'),
         ('photo_filter','컬러 필터'),('calibration','카메라 보정'),('metadata','사진 정보·관리'))
 ROUTES=('basic','crop','metadata','mixer','detail','masks','healing')
 TOOLS=('crop','healing','masks')
+
+
+class EditedDot(QWidget):
+    """A quiet dot: this panel holds values other than the defaults. Grey while the panel is off.
+    Clicks pass through to the header."""
+    def __init__(self):
+        super().__init__();self.setFixedSize(6,6);self.off=False;self.hide()
+        self.setToolTip(tr('기본값과 다른 보정이 있습니다'))
+
+    def paintEvent(self,event):
+        p=QPainter(self);p.setRenderHint(QPainter.RenderHint.Antialiasing);p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor('#5b6168' if self.off else '#a48e6b'));p.drawEllipse(0,0,6,6)
+
+
+class PanelSwitch(QToolButton):
+    """The panel's on/off switch: a small flat track with a square knob, right when on. Neutral greys only,
+    so the column stays calm and the accent is left to the edited dots."""
+    def __init__(self,title):
+        super().__init__();self.setObjectName('panelSwitch');self.setCheckable(True);self.setChecked(True)
+        self.setFixedSize(22,12);self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover)     # repaint on enter/leave for the hover shade
+        self.setAccessibleName(tr('{0} 켜기·끄기',title))
+        self.setToolTip(tr('이 패널의 보정을 켜고 끕니다. 꺼도 값은 그대로 남습니다.'))
+
+    def paintEvent(self,event):
+        p=QPainter(self);on=self.isChecked();hover=self.underMouse()
+        track=QColor('#5f6770' if on else '#41484f');knob=QColor('#aab1b8' if on else '#555c64')
+        if hover:track,knob=track.lighter(130),knob.lighter(115)
+        p.setPen(track);p.drawRect(0,0,self.width()-1,self.height()-1)
+        p.fillRect(self.width()-9 if on else 3,3,6,6,knob)
 
 
 class Panel(QWidget):
@@ -22,10 +55,25 @@ class Panel(QWidget):
         self.header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.header.customContextMenuRequested.connect(lambda p:host.context_menu(self.header,p))
         self.header.toggled.connect(lambda expanded:host.toggle_panel(key,expanded))
+        self.switch=self.dot=None;self.state=None
+        if key in PANEL_KEYS:
+            # Same place on every panel that holds edits: the dot, then the switch, at the header's right end.
+            row=QHBoxLayout(self.header);row.setContentsMargins(0,0,9,0);row.setSpacing(9);row.addStretch()
+            self.dot=EditedDot();row.addWidget(self.dot,0,Qt.AlignmentFlag.AlignVCenter)
+            self.switch=PanelSwitch(tr(title));row.addWidget(self.switch,0,Qt.AlignmentFlag.AlignVCenter)
+            self.switch.clicked.connect(lambda on:host.switch_panel(key,on))
         layout.addWidget(self.header)
         self.body=QWidget();self.body.setObjectName('developPanelBody')
         box=QVBoxLayout(self.body);box.setContentsMargins(8,9,8,12);box.setSpacing(4)
         layout.addWidget(self.body);self.set_expanded(False)
+
+    def show_state(self,on,changed):
+        if self.state==(on,changed):return
+        self.state=(on,changed)
+        self.switch.setChecked(on);self.dot.off=not on;self.dot.setVisible(changed);self.dot.update()
+        if self.header.property('panelOff')!=(not on):
+            self.header.setProperty('panelOff',not on)
+            self.header.style().unpolish(self.header);self.header.style().polish(self.header)
 
     def set_expanded(self,value):
         self.header.blockSignals(True);self.header.setChecked(value);self.header.blockSignals(False)
@@ -59,15 +107,21 @@ class DevelopPanels(QWidget):
     def __init__(self,window):
         super().__init__();self.w=window;self.labels=[];self.index=0;self.ready=False
         self.scroll_revision=0
-        self.solo=True;self.sections={};self.tool_buttons={}
+        self.solo=True;self.sections={};self.tool_buttons={};self.tool_dots={}
         layout=QVBoxLayout(self);layout.setContentsMargins(0,0,0,0);layout.setSpacing(0)
         strip=QWidget();strip.setObjectName('developTools');row=QHBoxLayout(strip)
         row.setContentsMargins(0,4,0,7);row.setSpacing(3)
         for index,title in ((0,'보정'),(1,'크롭'),(6,'복구'),(5,'마스크')):
             control=QToolButton();control.setObjectName('developTool');control.setText(tr(title))
             control.setAccessibleName(tr(title));control.setCheckable(True)
+            if index==6:control.setToolTip(f"{tr(title)} ({key_hint('Q')})")
+            if index==5:control.setToolTip(tr('마스크 · 새 마스크: 브러시 {0} · 선형 {1} · 방사형 {2}',key_hint('K'),key_hint('M'),key_hint('Shift+M')))
             control.clicked.connect(lambda checked=False,i=index:self.select_tool(i))
             row.addWidget(control,1);self.tool_buttons[index]=control
+            if ROUTES[index] in TOOLS and ROUTES[index] in PANEL_KEYS:
+                # Healing and masks have their panel only while the tool is open: the strip shows their dot.
+                corner=QHBoxLayout(control);corner.setContentsMargins(0,5,5,0);corner.addStretch()
+                dot=EditedDot();corner.addWidget(dot,0,Qt.AlignmentFlag.AlignTop);self.tool_dots[ROUTES[index]]=dot
         self.tool_buttons[0].setChecked(True);layout.addWidget(strip)
         self.scroll=PanelScroll(self);content=QWidget();self.column=QVBoxLayout(content)
         self.column.setContentsMargins(0,0,5,0);self.column.setSpacing(0)
@@ -131,6 +185,10 @@ class DevelopPanels(QWidget):
         if index==1 and not self.w.crop_button.isChecked():self.w.crop_button.click()
         elif index==6:self.w.studio.mode('heal')
 
+    def open_tool(self,index):
+        """A tool's key: opens the tool, and leaves it open when it already is (its strip button would close it)."""
+        if self.index!=index:self.select_tool(index)
+
     def toggle_panel(self,key,expanded):
         studio=getattr(self.w,'studio',None)
         overlay=(studio.overlay_layer(),studio.point_overlay_target()) if studio else None
@@ -161,6 +219,30 @@ class DevelopPanels(QWidget):
     def is_open(self,key):
         panel=self.sections[key]
         return panel.isVisible() and panel.header.isChecked()
+
+    def update_states(self):
+        """Switches, edited dots and dimmed titles from the current settings (cheap: called on every edit)."""
+        s=self.w.settings
+        for key in PANEL_KEYS:
+            on,changed=is_on(s,key),edited(s,key)
+            self.sections[key].show_state(on,changed)
+            dot=self.tool_dots.get(key)
+            if dot is not None and (not dot.isHidden(),dot.off)!=(changed,not on):
+                dot.off=not on;dot.setVisible(changed);dot.update()
+
+    def switch_panel(self,key,on):
+        """The header switch: one undo step that shows or hides the panel's edits; the values stay."""
+        w=self.w
+        if w.source is None or is_on(w.settings,key)==on:
+            self.sections[key].state=None;self.update_states();return
+        w.commit()
+        if key in SWITCHES:w.set_setting(SWITCHES[key],on)
+        else:
+            off=set(w.settings.get('panels_off') or ())-{key}|(set() if on else {key})
+            w.set_setting('panels_off',[p for p in OFF_PANELS if p in off])
+        title=tr(dict(PANELS)[key])
+        w.commit(tr('{0} 켜기',title) if on else tr('{0} 끄기',title))
+        w.render()
 
     def set_solo(self,value):
         self.solo=bool(value)

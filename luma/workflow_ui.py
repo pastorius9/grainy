@@ -44,7 +44,7 @@ class WorkflowTools:
         if retarget:
             from .rawcolor import retarget as fit
             values=[fit(v,r['info']) for r,v in zip(records,values)]
-        ids=apply(self.w.catalog,records,values,label,remember=False)
+        ids=apply(self.w.catalog,records,values,label,remember=False,switch=not retarget)
         self.w.refresh_command_edits(ids)
         self.w.statusBar().showMessage(tr('{0} · {1}장 변경', tr(label), f'{len(ids):,}'))
         return ids
@@ -166,6 +166,8 @@ class WorkflowTools:
         values=[]
         for r in targets:
             value=deepcopy(r['settings']);value.update({k:deepcopy(source['settings'][k]) for k in self.w.manager.copy_keys})
+            from .panel_keys import carried,panels_of
+            value['panels_off']=carried(value,source['settings'],panels_of(self.w.manager.copy_keys))
             if 'lensfun' in self.w.manager.copy_keys:
                 from .optics import retarget
                 value=retarget(value,r['info'])

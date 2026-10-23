@@ -47,6 +47,9 @@ class _Found(Exception):
 
 def _probe(source,settings,layer,index,callback,*,use_crop=True,original_size=None):
     from .engine import develop
+    # Picking works with the colour mixer (or masks) switched off: picking a colour switches it on again.
+    probed='mixer' if layer is None else 'masks'
+    settings={**settings,'panels_off':[p for p in settings.get('panels_off') or () if p!=probed]}
     def visit(current_layer,current_index,image,mask,origin,shape):
         if layer==current_layer and index==current_index:raise _Found(callback(image,mask,origin,shape))
     try:develop(source,settings,use_crop,output_space=None,original_size=original_size,on_point=visit)

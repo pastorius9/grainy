@@ -23,7 +23,8 @@ def kinds(button):
 
 def test_create_add_subtract(window):
     w = window; s = w.studio; w.tabs.setCurrentIndex(5)
-    assert kinds(s.create_button) == ['브러시', '선형 그레이디언트', '방사형 그레이디언트', '색상 범위', '광도 범위']
+    assert kinds(s.create_button) == ['하늘 선택', '브러시\tK', '선형 그레이디언트\tM', '방사형 그레이디언트\tShift+M', '색상 범위', '광도 범위']     # the keys that start them
+    assert kinds(s.add_button) == kinds(s.subtract_button) == ['하늘 선택', '브러시', '선형 그레이디언트', '방사형 그레이디언트', '색상 범위', '광도 범위']
     assert not s.add_button.isEnabled() and s.adjust_host.isHidden() and s.mask_tree.isHidden() and s.tool_options.isHidden() and s.tool_hint.text()
     s.create_mask('brush')                                              # Create New Mask > Brush
     assert w.view.tool_mode == 'brush' and len(w.settings['masks']) == 1 and not s.tool_options.isHidden()

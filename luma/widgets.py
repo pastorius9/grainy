@@ -388,6 +388,7 @@ class PhotoView(QGraphicsView):
     straightenDragged = Signal(float)   # crop tool: dragging outside the frame turns the photo (degrees)
     straightenFinished = Signal()
     sampled = Signal(float, float)
+    sampledArea = Signal(float, float, float, float)   # eyedropper dragged: x0, y0, x1, y1 of its rectangle, as fractions of the photo
     sampleCancelled = Signal()
     # Targeted adjustment ('adjust' tool): press position, then vertical drag in pixels (up = positive).
     adjustStarted = Signal(float, float)
@@ -410,6 +411,8 @@ class PhotoView(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.fit_mode, self.crop_mode, self._sample_mode = True, False, False
+        self.sample_press = None          # eyedropper: (pointer, spot on the photo) where the button went down
+        self.sample_area = None           # and the rectangle being drawn from there, in photo coordinates
         self.crop_limit = (0., 1., 1.)    # straighten angle and canvas size: the crop stays on the turned photo
         self.canvas = None                # crop tool: the part of the shown frame that crops are measured in (x, y, w, h)
         self.straighten_angle = 0.        # the photo's current angle, the start of a turn by dragging
@@ -450,6 +453,7 @@ class PhotoView(QGraphicsView):
     @sample_mode.setter
     def sample_mode(self,enabled):
         self._sample_mode=bool(enabled)
+        if not enabled:self.sample_press=self.sample_area=None
         self.sync_cursor();self.viewport().update()
 
     def sync_cursor(self):
@@ -801,8 +805,8 @@ class PhotoView(QGraphicsView):
             point = self.mapToScene(event.position().toPoint())
             bounds = self.image_rect
             if bounds.contains(point) and self.sample_mode:
-                self.sampled.emit(point.x()/bounds.width(), point.y()/bounds.height())
-                return
+                self.sample_press=(event.position(),point);self.sample_area=None      # a click or a rectangle: decided on release
+                event.accept();return
             if self.crop_mode:
                 self.drag_handle=self.hit_handle(event.position())
                 self.drag_start=self.normalized_point(point)
@@ -824,9 +828,11 @@ class PhotoView(QGraphicsView):
             self.zoom_press=None
         self.brush_position=self.mapToScene(event.position().toPoint())
         if self.sample_mode:
-            # Over the photo the magnifier marks the spot, so the pointer itself is hidden there.
+            if self.sample_press is not None and event.buttons() & Qt.MouseButton.LeftButton:self.sample_area=self.sample_rect(event.position())
+            # Over the photo the magnifier marks the spot, so the pointer itself is hidden there; a rectangle has a cross.
             over=self.has_photo and self.image_rect.contains(self.brush_position)
-            self.viewport().setCursor(Qt.CursorShape.BlankCursor if over else self.eyedropper_cursor);self.viewport().update()
+            self.viewport().setCursor(Qt.CursorShape.CrossCursor if self.sample_area is not None else Qt.CursorShape.BlankCursor if over else self.eyedropper_cursor)
+            self.viewport().update()
         if self.tool_mode=='adjust':
             if getattr(self,'adjust_origin',None) is not None and event.buttons() & Qt.MouseButton.LeftButton:
                 self.adjustDragged.emit(float(self.adjust_origin-event.position().y()))
@@ -865,6 +871,12 @@ class PhotoView(QGraphicsView):
 
     def mouseReleaseEvent(self, event):
         zoom_press=self.zoom_press;self.zoom_press=None
+        if self.sample_press is not None and event.button()==Qt.MouseButton.LeftButton:
+            area=self.sample_rect(event.position());origin=self.sample_press[1];self.sample_press=self.sample_area=None
+            self.sync_cursor();self.viewport().update();event.accept();bounds=self.image_rect
+            if area is None:self.sampled.emit(origin.x()/bounds.width(),origin.y()/bounds.height())
+            else:self.sampledArea.emit(area.left()/bounds.width(),area.top()/bounds.height(),area.right()/bounds.width(),area.bottom()/bounds.height())
+            return
         if self.tool_mode=='adjust':
             if getattr(self,'adjust_origin',None) is not None and event.button()==Qt.MouseButton.LeftButton:
                 self.adjustDragged.emit(float(self.adjust_origin-event.position().y()))
@@ -919,6 +931,16 @@ class PhotoView(QGraphicsView):
             event.accept()
         else:
             super().mouseDoubleClickEvent(event)
+
+    SAMPLE_DRAG=4            # screen pixels the eyedropper has to move before its click turns into a rectangle
+
+    def sample_rect(self,position):
+        """Eyedropper: the rectangle from where the button went down to the pointer, kept on the photo; None while the
+        pointer is within SAMPLE_DRAG pixels of the press, which is still a click."""
+        start,origin=self.sample_press
+        if max(abs(position.x()-start.x()),abs(position.y()-start.y()))<self.SAMPLE_DRAG:return None
+        end=self.mapToScene(position.toPoint())
+        return QRectF(origin,QPointF(min(max(end.x(),0),self.image_rect.width()),min(max(end.y(),0),self.image_rect.height()))).normalized()
 
     def leaveEvent(self,event):
         self.brush_position=None;self.viewport().update();super().leaveEvent(event)
@@ -1008,8 +1030,9 @@ class PhotoView(QGraphicsView):
                 painter.restore()
             if self.crop_mode:
                 self.draw_crop(painter)
-            if self.sample_mode and self.brush_position is not None and self.image_rect.contains(self.brush_position):
+            if self.sample_mode and self.sample_area is None and self.brush_position is not None and self.image_rect.contains(self.brush_position):
                 self.draw_loupe(painter)
+            if self.sample_area is not None:self.draw_sample_area(painter)
             return
         if self.loading_photo:return
         painter.save()
@@ -1030,6 +1053,14 @@ class PhotoView(QGraphicsView):
         painter.setFont(font)
         painter.setPen(QColor('#8c939b'))
         painter.drawText(QRectF(20,h/2+28,w-40,30), Qt.AlignmentFlag.AlignCenter, tr('사진이나 폴더를 끌어 놓거나, 사진 가져오기를 누르세요.'))
+        painter.restore()
+
+    def draw_sample_area(self,painter):
+        """Eyedropper: the rectangle that will be averaged, a thin dashed light line over a dark one so it shows on any photo."""
+        rect=QRectF(QPointF(self.mapFromScene(self.sample_area.topLeft())),QPointF(self.mapFromScene(self.sample_area.bottomRight()))).normalized()
+        painter.save();painter.resetTransform();painter.setBrush(Qt.BrushStyle.NoBrush)
+        for color,offset in ((QColor(0,0,0,200),4),(QColor('#f2f2f2'),0)):
+            pen=QPen(color,1);pen.setDashPattern([4,4]);pen.setDashOffset(offset);painter.setPen(pen);painter.drawRect(rect)
         painter.restore()
 
     LOUPE_RADIUS=72          # screen pixels

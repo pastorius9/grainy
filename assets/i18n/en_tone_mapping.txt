@@ -1,0 +1,4 @@
+톤 매핑 => Tone mapping
+톤 매핑 · 기본 => Tone mapping · Classic
+톤 매핑 · 부드러운 하이라이트 (DRT) => Tone mapping · Smooth highlights (DRT)
+부드러운 하이라이트: 밝은 하늘과 조명이 색을 지킨 채 천천히 흰색에 다가가고, 아주 밝은 색은 자연스럽게 흰색으로 빠집니다. 중간 밝기는 기본과 같습니다. 필름을 고르면 필름의 인화가 대신 쓰입니다. => Smooth highlights: bright skies and lights keep their colour as they approach white slowly, and very bright colours fade naturally to white. Mid-tones are as in Classic. A film look uses its own print instead.

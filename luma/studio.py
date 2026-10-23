@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (QLabel,QPushButton,QComboBox,QCheckBox,QHBoxLayou
     QListWidget,QListWidgetItem,QInputDialog,QFileDialog,QMessageBox,QColorDialog,QGroupBox,QVBoxLayout)
 from .widgets import Adjustment,ToneCurve
 from .engine import geometry,resize_float,defaults,GEOMETRY_KEYS
+from .shortcut_list import key_hint,MASKS
+from .sky_mask import DEFAULTS as SKY_DEFAULTS
 
 
 def label(box,text):
@@ -47,9 +49,6 @@ class StudioTools:
         self.w.view.brushSizeChanged.connect(self.set_brush_size)
         self.w.view.componentEdited.connect(self.move_component_handles)
         self.w.view.toolModeChanged.connect(self.mask_tool_changed)
-        from PySide6.QtGui import QShortcut,QKeySequence
-        self.overlay_shortcut=QShortcut(QKeySequence('O'),self.w)
-        self.overlay_shortcut.activated.connect(lambda:self.w.safe_shortcut(self.toggle_overlay))
         self.w.tabs.currentChanged.connect(self.tab_changed)
         self.load_settings()
 
@@ -117,13 +116,12 @@ class StudioTools:
     def build_color(self):
         self.w.tab_page(tr('색상'));box=self.w.panel_box('photo_filter')
         from .photo_filter import FILTERS
-        self.photo_filter_enabled=QCheckBox(tr('컬러 필터'));box.addWidget(self.photo_filter_enabled)
+        # The filter's on/off (photo_filter_enabled) is the panel header's switch; choosing or changing turns it on.
         self.photo_filter_choice=QComboBox();self.photo_filter_choice.setAccessibleName(tr('필터 프리셋'))
         for key,title,_ in FILTERS:self.photo_filter_choice.addItem(tr(title),key)
         box.addWidget(self.photo_filter_choice)
         self.scalar(box,'photo_filter_density',tr('필터 강도'),0,100)
         self.photo_filter_luminosity=QCheckBox(tr('밝기 유지'));box.addWidget(self.photo_filter_luminosity)
-        self.photo_filter_enabled.toggled.connect(lambda value:self.change_photo_filter('photo_filter_enabled',value))
         self.photo_filter_choice.currentIndexChanged.connect(lambda _:self.change_photo_filter('photo_filter',self.photo_filter_choice.currentData()))
         self.photo_filter_luminosity.toggled.connect(lambda value:self.change_photo_filter('photo_filter_luminosity',value))
         label(box,tr('필터 선택 후 강도를 조절하세요. 흑백 사진에서는 색에 따른 밝기 차이를 조절합니다.'))
@@ -254,8 +252,9 @@ class StudioTools:
         label(box,tr('사각형의 좌상 → 우상 → 우하 → 좌하 모서리를 클릭합니다.'))
         action(box,tr('가이드 원근 초기화'),lambda:self.w.set_setting('guides',None))
 
-    # Mask kinds in menu order (None = separator). AI masks and depth range are not offered.
-    MASK_KINDS=(('brush','브러시'),('linear','선형 그레이디언트'),('radial','방사형 그레이디언트'),(None,''),
+    # Mask kinds in menu order (None = separator). Select Sky is a classical colour and position analysis
+    # (sky_mask.py); AI masks and depth range are not offered.
+    MASK_KINDS=(('sky','하늘 선택'),(None,''),('brush','브러시'),('linear','선형 그레이디언트'),('radial','방사형 그레이디언트'),(None,''),
                 ('color_range','색상 범위'),('luma_range','광도 범위'))
     # Tones a brushed mask can be limited to (dodging and burning). The limit is a luminance component that
     # intersects the mask and stays its last component, so every stroke is inside it. The three ramps add up
@@ -263,21 +262,28 @@ class StudioTools:
     BRUSH_RANGES=(('all','전체',None),('shadows','어두운 곳',(0.,.2)),('midtones','중간 밝기',(.45,.55)),('highlights','밝은 곳',(.8,1.)))
     BRUSH_RANGE_SOFTNESS=.25
 
-    def kind_button(self,box,text,callback):
-        """A button that opens the list of mask kinds and calls callback(kind)."""
+    # The keys that start a new mask of a kind (luma/shortcut_list.MASKS), written beside it in the New Mask list.
+    MASK_KEYS={kind:key for kind,key,_ in MASKS}
+
+    def kind_button(self,box,text,callback,keyed=False):
+        """A button that opens the list of mask kinds and calls callback(kind); keyed writes the key of each kind beside it."""
         from PySide6.QtWidgets import QMenu
         button=QPushButton(tr(text));menu=QMenu(button)
         for kind,title in self.MASK_KINDS:
             if kind is None:menu.addSeparator()
-            else:menu.addAction(tr(title),lambda k=kind:callback(k))
-        button.setMenu(menu);box.addWidget(button);return button
+            else:
+                key=key_hint(self.MASK_KEYS[kind]) if keyed and kind in self.MASK_KEYS else ''
+                action=menu.addAction(tr(title)+('\t'+key if key else ''),lambda k=kind:callback(k))
+                if key:action.setToolTip(f'{tr(title)} ({key})')
+        menu.setToolTipsVisible(keyed);button.setMenu(menu);box.addWidget(button);return button
 
     def build_masks(self):
         from PySide6.QtWidgets import QTreeWidget,QWidget
         from .app import section
         _,box=self.w.tab_page(tr('마스크'))
         # Order: create a mask, the mask list with add / subtract, the active tool's options, the mask's adjustments.
-        self.create_button=self.kind_button(box,'새 마스크 만들기',self.create_mask)
+        self.create_button=self.kind_button(box,'새 마스크 만들기',self.create_mask,keyed=True)
+        self.create_button.setToolTip(tr('새 마스크 만들기 · 브러시 {0} · 선형 {1} · 방사형 {2}',*(key_hint(k) for k in self.MASK_KEYS.values())))
         self.mask_tree=QTreeWidget();self.mask_tree.setHeaderHidden(True);self.mask_tree.setIndentation(14)
         box.addWidget(self.mask_tree)
         self.mask_tree.itemExpanded.connect(lambda _:self.update_mask_ui());self.mask_tree.itemCollapsed.connect(lambda _:self.update_mask_ui())
@@ -340,6 +346,13 @@ class StudioTools:
         self.radial_angle.changed.connect(self.radial_turned);self.radial_angle.committed.connect(self.w.finish_interaction)
         radial_box.addWidget(self.radial_angle);label(radial_box,tr('방사형 그레이디언트는 사진 밖에서 시작하거나 사진 밖까지 그릴 수 있습니다.'))
         self.radial_editor.hide()
+        self.sky_editor=QWidget();sky_box=QVBoxLayout(self.sky_editor);sky_box.setContentsMargins(0,0,0,0);box.addWidget(self.sky_editor)
+        sky_box.addWidget(section(tr('하늘 다듬기')));self.sky_controls={}
+        for key,title in (('sensitivity','민감도'),('feather','경계 흐림')):
+            c=Adjustment(key,title,0,100);c.default_value=SKY_DEFAULTS[key];c.changed.connect(self.sky_changed)
+            c.committed.connect(self.w.finish_interaction);sky_box.addWidget(c);self.sky_controls[key]=c
+        label(sky_box,tr('민감도를 올리면 옅은 구름과 안개까지 넓어집니다. 경계 흐림은 나뭇가지와 지붕선 경계의 부드러움입니다.'))
+        self.sky_editor.hide()
         self.done_button=action(box,tr('완료'),lambda:self.mode(''))
         # Adjustments of the selected mask, named as in the main panels.
         self.adjust_host=QWidget();adjust=QVBoxLayout(self.adjust_host);adjust.setContentsMargins(0,0,0,0);box.addWidget(self.adjust_host)
@@ -388,7 +401,8 @@ class StudioTools:
         action(box,tr('여러 사진의 먼지 감지…'),self.detect_dust_batch)
         label(box,tr('검은 점과 흰 먼지를 찾아, 확인한 후보만 한 번에 제거합니다.'))
         for title,kind in [('복제 도장','clone'),('힐링 브러시','heal'),('먼지·흠집 제거','inpaint'),('적목 보정','red_eye')]:
-            action(box,title,lambda _,k=kind:self.mode(k))
+            tool=action(box,title,lambda _,k=kind:self.mode(k))
+            if kind=='heal':tool.setToolTip(f"{tr(title)} ({key_hint('Q')})")
         label(box,tr('힐링: 지울 곳을 여러 번 칠한 뒤 실행하세요. 붉은 표시는 아직 적용되지 않은 영역입니다. Alt+클릭으로 원본을 직접 지정할 수 있습니다.'))
         self.retouch_source_note=label(box,tr('힐링 원본: 자동 선택'))
         action(box,tr('힐링 원본 자동 선택으로 복귀'),self.automatic_healing_source)
@@ -541,7 +555,8 @@ class StudioTools:
         self.preview_ready(self.w.view.on_screen)
 
     def source_point(self,point):
-        s=self.w.settings
+        from .panel_keys import effective
+        s=effective(self.w.settings)    # the frame as shown: without the lens and transform panels when they are off
         keys=GEOMETRY_KEYS
         key=(self.w.load_version,json.dumps({k:s[k] for k in keys},sort_keys=True))
         if key!=self.coordinate_key:
@@ -704,6 +719,18 @@ class StudioTools:
         values=self.coordinates[positions[:,1],positions[:,0]]
         return np.clip(values[values[:,2]>.9,:2],0,1).tolist()
 
+    def area_pixels(self,source,area):
+        """The pixels of `source` under a rectangle of the shown frame (fractions x0,y0,x1,y1) as (n,3). The frame can be
+        cropped or turned, so positions inside the rectangle, up to 80 x 80, are carried to the source one by one."""
+        x0,y0,x1,y1=area;self.source_point([.5,.5])
+        h,w=self.coordinates.shape[:2]
+        across=int(np.clip((x1-x0)*(w-1)+1,1,80));down=int(np.clip((y1-y0)*(h-1)+1,1,80))
+        gx,gy=np.meshgrid(np.linspace(x0,x1,across),np.linspace(y0,y1,down))
+        found=np.asarray(self.source_points(np.stack([gx.ravel(),gy.ravel()],axis=1).tolist()))
+        if not len(found):return np.empty((0,3),np.float32)
+        height,width=source.shape[:2];at=np.rint(found*[width-1,height-1]).astype(np.intp)
+        return np.asarray(source)[at[:,1],at[:,0],:3]
+
     def stroke_valid(self):
         p=self.pending_stroke
         return p is not None and p['photo']==self.w.current_id and p['load']==self.w.load_version and p['base']==self.w.settings and p['layer']==self.layer_index
@@ -831,6 +858,8 @@ class StudioTools:
         self.radial_editor.setVisible(kind=='radial')
         if kind=='radial' and self.w.live_source is not None:
             self.radial_angle.set_value((self.radial_on_screen(component)[2]+180)%360-180)
+        self.sky_editor.setVisible(kind=='sky')
+        for key,c in self.sky_controls.items():c.set_value(component.get(key,SKY_DEFAULTS[key]))
         self.range_add.setEnabled(len(samples)<5);self.range_remove.setEnabled(len(samples)>1)
         self.range_note.setText(tr('같은 범위 안의 색들을 함께 선택합니다. 허용량을 낮추면 선택이 좁아집니다.') if kind=='color' else tr('범위와 경계 흐림을 조절하며 사진과 선택 영역을 확인하세요.'))
         self.range_loading=False
@@ -850,6 +879,21 @@ class StudioTools:
         else:return
         layers=deepcopy(self.w.settings['masks']);layers[self.layer_index]['components'][self.component_index]=component
         self.w.set_setting('masks',layers)
+
+    def sky_changed(self,key,value):
+        component=self.current_component()
+        if self.loading or self.range_loading or component is None or component.get('type')!='sky':return
+        layers=deepcopy(self.w.settings['masks']);layers[self.layer_index]['components'][self.component_index]={**component,key:value}
+        self.w.set_setting('masks',layers)
+
+    def add_sky(self,operation):
+        """Select Sky: found in the photo, so it is added at once instead of drawn."""
+        if self.w.source is None:return
+        self.fresh_layer=None;self.mode('')         # an empty new mask receives the sky instead of being dropped
+        self.set_operation(operation)
+        self.add_component(dict(type='sky',**SKY_DEFAULTS))
+        self.w.commit('하늘 선택');self.w.render()
+        self.w.statusBar().showMessage(tr('하늘을 선택했습니다. 민감도와 경계 흐림으로 다듬으세요.'))
 
     def remove_range_sample(self):
         component=deepcopy(self.current_component() or {});samples=component.get('samples',[]);index=self.range_samples.currentIndex()
@@ -969,14 +1013,31 @@ class StudioTools:
     def set_operation(self,operation):
         self.operation.setCurrentIndex(self.operation.findData(operation))
 
+    def mask_shortcut(self,kind):
+        """K, M, Shift+M: the Masks tool opens and New Mask > kind runs, as the button's list would. A new mask that has
+        no stroke yet is used again instead of leaving an empty one behind."""
+        if self.w.source is None:return
+        self.w.tabs.open_tool(5)
+        layers=self.w.settings['masks'];fresh=self.fresh_layer
+        if fresh is not None and fresh==self.layer_index and 0<=fresh<len(layers) and not layers[fresh].get('components'):self.mode(kind)
+        else:self.create_mask(kind)
+
+    def heal_shortcut(self):
+        """Q: the Healing tool opens with the healing brush in hand, as the tool strip's 복구 and the 힐링 브러시 button do."""
+        if self.w.source is None:return
+        self.w.tabs.open_tool(6)
+        if self.w.view.tool_mode!='heal':self.mode('heal')
+
     def create_mask(self,kind):
         """Create New Mask: a new mask whose first component is drawn with the chosen tool."""
         if self.w.source is None:return
+        if kind=='sky':self.mode('');self.new_layer();self.add_sky('add');return
         self.new_layer();self.fresh_layer=self.layer_index;self.set_operation('add');self.mode(kind)
 
     def extend_mask(self,kind,operation):
         """Add to, subtract from or intersect the selected mask with a new component of this kind."""
         if self.current_layer() is None:self.create_mask(kind);return
+        if kind=='sky':self.w.commit();self.add_sky(operation);return
         self.set_operation(operation);self.mode(kind)
 
     def drop_fresh_layer(self):
@@ -1266,6 +1327,8 @@ class StudioTools:
             reference,light=FILM_BALANCE[key]
             w.settings.update(kelvin_enabled=True,wb_reference=reference,kelvin=light)
         else:w.settings['kelvin_enabled']=False
+        from .panel_keys import switch_on
+        switch_on(w.settings,('kelvin_enabled',))
         w.commit({'tungsten':'텅스텐 → 데이라이트','daylight':'데이라이트 → 텅스텐'}[key] if checked else '필름 색온도 변환 해제')
         w.load_controls();w.before_button.setChecked(False);w.render_version+=1;w.render()
 
@@ -1397,11 +1460,8 @@ class StudioTools:
     def load_settings(self):
         self.loading=True;s=self.w.settings
         if self.healing_context is not None and self.healing_context!=(self.w.current_id,self.w.load_version):self.clear_healing()
-        self.photo_filter_enabled.setChecked(s['photo_filter_enabled'])
         self.photo_filter_choice.setCurrentIndex(self.photo_filter_choice.findData(s['photo_filter']))
         self.photo_filter_luminosity.setChecked(s['photo_filter_luminosity'])
-        self.w.adjustments['photo_filter_density'].setEnabled(s['photo_filter_enabled'])
-        self.photo_filter_luminosity.setEnabled(s['photo_filter_enabled'])
         self.load_film(s)
         if self.photo_id!=self.w.current_id:
             self.photo_id=self.w.current_id;self.donor=None;self.guide_points=[];self.layer_index=0;self.component_index=-1
@@ -1433,7 +1493,6 @@ class StudioTools:
     def change_photo_filter(self,key,value):
         if self.loading or self.w.source is None:return
         self.w.commit();self.w.set_setting(key,value)
-        if key=='photo_filter':self.w.set_setting('photo_filter_enabled',True)
         self.w.commit('컬러 필터');self.w.load_controls();self.w.render()
 
     def change_working(self):
