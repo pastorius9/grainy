@@ -152,7 +152,8 @@ def test_list_shows_every_binding(window):
             for entry in TABLE:
                 assert written(entry) in texts and tr(entry.text) in texts
             assert all(tr(group) in texts for group in GROUPS)
-            assert all(key in texts for key in ('W', 'K', 'M', 'Shift+M', 'Q', '?', 'O', '[ / ]', '0 – 5', 'Ctrl+Shift+Z / Ctrl+Y'))
+            from luma.shortcut_list import shown                                              # macOS writes ⇧ and ⌘
+            assert all(shown(key) in texts for key in ('W', 'K', 'M', 'Shift+M', 'Q', '?', 'O', '[ / ]', '0 – 5', 'Ctrl+Shift+Z / Ctrl+Y'))
             if lang == 'en':assert not [t for t in texts if re.search('[가-힣]', t)]
             dialog.deleteLater()
         finally:
