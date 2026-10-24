@@ -125,8 +125,8 @@ class FolderSync:
             pass
         return True
 
-    def imported(self, path):
-        key = path_key(str(Path(path).resolve()))
+    def imported(self, path,*,resolved=False):
+        key = path_key(path if resolved else str(Path(path).resolve()))
         self.auto.discard(key)
         if key in self.excluded:
             self.excluded.discard(key); self.w.catalog.save_preference(EXCLUDED, sorted(self.excluded))

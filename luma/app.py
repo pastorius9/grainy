@@ -353,6 +353,8 @@ class MainWindow(QMainWindow):
         self.import_errors = []
         self.import_scans = 0
         self.import_pending_paths=set()
+        self.import_completion_errors={}
+        self.import_quiet=set()    # path keys an AI import_folder job queued: their failures go to its result, not a message box
         self.import_extras={}      # path key -> {'keywords', 'preset'} for copy imports (luma/import_copy.py)
         self.import_cancel=Event()
         self.import_refresh_timer=QTimer(self);self.import_refresh_timer.setSingleShot(True)
@@ -2378,8 +2380,20 @@ class MainWindow(QMainWindow):
             self.import_cancel_button.show()
             self.spawn(scan,scanned,scan_failed)
 
+    def queue_import_files(self,files):
+        """Queue an already resolved, fixed MCP scan; do not enumerate its folder again."""
+        if self.import_cancel.is_set():self.import_cancel=Event()
+        known={path_key(p) for p in self.catalog.paths()}|self.import_pending_paths
+        for file in files:
+            key=path_key(file)
+            if key not in known:
+                self.import_queue.append(file);self.import_pending_paths.add(key);known.add(key)
+        self.refresh_folder_tree()
+        if not self.import_busy:
+            self.import_errors=[];self.import_next()
+
     def cancel_import(self):
-        self.import_cancel.set();self.import_queue.clear();self.import_pending_paths.clear()
+        self.import_cancel.set();self.import_queue.clear();self.import_pending_paths.clear();self.import_quiet.clear()
         self.import_cancel_button.setEnabled(False)
         self.statusBar().showMessage(tr('가져오기를 중단하고 있습니다. 이미 가져온 사진은 유지합니다.'))
         if not self.import_busy and not self.import_scans:self.import_next()
@@ -2395,16 +2409,17 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self,tr('읽을 수 없는 사진'), '\n'.join(self.import_errors[:10]))
             return
         self.import_busy=True
-        path=self.import_queue.popleft()
+        path=self.import_queue.popleft();key=path_key(path);quiet=key in self.import_quiet
+        if not quiet:key=path_key(str(Path(path).resolve()))
         self.statusBar().showMessage(tr('가져오는 중: {0}  ·  남은 사진 {1}장', f'{Path(path).name}', f'{len(self.import_queue)}'))
         def ready(result):
             if self.import_cancel.is_set():self.import_busy=False;self.import_next();return
             image,info=result[:2]
             settings=result[2] if len(result)>2 else None
-            photo_id=self.catalog.add(path,settings=settings,metadata=info)
-            self.import_pending_paths.discard(path_key(str(Path(path).resolve())))
-            self.folder_sync.imported(path)
-            extras=self.import_extras.pop(path_key(str(Path(path).resolve())),None)
+            photo_id=self.catalog.add(path,settings=settings,metadata=info,**({'resolved':True} if quiet else {}))
+            self.import_pending_paths.discard(key)
+            self.folder_sync.imported(path,**({'resolved':True} if quiet else {}))
+            extras=self.import_extras.pop(key,None)
             if extras:settings=self.apply_import_extras(photo_id,extras) or settings
             from .preview_store import store_render
             saved=settings or defaults()
@@ -2415,16 +2430,23 @@ class MainWindow(QMainWindow):
             if not self.import_refresh_timer.isActive():self.import_refresh_timer.start(150)
             if self.current_id is None and photo_id in self.visible_ids:
                 self.activate(photo_id)
+            self.import_quiet.discard(key)
             QTimer.singleShot(0,self.import_next)
         def failed(error):
-            self.import_pending_paths.discard(path_key(str(Path(path).resolve())))
-            if not self.folder_sync.import_failed(path) and not self.import_cancel.is_set():
+            self.import_pending_paths.discard(key);self.import_quiet.discard(key)
+            if not quiet and not self.folder_sync.import_failed(path) and not self.import_cancel.is_set():
                 self.import_errors.append(Path(path).name+': '+import_reason(path,error))
             QTimer.singleShot(0,self.import_next)
+        def completed(result):
+            try:ready(result)
+            except Exception as error:
+                if self.catalog.db.in_transaction:self.catalog.db.rollback()
+                if quiet:self.import_completion_errors[key]=type(error).__name__
+                failed(error)
         from .raw_defaults import PREFERENCE,import_preview,is_raw
         rules=self.catalog.preference(PREFERENCE,[])
         # RAW always goes through the import rules: the built-in RAW development applies even without rules.
-        self.spawn(lambda:import_preview(path,rules) if is_raw({},path) else thumbnail(path,with_info=True),ready,failed)
+        self.spawn(lambda:import_preview(path,rules) if is_raw({},path) else thumbnail(path,with_info=True),completed,failed)
 
     def apply_import_extras(self,photo_id,extras):
         """Keywords and a develop preset chosen in the copy import; returns the new settings, if any."""
@@ -2485,7 +2507,7 @@ class MainWindow(QMainWindow):
         if folder:self.start_export(ids,Path(folder),**options)
 
     def start_export(self,ids,folder,format='JPEG',quality=95,longest=0,color_space='sRGB',keep_metadata=False,naming='{stem}_grainy',
-                     grayscale=True,dither=True,*,remember=True,on_done=None,on_error=None,cancel=None,progress=None):
+                     grayscale=True,dither=True,*,remember=True,on_done=None,on_error=None,cancel=None,progress=None,protocol=False):
         """Export in the worker pool (photo_service.export_records). remember=False leaves the person's
         "previous export" settings alone (AI exports); on_done/on_error replace the message boxes.
         Returns False when nothing was started."""
@@ -2493,7 +2515,7 @@ class MainWindow(QMainWindow):
         self.commit()
         records=[self.catalog.photo(i) for i in ids]
         folder=Path(folder)
-        if not folder.is_dir():raise ValueError(tr('저장할 폴더를 선택해 주세요.'))
+        if not protocol and not folder.is_dir():raise ValueError(tr('저장할 폴더를 선택해 주세요.'))
         options=dict(folder=str(folder),format=format,quality=quality,longest=longest,
             color_space=color_space,keep_metadata=keep_metadata,naming=naming,grayscale=grayscale,dither=dither)
         self.export_running=True
@@ -2501,16 +2523,21 @@ class MainWindow(QMainWindow):
         from .workflow_data import record_exports
         from . import photo_service
         work=lambda:photo_service.export_records(records,folder,format,quality,longest,color_space,keep_metadata,naming,
-            grayscale,dither,cancel=cancel,progress=progress,exporter=lambda *a,**k:export_image(*a,**k))
+            grayscale,dither,cancel=cancel,progress=progress,exporter=lambda *a,**k:export_image(*a,**k),english=protocol)
         def finished(result):
             self.export_running=False
             self.export_button.setEnabled(True)
             self.last_export=result
-            if result['outputs']:
-                if remember:
-                    from .quick_export import PREFERENCE
-                    self.catalog.save_preference(PREFERENCE,options)
-                record_exports(self.catalog,[{k:o[k] for k in ('path','photo_id','edit_signature')} for o in result['outputs']])
+            try:
+                if result['outputs']:
+                    if remember:
+                        from .quick_export import PREFERENCE
+                        self.catalog.save_preference(PREFERENCE,options)
+                    record_exports(self.catalog,[{k:o[k] for k in ('path','photo_id','edit_signature')} for o in result['outputs']])
+            except Exception:
+                if self.catalog.db.in_transaction:self.catalog.db.rollback()
+                if on_done is None:raise
+                result['completion_error']='could not save export history; files already written stay'
             self.statusBar().showMessage(tr('내보내기 완료: {0}장  ·  실패: {1}장', f"{len(result['outputs'])}", f"{len(result['failures'])}"))
             if on_done is not None:on_done(result)
             elif result['failures']:

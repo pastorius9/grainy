@@ -16,8 +16,8 @@ from luma.desktop_session import DesktopSession
 from luma.preferences import Preferences
 
 
-def make_session(app,tmp_path,*,start=True,language='ko',settings=None):
-    preferences=Preferences(tmp_path/'settings.json');preferences.save_language(language);preferences.save('update_check',False)
+def make_session(app,tmp_path,*,start=True,language='ko',settings=None,settings_path=None):
+    preferences=Preferences(settings_path or tmp_path/'settings'/'settings.json');preferences.save_language(language);preferences.save('update_check',False)
     for key,value in (settings or {}).items():preferences.save(key,value)
     session=DesktopSession(app,tmp_path/'library',preferences)
     session.apply_language(language);session.open_window()

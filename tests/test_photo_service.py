@@ -199,6 +199,19 @@ def test_summary_lists_only_non_default_values_and_classifies_every_default_key(
     assert plain=={'id':12,'name':'R12_01.NEF','path':'D:/Film/R12_01.NEF'}
 
 
+def test_summary_names_the_film_look_as_apply_edits_takes_it():
+    from luma import film_look
+    film=film_look.find('CineStill 800T')[0]
+    record={'id':3,'name':'a.png','path':'D:/a.png','settings':{**defaults(),'film_look':film,'film_strength':80.}}
+    edits=service.summary(record)['edits']
+    assert edits=={'film_look':film_look.entry(film)['name'],'film_strength':80}
+    assert 'other' not in service.summary(record)                      # film_look and film_strength are edits already
+    assert service.parse_changes({'film_look':edits['film_look']})[0]=={'film_look':film}      # the name goes back as is
+    assert service.summary({**record,'settings':{**defaults(),'film_look':'gone-film'}})['edits']=={'film_look':'gone-film'}
+    dirs,rows=service.summaries([record,{**record,'id':4,'settings':defaults()}])          # one with a film, one without
+    assert [r['id'] for r in rows]==[3,4] and rows[0]['edits']['film_look']==edits['film_look'] and 'edits' not in rows[1]
+
+
 def test_summary_never_returns_gps_serial_or_other_metadata():
     info={'width':10,'height':8,'latitude':37.5,'longitude':127.,'serial':'SN123','creator':'Owner','copyright':'(c)',
           'make':'Nikon','maker_note':'x','subject_distance':3.,'camera':'Z 6'}

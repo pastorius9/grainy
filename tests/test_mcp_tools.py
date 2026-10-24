@@ -407,7 +407,8 @@ def test_every_tool_replies_within_deadline(session,tmp_path,monkeypatch):
     monkeypatch.setattr(photo_service,'freeze',lambda *a:(time.sleep(4),slow(*a))[1])
     pending=start_call(session,'apply_edits',{'edits':[{'ids':ids,'add':{'exposure':.1}}]});result=finish(pending)
     assert result.error and 'did not finish it within the time limit' in result.text and pending.seconds<2+1+1
-    wait(lambda:photo_service.batch_index(w.catalog)!=[],10000)      # the started work still finished
+    # Preparation is read-only; a timed-out preparation must never advance to the write phase.
+    assert photo_service.batch_index(w.catalog)==[] and all(s['exposure']==0 for s in settings_of(w,ids))
 
 
 def test_one_write_job_at_a_time(session,tmp_path,gate):
@@ -600,15 +601,16 @@ def test_snapshots_save_list_and_restore_as_an_undoable_batch(session,tmp_path):
         assert call(session,'snapshot',bad).error,bad
 
 
-def test_set_labels_changes_rating_flag_and_label_outside_the_batches(session,tmp_path):
+def test_set_labels_changes_rating_flag_and_label_in_a_batch(session,tmp_path):
     w=session.window;ids=add_photos(w,tmp_path/'p',3)
     value=call(session,'set_labels',{'ids':ids[:2]+[999],'rating':4,'flag':'picked','label':'green'}).value
+    assert value.pop('batch').startswith('b')
     assert value=={'changed':2,'unchanged':0,'errors':[{'id':999,'error':'not in the catalog'}]}
     assert [(r['rating'],r['flag'],r['label']) for r in map(w.catalog.photo,ids)]==[(4,1,'초록'),(4,1,'초록'),(0,0,'')]
     assert call(session,'set_labels',{'ids':ids[:2],'rating':4}).value['unchanged']==2
     assert call(session,'set_labels',{'where':{'label':'green'},'label':'none','flag':'rejected'}).value['changed']==2
     assert [p.get('f') for p in call(session,'list_photos',{}).value['photos']]==[-1,-1,None]
-    assert w.catalog.photo(ids[0])['label']=='' and photo_service.batch_index(w.catalog)==[]
+    assert w.catalog.photo(ids[0])['label']=='' and photo_service.last_batch(w.catalog)['tool']=='set_labels'
     for bad in ({'ids':ids},{'ids':ids,'rating':6},{'ids':ids,'label':'pink'}):assert call(session,'set_labels',bad).error,bad
 
 
@@ -643,6 +645,21 @@ def test_import_folder_adds_new_photos_once_and_reports_their_ids(session,tmp_pa
     for bad,text in (('relative','absolute'),(str(folder/'missing'),'not a folder'),(str(files[0]),'not a folder'),
                      (str(w.catalog.directory),'a folder Grainy manages itself'),(str(session.mcp.folder),'a folder Grainy manages itself')):
         reply=call(session,'import_folder',{'path':bad});assert reply.error and text in reply.text,(bad,reply.text)
+
+
+def test_import_folder_reports_unreadable_files_in_its_result_without_a_message_box(session,tmp_path_factory,monkeypatch):
+    # A modal message box would leave every later AI call busy until a person closes it.
+    import luma.app
+    shown=[];monkeypatch.setattr(luma.app.QMessageBox,'information',lambda *a,**k:shown.append(a[1:]))
+    w=session.window;folder=tmp_path_factory.mktemp('mixed')
+    gradient(folder/'good.png');(folder/'broken.png').write_bytes(b'not an image')
+    value=call(session,'import_folder',{'path':str(folder)}).value
+    assert value['imported']==1 and value['not_imported']==1 and value['failures']==['broken.png']
+    assert not shown and not w.import_quiet
+    assert not call(session,'apply_edits',{'edits':[{'ids':value['ids'],'add':{'exposure':.3}}]}).error
+    w.import_paths([str(folder)])                                               # the person imports the same folder
+    wait(lambda:not w.import_busy and not w.import_scans and not w.import_queue)
+    assert len(shown)==1 and 'broken.png' in shown[0][1]                       # people still see what could not be read
 
 
 def test_export_to_a_named_folder_with_a_size_box_and_metadata_names(session,tmp_path,tmp_path_factory):

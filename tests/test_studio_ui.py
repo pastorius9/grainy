@@ -36,7 +36,8 @@ def app():
 @pytest.fixture
 def window(app,tmp_path):
     yy,xx=np.mgrid[:120,:180];rgb=np.stack([.2+xx/360,.2+yy/240,np.full_like(xx,.4,dtype=float)],-1)
-    path=tmp_path/'test.png';Image.fromarray(np.uint8(rgb*255)).save(path)
+    path=tmp_path/'photos'/'test.png';path.parent.mkdir()
+    Image.fromarray(np.uint8(rgb*255)).save(path)
     w=MainWindow(tmp_path/'data');ident=w.catalog.add(path);w.refresh_lists();w.activate(ident);w.show()
     wait(lambda:w.source is not None and not w.render_running and not w.library_loading)
     yield w

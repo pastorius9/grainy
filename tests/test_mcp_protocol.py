@@ -88,14 +88,14 @@ def test_tools_list_is_deterministic_and_valid():
         assert tool['annotations']['openWorldHint'] is False and len(tool['description'])<=1000
         schema=tool['inputSchema'];assert schema['type']=='object' and schema['additionalProperties'] is False
         assert all(re.fullmatch('[A-Za-z0-9_.-]{1,64}',name) for name in properties(schema))
-    assert len(json.dumps({'tools':first},separators=(',',':')))<=22000      # 15,460 with 12 tools; 21,312 with 17
+    assert len(json.dumps({'tools':first},separators=(',',':')))<=24000      # 21,312 before crop, variants, labels, saved sheets and export plans
     edits=next(t for t in first if t['name']=='apply_edits')['description']
     for key,(_,low,high) in FIELDS.items():
         assert key in edits
-        if key not in ('monochrome','film_look','flip'):assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
+        if key not in ('monochrome','film_look','flip','rotation'):assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
     targeted=[t for t in first if 'ids' in t['inputSchema']['properties'] and 'where' in t['inputSchema']['properties']]
     assert len(targeted)==7 and all(mcp_tools.TARGET_TEXT[:-1] in t['description'] for t in targeted)
-    assert "Each entry targets one of ids, where (list_photos filters) or scope ('selection' or 'current')" in edits
+    assert "entries apply in order" in edits and "set rejects" in edits and "2-16 [x,y]" in edits
 
 
 def test_readme_example_inverts_negatives_before_evening_out_exposure():

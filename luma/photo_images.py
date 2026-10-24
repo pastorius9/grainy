@@ -56,8 +56,11 @@ def jpeg(array,quality=70,max_bytes=None):
         else:image=image.resize((max(1,round(image.width*.85)),max(1,round(image.height*.85))),Image.Resampling.LANCZOS)
 
 
-def _font():
-    try:return ImageFont.load_default(size=13)
+def _font(size=13):
+    for name in ('C:/Windows/Fonts/malgun.ttf','DejaVuSans.ttf'):
+        try:return ImageFont.truetype(name,size)
+        except OSError:pass
+    try:return ImageFont.load_default(size=size)
     except TypeError:return ImageFont.load_default()      # Pillow without FreeType
 
 
@@ -70,12 +73,15 @@ def mark(ident,rating=0,flag=0):
     return text
 
 
-def contact_sheet(cells,cell=160):
+def contact_sheet(cells,cell=160,*,captions=False):
     """One image of cells [(id, uint8 array or None, label text)], at most 6 columns; each cell is cell x cell
     with the picture letterboxed on #202020 above an 18 px label strip. None is drawn as 'not ready'."""
     count=max(1,len(cells));columns=min(MAX_COLUMNS,count);rows=math.ceil(count/columns)
     gap=2;sheet=Image.new('RGB',(columns*cell+(columns-1)*gap,rows*cell+(rows-1)*gap),(12,12,12))
-    draw=ImageDraw.Draw(sheet);font=_font();area=(cell,cell-LABEL_HEIGHT)
+    draw=ImageDraw.Draw(sheet);font_size=max(13,min(22,cell//20)) if captions else 13
+    font=_font(font_size);line=font_size+5
+    height=line*3+4 if captions else LABEL_HEIGHT
+    area=(cell,cell-height)
     for index,(ident,pixels,label) in enumerate(cells):
         x=(index%columns)*(cell+gap);y=(index//columns)*(cell+gap)
         draw.rectangle([x,y,x+cell-1,y+cell-1],fill=BACKGROUND)
@@ -86,5 +92,10 @@ def contact_sheet(cells,cell=160):
             picture=Image.fromarray(np.asarray(pixels,dtype=np.uint8)).convert('RGB')
             picture.thumbnail(area,Image.Resampling.LANCZOS)
             sheet.paste(picture,(x+(area[0]-picture.width)//2,y+(area[1]-picture.height)//2))
-        draw.text((x+4,y+area[1]+LABEL_HEIGHT//2),str(label),fill=(235,235,235),font=font,anchor='lm')
+        lines=str(label).split('\n')[:3] if captions else [str(label)]
+        for n,text in enumerate(lines):
+            # Clip within this cell, including long file names and labels.
+            while text and draw.textlength(text,font=font)>cell-8:text=text[:-2]+'…' if len(text)>1 else ''
+            draw.text((x+4,y+area[1]+(n+.5)*(line if captions else LABEL_HEIGHT)),text,
+                      fill=(235,235,235),font=font,anchor='lm')
     return sheet

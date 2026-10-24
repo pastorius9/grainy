@@ -9,9 +9,9 @@ from uuid import uuid4
 import xml.etree.ElementTree as ET
 
 ROOT=Path(__file__).resolve().parents[1]
-# These assert latency / continuous frame delivery, not only final pixels.
+# These assert latency / continuous frame delivery / batch throughput, not only final pixels.
 # Run them after all parallel workers have exited, with unchanged thresholds.
-TIMING_FILES=('tests/test_interaction.py','tests/test_studio_ui.py')
+TIMING_FILES=('tests/test_interaction.py','tests/test_studio_ui.py','tests/test_command_batch.py')
 
 
 def results(path):

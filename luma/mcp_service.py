@@ -128,7 +128,7 @@ def ready(w,*,write=False,export=False,ids=(),selection=False,job=None):
         raise Busy(f'job {running.id} ({running.tool}) is still running; call get_job')
     if write and w.current_id is not None and w.current_id in ids:
         if w.interacting():raise Busy('the person is adjusting the open photo')
-        if w.studio.pending_stroke is not None:raise Busy('the open photo has unfinished brush or healing marks')
+        if w.studio.pending_stroke is not None or w.studio.healing_strokes:raise Busy('the open photo has unfinished brush or healing marks')
         if w.view.crop_mode or w.view.sample_mode:raise Busy('a crop or picker tool is open on the open photo')
     if write and selection and w.library_loading:raise Busy('the photo list is still loading')
     return w
@@ -236,6 +236,7 @@ class McpService(QObject):
         self.generation=0;self.gui=None;self.snapshotted=set()
         self.job=None;self.jobs=OrderedDict();self.job_count=0;self.activity=deque(maxlen=50)
         self.calls=threading.BoundedSemaphore(4);self.render_lock=threading.BoundedSemaphore(1)
+        self.io_slots=threading.BoundedSemaphore(4)
         self.tools=Tools(self);self.port_changed=False
         # owner: the locked handle of mcp/owner.lock while this process owns endpoint and auth-header. Another Grainy
         # (another library, the same settings) may be running; elsewhere: it has the connection on.
@@ -271,19 +272,15 @@ class McpService(QObject):
 
     def export_root(self):
         saved=self.preferences.values.get('mcp_export_folder')
-        if isinstance(saved,str) and saved and Path(saved).is_dir():return Path(saved)
+        if isinstance(saved,str) and saved:return Path(saved)   # UI display only; tools check availability off-thread
         return pictures_folder()
 
     def own_folders(self):
-        """Folders whose files Grainy manages itself: the library, the bridges' folder (mcp/) and the program. AI
+        """Folders whose files Grainy manages itself: the library, the whole settings folder and the program. AI
         exports and imports never go there."""
-        folders=[self.directory,self.folder,Path(__file__).resolve().parents[1]]
+        folders=[self.directory,Path(self.preferences.path).parent,Path(__file__).resolve().parents[1]]
         if getattr(sys,'frozen',False):folders.append(Path(sys.executable).parent)
-        result=[]
-        for folder in folders:
-            try:result.append(Path(folder).resolve())
-            except OSError:result.append(Path(folder))
-        return result
+        return folders
 
     def note(self,name,outcome,ms=0):
         """One line of the dialog's recent activity; never a header value or the key. outcome is a short English
@@ -548,11 +545,11 @@ class McpService(QObject):
         def guarded(step,value):
             try:step(value)
             except Exception as error:
-                last=str(error).strip().splitlines()[-1] if str(error).strip() else type(error).__name__
+                last=photo_service.english_error(error)
                 self.end_job(job,'failed',error=f'could not finish: {last}')
 
         def failed(error):
-            last=str(error).strip().splitlines()[-1] if str(error).strip() else 'unknown error'
+            last=photo_service.english_error(error)
             try:self.end_job(job,'failed',error=f'could not read or compute: {last}')
             except Exception:pass
 
@@ -567,22 +564,25 @@ class McpService(QObject):
             try:
                 failures=result.get('failures',[])
                 outcome={'exported':len(result.get('outputs',[])),'failed':len(failures),'skipped':result.get('skipped',0),
-                         'folder':str(folder),'failures':failures[:20]}
+                         'folder':str(folder),'failures':failures[:20],
+                         **photo_service.output_files(result.get('outputs',[]))}
+                if len(failures)>20:outcome['more_failures']=len(failures)-20
                 if extra_errors:outcome.update(capped(list(extra_errors)))
-                self.end_job(job,'done' if not job.cancel.is_set() else 'cancelled',result=outcome,
-                             error=None if not job.cancel.is_set() else 'stopped; files already written stay')
+                self.end_job(job,'failed' if result.get('completion_error') else 'done' if not job.cancel.is_set() else 'cancelled',
+                             result=outcome,error=result.get('completion_error') or
+                             (None if not job.cancel.is_set() else 'stopped; files already written stay'))
             except Exception as error:
                 self.end_job(job,'failed',error=f'could not finish: {type(error).__name__}')
 
         def failed(error):
-            last=str(error).strip().splitlines()[-1] if str(error).strip() else 'unknown error'
+            last=photo_service.english_error(error)
             try:self.end_job(job,'failed',error=f'export failed: {last}')
             except Exception:pass
 
         try:
             started=w.start_export(ids,folder,options['format'],options['quality'],options['longest'],options['color_space'],
                 options['keep_metadata'],options['naming'],True,True,remember=False,on_done=done,on_error=failed,
-                cancel=job.cancel,progress=lambda n:setattr(job,'done',n))
+                cancel=job.cancel,progress=lambda n:setattr(job,'done',n),protocol=True)
         except Exception:
             self.end_job(job,'failed',error='the export could not start');raise
         if not started:
@@ -592,16 +592,17 @@ class McpService(QObject):
 
     def start_import(self,w,folder,recursive):
         """GUI thread, after ready(write=True): find the image files in a job, then import them with the window's
-        own import (MainWindow.import_paths: the same duplicate handling; originals are only read). The job is done
+        fixed-file queue (the same duplicate handling; originals are only read). The job is done
         when none of its files is waiting any more; its result has the ids of the photos it added."""
         from .folders import path_key,stored_path
         job=self.new_job('import_folder',0);job.phase='finding photos'
         state=w.mcp;first_try=[];watch={}
 
         def scan():
-            files=photo_service.image_files(folder,recursive,job.cancel,MAX_IMPORT)
+            files=photo_service.image_files(folder,recursive,job.cancel,MAX_IMPORT,own=self.own_folders())
             if not isinstance(files,list):return files
-            return [(file,path_key(str(Path(file).resolve())),stored_path(Path(file).resolve())) for file in files]
+            resolved=list(dict.fromkeys(files))   # image_files already checked and froze the resolved paths
+            return [(file,path_key(file),stored_path(file)) for file in resolved]
 
         def known(window,stored):
             """{stored path key: id} of the originals (not virtual copies) among stored paths."""
@@ -629,17 +630,26 @@ class McpService(QObject):
             new=[(file,key) for file,key,_ in files if key not in before]
             watch.update(files=files,before=before,keys={key for _,key in new},window=w)
             job.total=len(new);job.phase=None
+            w.catalog.register_folder(folder,resolved=True);w.catalog.restore_folder(folder)
             if new:
-                w.import_paths([str(folder)] if recursive else [file for file,_ in new])
+                w.import_quiet|=watch['keys']           # a failure is the job's to report (failures), not a message box's
+                w.queue_import_files([file for file,_ in new])
                 timer=QTimer(w);timer.setInterval(250);watch['timer']=timer
                 timer.timeout.connect(lambda:guarded(poll));timer.start()
             else:finish()
 
+        def release():
+            """From now on a failure of the job's files is the person's to see again."""
+            if watch.get('window') is not None:
+                window=watch['window']
+                window.import_quiet-=watch.get('keys',set())-window.import_pending_paths
+
         def poll():
             w=watch['window']
-            if job.state!='running' or w.closing:return watch['timer'].stop()
+            if job.state!='running' or w.closing:release();return watch['timer'].stop()
             if job.cancel.is_set():
                 watch['timer'].stop()
+                release()
                 if job.stopped:w.cancel_import();return self.end_job(job,'cancelled',error='stopped; the photos imported so far stay')
                 return self.end_job(job,'cancelled',error='the AI connection was turned off or restarted; Grainy goes on importing')
             waiting=watch['keys']&w.import_pending_paths
@@ -648,24 +658,28 @@ class McpService(QObject):
             watch['timer'].stop();finish()
 
         def finish():
-            w=watch['window'];files=watch['files'];before=watch['before']
+            release();w=watch['window'];files=watch['files'];before=watch['before']
             after=known(w,[stored for _,_,stored in files])
             ids=[after[key] for _,key,_ in files if key in after and key not in before]
             missing=[Path(file).name for file,key,_ in files if key not in after]
             result={'imported':len(ids),'ids':ids[:MAX_REPORTED],'already':len(before),'folder':str(folder),'recursive':recursive}
             if len(ids)>MAX_REPORTED:result['more_ids']=len(ids)-MAX_REPORTED
             if missing:result.update(not_imported=len(missing),failures=missing[:20])
-            self.end_job(job,'done',result=result)
+            completion=[w.import_completion_errors.pop(key) for _,key,_ in files if key in w.import_completion_errors]
+            self.end_job(job,'failed' if completion else 'done',result=result,
+                         error='could not save imported photos to the catalog' if completion else None)
 
         def guarded(step,*values):
             try:step(*values)
             except Exception as error:
                 if 'timer' in watch:watch['timer'].stop()
-                last=str(error).strip().splitlines()[-1] if str(error).strip() else type(error).__name__
+                try:release()
+                except Exception:pass
+                last=photo_service.english_error(error)
                 self.end_job(job,'failed',error=f'could not finish: {last}')
 
         def failed(error):
-            last=str(error).strip().splitlines()[-1] if str(error).strip() else 'unknown error'
+            last=photo_service.english_error(error)
             try:self.end_job(job,'failed',error=f'could not read the folder: {last}')
             except Exception:pass
 

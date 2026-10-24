@@ -21,10 +21,10 @@ from .i18n import tr
 EXPLAIN=('Grainy가 실행 중이면 이 컴퓨터의 AI 프로그램(Claude Code, Codex, Claude 데스크톱)이 Grainy를 쓸 수 있습니다. 그 프로그램에 '
     '아래 방법으로 Grainy의 MCP를 설치하고 일을 시켰을 때만, 그 프로그램이 사진 목록과 사진 정보, 보정값, 미리보기 이미지(최대 1568픽셀)를 '
     '읽고, 보정값과 별점·선택 표시·색 라벨을 바꾸고, 가상 사본과 스냅샷을 만들고, 그 프로그램이 정한 폴더의 사진을 보관함으로 가져오고, '
-    '그 프로그램이 정한 폴더로 사진을 내보냅니다. 사진 정보는 파일 이름과 폴더 경로, 파일 형식과 픽셀 크기, 키워드, 별점, 선택·제외 표시, '
+    '그 프로그램이 정한 폴더로 사진을 내보내고 밀착 이미지 JPEG(최대 4000픽셀)를 저장합니다. 사진 정보는 파일 이름과 폴더 경로, 파일 형식과 픽셀 크기, 키워드, 별점, 선택·제외 표시, '
     '색 라벨, 카메라와 렌즈, 노출 정보(ISO, 셔터 속도, 조리개, 초점 거리), 촬영 날짜이며 위치 정보는 보내지 않습니다. AI가 읽은 내용은 '
     '그 AI 서비스로 전송되고 그 프로그램에도 남을 수 있습니다. Grainy 자체는 사진을 인터넷으로 보내지 않으며, 연결은 이 컴퓨터 안에서만 '
-    '열립니다. 원본 사진 파일은 바뀌지 않고, AI가 한 보정은 최근 작업부터 차례로 되돌릴 수 있습니다.')
+    '열립니다. 원본 사진 파일은 바뀌지 않고, AI가 한 보정과 별점·선택 표시·색 라벨 변경은 최근 작업부터 차례로 되돌릴 수 있습니다.')
 REGEN=('새 연결 키를 만들까요? HTTP로 직접 연결한 프로그램은 새 키로 다시 설정해야 합니다. 위 설치 방법으로 설치한 AI 프로그램은 '
     '그대로 쓸 수 있습니다.')
 # The bridges' place on every computer, as PowerShell or the shell expands it when the command runs.
@@ -124,7 +124,8 @@ class McpDialog(QDialog):
             self.tabs.addTab(page,tr(title));self.setups[key]=(instruction,text,copy)
         box.addWidget(self.tabs)
         note=QLabel(tr('한 번만 설치하면 됩니다. 설치에는 연결 키가 들어가지 않습니다. 설치한 AI 프로그램은 Grainy가 실행 중이고 AI 연결이 '
-                       '켜져 있을 때 Grainy를 쓰며, Grainy보다 먼저 켜 두어도 됩니다.'))
+                       '켜져 있을 때 Grainy를 쓰며, Grainy보다 먼저 켜 두어도 됩니다. '+
+                       'Grainy 업데이트 후에는 AI에서 새 세션을 시작하세요. 기존 세션은 이전 도구 목록을 유지합니다.'))
         note.setWordWrap(True);note.setObjectName('muted');box.addWidget(note)
         row=QHBoxLayout();row.addWidget(QLabel(tr('AI 내보내기 폴더')))
         self.export_folder=QLineEdit();self.export_folder.setReadOnly(True);row.addWidget(self.export_folder,1)
@@ -273,7 +274,7 @@ class McpDialog(QDialog):
         try:
             ready(w,write=True,ids=[w.current_id] if w.current_id is not None else [])
             if w.current_id is not None:w.commit();w.save_keywords()
-            _,_,ids=photo_service.undo_batch(w.catalog)
+            _,tool,ids=photo_service.undo_batch(w.catalog)
         except photo_service.Busy:
             self.undo_message.setText(tr('지금은 되돌릴 수 없습니다. 열린 창이나 진행 중인 작업을 마친 뒤 다시 눌러 주세요.'));self.undo_message.show()
         except photo_service.ServiceError as error:
@@ -281,6 +282,10 @@ class McpDialog(QDialog):
                 self.undo_message.setText(tr('이후에 다시 보정한 사진이 있어 이 AI 작업은 되돌릴 수 없습니다. 사진마다 실행 취소를 사용해 주세요.'))
                 self.undo_message.show()
         else:
-            if ids:w.refresh_command_edits(ids,'AI 실행 취소')
+            if ids:
+                if tool=='set_labels':
+                    w.refresh_lists()
+                    if w.current_id in ids:w.load_controls()
+                else:w.refresh_command_edits(ids,'AI 실행 취소')
             self.service.note('undo_last_batch','undone in Grainy')
         self.refresh()

@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.2 — AI connection: crop and straighten, look comparison sheets, culling in one call, safer
+
+- **AI connection (MCP):** crop, auto straighten and scan-border crop; compare up to 12 film looks or presets on one photo in a labelled contact sheet without virtual copies; different ratings, flags and labels per photo in one undoable batch; save a contact sheet as a JPEG up to 4000 px; export results list the files, and a dry run plans an export without writing.
+- **Safer:** pending healing marks are kept, jobs always finish, slow photos and unreachable network folders no longer hold calls or the window, copied settings are current, Grainy's settings folder is protected, long or reserved file names are fixed, get_photo works on photos with a film look, and an AI import no longer opens a message box that blocks later calls.
+- After updating Grainy, start a new session in your AI program to see the new tools.
+
 ## 0.6.1 — More shortcuts; the AI connection rotates, copies, imports and exports to any folder
 
 - **More shortcuts:** J clipping, Z 1:1 / fit, F full screen, L lights out, Tab side panels, Shift+Tab all panels (Esc leaves lights out and full screen); Ctrl+U Auto tone, Ctrl+Shift+U Auto Color, Ctrl+[ / Ctrl+] rotate 90°; 6–9 colour labels (the same key again clears), Ctrl+' virtual copy, Ctrl+/ the shortcut list. On a Mac, Ctrl is ⌘.

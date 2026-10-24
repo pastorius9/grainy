@@ -224,7 +224,7 @@ def other_grainy(tmp_path):
 def test_second_grainy_never_takes_the_running_ones_bridge_files(session,tmp_path):
     first=session.mcp;folder=first.folder
     files={name:(folder/name).read_text(encoding='utf-8') for name in ('endpoint','auth-header')}
-    second=other_grainy(tmp_path)
+    second=other_grainy(session.preferences.path.parent)
     try:
         assert second.folder==folder
         second.start_if_enabled()                          # on by default, but the first one owns the files: removes nothing
@@ -269,8 +269,8 @@ def test_distribution_notes_computers_shared_with_other_accounts():
 
 
 def test_bridge_files_are_private_and_match_port_and_token(app,tmp_path,monkeypatch):
-    folder=tmp_path/'mcp'
-    if os.name!='nt':folder.mkdir(mode=0o755);os.chmod(folder,0o755)
+    folder=tmp_path/'settings'/'mcp'
+    if os.name!='nt':folder.mkdir(parents=True,mode=0o755);os.chmod(folder,0o755)
     modes=[]
     if os.name!='nt':
         original=os.replace
@@ -522,7 +522,7 @@ def test_grainy_writes_the_bridge_that_the_documented_desktop_command_starts(app
     settings there: forwarded while the connection is on, the offline answer while it is off, again when it is on."""
     from test_mcp_bridge import Bridge,desktop_environment,documented_desktop_command,message
     local=tmp_path/'사용자 이름'/'AppData'/'Local'
-    session=make_session(app,local/'Grainy')                                     # settings: <local>/Grainy/settings.json
+    session=make_session(app,local/'Grainy',settings_path=local/'Grainy'/'settings.json')                                     # settings: <local>/Grainy/settings.json
     try:
         ids=add_photos(session.window,tmp_path/'p',2);service=session.mcp
         assert service.folder==local/'Grainy'/'mcp'
@@ -603,7 +603,7 @@ def test_explanation_names_every_photo_detail_sent_and_says_when_anything_is_rea
     named={'name':'파일 이름','path':'폴더 경로','size':'픽셀 크기','format':'파일 형식','keywords':'키워드','r':'별점',
            'f':'선택·제외 표시','l':'색 라벨','camera':'카메라','lens':'렌즈','iso':'ISO','shutter':'셔터 속도','aperture':'조리개',
            'focal':'초점 거리','date':'촬영 날짜'}
-    sent=set(photo_service.summary(record))-{'id'}
+    sent=set(photo_service.summary(record))-{'id','crop','auto_level'}               # edit values, described above
     assert sent==set(named)                                # a new detail needs its words in the explanation
     assert [named[key] for key in sorted(sent) if named[key] not in mcp_dialog.EXPLAIN]==[]
     assert all(words in mcp_dialog.EXPLAIN for words in ('Grainy가 실행 중이면','설치하고 일을 시켰을 때만','그 AI 서비스로 전송',

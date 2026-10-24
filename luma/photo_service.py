@@ -218,7 +218,8 @@ def where_options(where,sort=None,descending=False,allow_empty=False):
     if flag in ('picked','rejected'):options['mode']=flag
     elif flag=='unflagged':rules['flag']=0
     elif flag is not None:raise ServiceError('flag must be picked, rejected or unflagged')
-    if where.get('rating_min') is not None:rules['rating_min']=where['rating_min']
+    for key in ('rating_min','rating_max'):
+        if where.get(key) is not None:rules[key]=where[key]
     if where.get('label') is not None:
         if where['label'] not in LABELS:raise ServiceError(f'label must be one of {", ".join(LABELS)}')
         rules['label']=LABELS[where['label']]
@@ -325,11 +326,24 @@ INFO=(('format','format'),('camera','camera'),('lens','lens'),('iso','iso'),('sh
       ('aperture','aperture'),('focal','focal_length'),('date','date'))
 
 
+def _shown(key,value):
+    """One edit value as get_photo gives it: rotation in degrees, film_look as the film's name (what apply_edits takes;
+    the stored id when the film is not among the shipped ones), numbers rounded."""
+    if key=='rotation':return fmt(value*90)
+    if key=='film_look':
+        from . import film_look
+        film=film_look.entry(value)
+        return film['name'] if film else str(value)
+    return fmt(value)
+
+
 def summary(record):
     """get_photo's view of a catalog row. Only these fields: no GPS, serial numbers, owner names or maker notes."""
     from .engine import defaults
     base=defaults();settings=record['settings'];info=record.get('info') or {}
     result={'id':record['id'],'name':record['name'],'path':record['path']}
+    if settings.get('crop'):result['crop']=settings['crop']
+    if settings.get('upright'):result['auto_level']=fmt(settings['upright']['rotation'])
     if info.get('width') and info.get('height'):result['size']=[info['width'],info['height']]
     for name,key in INFO:
         value=info.get(key)
@@ -338,13 +352,13 @@ def summary(record):
         if record.get(key):result[name]=record[key]
     if record.get('label'):result['l']=LABEL_NAMES.get(record['label'],record['label'])
     if record.get('keywords'):result['keywords']=record['keywords']
-    edits={k:fmt(settings[k]*90 if k=='rotation' else settings[k]) for k in FIELDS if k in settings and settings[k]!=base[k]}
+    edits={k:_shown(k,settings[k]) for k in FIELDS if k in settings and settings[k]!=base[k]}
     point=lambda p:[round(float(v),4) for v in p]
     if settings.get('curve',base['curve'])!=base['curve']:edits['curve']=[point(p) for p in settings['curve']]
     if settings.get('rgb_curves',base['rgb_curves'])!=base['rgb_curves']:
         edits['rgb_curves']=[[point(p) for p in channel] for channel in settings['rgb_curves']]
     if edits:result['edits']=edits
-    other=[name for name,keys in GROUPS.items() if any(settings.get(k)!=base.get(k) for k in keys)]
+    other=[name for name,keys in GROUPS.items() if not set(keys)<=FIELDS.keys() and any(settings.get(k)!=base.get(k) for k in keys)]
     other+=[f'{key}:{len(settings[key])}' for key in COUNTED if settings.get(key)]
     if other:result['other']=other
     if settings.get('panels_off'):result['off']=list(settings['panels_off'])
@@ -477,22 +491,24 @@ def apply_batch(catalog,records,values,*,label,tool,snapshot_name,snapshotted,sw
             payload=json.dumps(catalog.profiles.pack(deepcopy(frozen[ident]['settings']),internal=True))
             catalog.db.execute('INSERT INTO snapshots(photo_id,name,edits,created) VALUES(?,?,?,?)',(ident,snapshot_name,payload,now))
         named={str(ident):[_set_preset(catalog,ident,presets[ident]),presets[ident]] for ident in ids if (presets or {}).get(ident)}
-        kept=[entry for entry in entries if entry.get('state')!='undone']
-        applied=[entry for entry in kept if entry.get('state')=='applied']
-        dropped=[entry for entry in entries if entry.get('state')=='undone']+applied[:max(0,len(applied)-(MCP_DEPTH-1))]
-        drop_ids={entry.get('id') for entry in dropped}
-        for entry in dropped:
-            catalog.db.execute('DELETE FROM preferences WHERE key=?',(BATCH_PREFIX+str(entry.get('id')),))
-        remaining=[entry for entry in entries if entry.get('id') not in drop_ids]
-        remaining.append({'id':bid,'tool':tool,'label':label,'count':len(ids),'created':now,'state':'applied',
-                          **({'presets':named} if named else {})})
-        _write_index(catalog,remaining)
+        remember_batch(catalog,entries,{'id':bid,'tool':tool,'label':label,'count':len(ids),'created':now,'state':'applied',
+                                       **({'presets':named} if named else {})})
 
     if catalog.db.in_transaction:raise Busy('Grainy is saving something else')
     ids=command_batch.apply(catalog,records,values,label,remember=True,batch_key=BATCH_PREFIX+bid,after_apply=after,
                             meta={'id':bid,'tool':tool},compact=True,switch=switch)
     snapshotted.update(ids)
     return (bid if ids else None),ids
+
+
+def remember_batch(catalog,entries,entry):
+    """Inside the write transaction: append either kind of batch, dropping redo and the oldest excess."""
+    kept=[e for e in entries if e.get('state')!='undone']
+    applied=[e for e in kept if e.get('state')=='applied']
+    dropped=[e for e in entries if e.get('state')=='undone']+applied[:max(0,len(applied)-(MCP_DEPTH-1))]
+    drop_ids={e.get('id') for e in dropped}
+    for item in dropped:catalog.db.execute('DELETE FROM preferences WHERE key=?',(BATCH_PREFIX+str(item.get('id')),))
+    _write_index(catalog,[e for e in entries if e.get('id') not in drop_ids]+[entry])
 
 
 def undo_batch(catalog,batch=None,redo=False):
@@ -513,6 +529,9 @@ def undo_batch(catalog,batch=None,redo=False):
         _write_index(catalog,entries)
 
     if catalog.db.in_transaction:raise Busy('Grainy is saving something else')
+    if tool=='set_labels':
+        from .photo_labels import restore
+        return cid,tool,restore(catalog,cid,redo,flip)
     try:ids=command_batch.restore(catalog,redo,batch_key=BATCH_PREFIX+str(cid),after_restore=flip,expect=cid)
     except command_batch.BatchConflict as error:
         if error.kind in ('changed','history'):
@@ -527,7 +546,7 @@ def undo_batch(catalog,batch=None,redo=False):
 TOKENS=('film','preset','camera','date')        # naming tokens that can be empty for a photo
 NAMING=re.compile(r'(?:[^{}<>:"/\\|?*\x00-\x1f]|\{stem\}|\{n(?::0[2-6]d)?\}|\{(?:film|preset|camera|date)\})+')
 DEVICES={'CON','PRN','AUX','NUL',*{f'COM{i}' for i in range(1,10)},*{f'LPT{i}' for i in range(1,10)}}
-OWN_TEXT="a folder Grainy manages itself (its library, its AI connection files or the program); choose another folder"
+OWN_TEXT="a folder Grainy manages itself (its library, settings or program); choose another folder"
 EMPTY='\x00'                                   # an empty token while a name is put together
 UNSAFE=str.maketrans({**{c:'_' for c in '<>:"/\\|?*'},**{chr(i):'_' for i in range(32)}})
 
@@ -568,7 +587,7 @@ def file_stem(naming,stem,n,values):
     return name.strip().rstrip('. ') or stem
 
 
-def export_folder(root,subfolder,own=()):
+def export_folder(root,subfolder,own=(),*,create=True):
     """root, or one folder level below it; created when missing. Never inside one of the `own` folders
     (named_folder)."""
     from .folders import contains_folder
@@ -581,10 +600,11 @@ def export_folder(root,subfolder,own=()):
         target=(root/subfolder).resolve()
         if target.parent!=root.resolve():raise ServiceError('subfolder must be one folder name without path characters')
     else:target=root.resolve()
-    if any(contains_folder(folder,target) for folder in own):
+    if any(contains_folder(Path(folder).resolve(),target) for folder in own):
         raise ServiceError('the export folder is inside '+OWN_TEXT)
-    try:target.mkdir(parents=True,exist_ok=True)
-    except OSError as error:raise ServiceError(f'the export folder cannot be created ({error.strerror or type(error).__name__})') from None
+    if create:
+        try:target.mkdir(parents=True,exist_ok=True)
+        except OSError as error:raise ServiceError('the export folder cannot be created: '+english_error(error)) from None
     return target
 
 
@@ -597,12 +617,12 @@ def named_folder(text,own,what='path'):
     if not path.is_absolute():raise ServiceError(f'{what} must be an absolute folder path (with its drive or starting at /)')
     try:path=path.resolve()
     except (OSError,RuntimeError):raise ServiceError(f'{what} cannot be used') from None
-    if any(contains_folder(folder,path) for folder in own):
+    if any(contains_folder(Path(folder).resolve(),path) for folder in own):
         raise ServiceError(f'{what} is inside '+OWN_TEXT)
     return path
 
 
-def image_files(folder,recursive,cancel,limit):
+def image_files(folder,recursive,cancel,limit,*,own=()):
     """The image files Grainy imports in folder (and its subfolders), sorted; None when cancelled, or
     {'error'} past `limit` files. Any thread."""
     from .engine import IMAGE_EXTENSIONS
@@ -610,45 +630,93 @@ def image_files(folder,recursive,cancel,limit):
     for path in (Path(folder).rglob('*') if recursive else Path(folder).iterdir()):
         if cancel.is_set():return None
         if path.suffix.lower() in IMAGE_EXTENSIONS and path.is_file():
-            found.append(str(path))
+            # Validate every resolved file, including file links and directory junctions.
+            resolved=named_folder(str(path),own,what='import file')
+            found.append(str(resolved))
             if len(found)>limit:
                 return {'error':f'more than {limit} image files; import fewer at a time (subfolders, or recursive false)'}
     return sorted(found)
 
 
+def english_error(error):
+    """Stable English at the protocol boundary; never forward localized traceback/OS text."""
+    if isinstance(error,PermissionError):return 'permission denied'
+    if isinstance(error,FileNotFoundError):return 'file or folder not found'
+    if isinstance(error,FileExistsError):return 'output already exists; try again for a new name'
+    if isinstance(error,OSError):return 'file system operation failed'
+    return 'operation failed ('+(type(error).__name__ if isinstance(error,BaseException) else 'internal error')+')'
+
+
+def safe_filename(stem,suffix,index=1):
+    """A portable component, with space for its suffix AND collision number (UTF-8/UTF-16)."""
+    import unicodedata
+    stem=unicodedata.normalize('NFC',str(stem)).translate(UNSAFE).strip().rstrip('. ') or 'photo'
+    # Windows also treats superscript digits as DOS device numbers.
+    device=stem.split('.')[0].strip().upper().translate(str.maketrans('¹²³','123'))
+    if device in DEVICES:stem='_'+stem
+    tail=('' if index==1 else f'_{index}')+suffix
+    while len((stem+tail).encode('utf-8'))>255 or len((stem+tail).encode('utf-16-le'))//2>255:stem=stem[:-1]
+    return (stem.rstrip('. ') or 'photo')+tail
+
+
+def export_plans(records,folder,format='JPEG',naming='{stem}_grainy'):
+    """Reserve names in memory only. Real writers still use exclusive creation to close races."""
+    import unicodedata
+    from .quick_export import SUFFIXES
+    key=lambda name:unicodedata.normalize('NFC',name).casefold()
+    folder=Path(folder)
+    reserved={key(p.name) for p in folder.iterdir()} if folder.is_dir() else set()
+    plans=[]
+    for n,record in enumerate(records,1):
+        suffix=Path(record['path']).suffix if format=='Original' else SUFFIXES[format]
+        stem=file_stem(naming,Path(record['path']).stem,n,name_values(record))
+        index=1
+        while True:
+            name=safe_filename(stem,suffix,index);sidecar=Path(name).with_suffix('.xmp').name
+            if key(name) not in reserved and (format!='Original' or key(sidecar) not in reserved):break
+            index+=1
+        reserved.add(key(name))
+        if format=='Original':reserved.add(key(sidecar))
+        plans.append((record,folder/name))
+    return plans
+
+
+def output_files(outputs,limit=100):
+    """Compact file results; stat is done by the worker, never by the GUI completion callback."""
+    files=[{'id':o['photo_id'],'name':Path(o['path']).name,'path':o['path'],
+            'w':o['size'][0],'h':o['size'][1],'bytes':o.get('bytes')} for o in outputs[:limit]]
+    return {'files':files,**({'more_files':len(outputs)-limit} if len(outputs)>limit else {})}
+
+
+def planned_size(record,longest=0):
+    """Dimensions after the same fixed canvas, orientation, crop rounding and resize as engine.export_image."""
+    from .engine import load_image,export_longest
+    settings=record['settings'];info=record.get('info') or {}
+    w,h=info.get('width'),info.get('height')
+    if not w or not h:
+        _,info=load_image(record['path'],32,settings['working_space'],raw_options=settings)
+        w,h=info['width'],info['height']
+    if int(settings.get('rotation') or 0)%2:w,h=h,w
+    crop=settings.get('crop')
+    if crop:
+        l,t=min(w-1,max(0,round(crop[0]*w))),min(h-1,max(0,round(crop[1]*h)))
+        r,b=max(l+1,min(w,round(crop[2]*w))),max(t+1,min(h,round(crop[3]*h)))
+        w,h=r-l,b-t
+    side=export_longest((h,w,3),longest) if longest else max(w,h)
+    factor=min(1,side/max(w,h))
+    return max(1,round(w*factor)),max(1,round(h*factor))
+
+
 def export_records(records,folder,format='JPEG',quality=95,longest=0,color_space='sRGB',keep_metadata=False,
-                   naming='{stem}_grainy',grayscale=True,dither=True,*,cancel=None,progress=None,exporter=None):
-    """Export catalog records as new files: {'outputs', 'failures', 'skipped'}. Any thread.
-    Names are planned in order first, so parallel jobs never claim the same path; existing files are kept.
-    exporter replaces engine.export_image (the window passes its own reference)."""
+                   naming='{stem}_grainy',grayscale=True,dither=True,*,cancel=None,progress=None,exporter=None,english=False):
+    """Export new files, with dimensions/bytes. English failures for MCP; localized UI errors elsewhere."""
     from concurrent.futures import ThreadPoolExecutor
     from .engine import export_image
-    from .i18n import tr
-    from .quick_export import SUFFIXES,export_concurrency
+    from .quick_export import export_concurrency
     from .workflow_data import edit_signature
     export_image=exporter or export_image
-    folder=Path(folder)
-    plans,failures,reserved=[],[],set()
-    taken=lambda path:path.exists() or path in reserved
-    for n,record in enumerate(records,1):
-        try:
-            suffix=Path(record['path']).suffix if format=='Original' else SUFFIXES[format]
-            # A macOS file name may hold characters Windows forbids (Finder shows ':' as '/', as in a
-            # date); the exported name gets '_' there instead of the export failing.
-            source_stem=Path(record['path']).stem.translate(str.maketrans({c:'_' for c in '<>:"/\\|?*'}))
-            stem=file_stem(naming,source_stem,n,name_values(record) if any('{'+t+'}' in naming for t in TOKENS) else {})
-            if not stem.strip() or Path(stem).name!=stem or any(c in stem for c in '<>:"/\\|?*'):
-                raise ValueError(tr('유효하지 않은 출력 이름'))
-            destination=folder/(stem+suffix);index=2
-            while taken(destination) or (format=='Original' and taken(destination.with_suffix('.xmp'))):
-                destination=folder/f'{stem}_{index}{suffix}';index+=1
-            reserved.add(destination)
-            if format=='Original':reserved.add(destination.with_suffix('.xmp'))
-            plans.append((record,destination))
-        except Exception as exc:
-            failures.append(record['name']+': '+str(exc))
+    plans=export_plans(records,folder,format,naming)
     lock=Lock();state={'done':0,'skipped':0}
-
     def one(plan):
         record,destination=plan
         try:
@@ -661,17 +729,17 @@ def export_records(records,folder,format='JPEG',quality=95,longest=0,color_space
             else:
                 size=export_image(record['path'],destination,record['settings'],format,quality,longest or None,
                     color_space,keep_metadata,record['user_metadata'],record['keywords'],grayscale=grayscale,dither=dither)
-            return {'path':str(destination),'size':size,'photo_id':record['id'],
-                'edit_signature':edit_signature(record['settings'])},None
-        except Exception as exc:
-            return None,record['name']+': '+str(exc)
+            try:byte_size=destination.stat().st_size
+            except OSError:byte_size=None
+            return {'path':str(destination),'size':size,'bytes':byte_size,'photo_id':record['id'],
+                    'edit_signature':edit_signature(record['settings'])},None
+        except Exception as error:
+            return None,record['name']+': '+('could not export: '+english_error(error) if english else str(error))
         finally:
             if progress is not None:
                 with lock:
-                    state['done']+=1
-                    progress(state['done'])
+                    state['done']+=1;progress(state['done'])
     with ThreadPoolExecutor(export_concurrency([record for record,_ in plans]),thread_name_prefix='GrainyExport') as pool:
         results=list(pool.map(one,plans))
-    outputs=[output for output,_ in results if output]
-    failures+=[failure for _,failure in results if failure]
-    return {'outputs':outputs,'failures':failures,'skipped':state['skipped']}
+    return {'outputs':[output for output,_ in results if output],
+            'failures':[failure for _,failure in results if failure],'skipped':state['skipped']}

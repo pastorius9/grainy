@@ -65,8 +65,8 @@ class Catalog:
                 roots.append(folder)
         self.db.commit()
 
-    def add(self, path,settings=None,metadata=None):
-        path = stored_path(Path(path).resolve())
+    def add(self, path,settings=None,metadata=None,*,resolved=False):
+        path = stored_path(Path(path) if resolved else Path(path).resolve())
         previous=self.db.execute('SELECT id FROM photos WHERE path=? COLLATE NOCASE AND virtual_source IS NULL',(path,)).fetchone()
         if previous:
             return previous['id']
@@ -184,8 +184,8 @@ class Catalog:
     def folder_roots(self):
         return [r['path'] for r in self.db.execute('SELECT path FROM folder_roots ORDER BY path COLLATE NOCASE')]
 
-    def register_folder(self,path):
-        path=stored_path(Path(path).resolve())
+    def register_folder(self,path,*,resolved=False):
+        path=stored_path(Path(path) if resolved else Path(path).resolve())
         self.db.execute('INSERT OR IGNORE INTO folder_roots VALUES(?)',(path,))
         self.db.commit()
         removed=self.removed_folders()
