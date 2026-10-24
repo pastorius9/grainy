@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.3 — Ask AI: give Claude Code, Codex or Gemini CLI a task from inside Grainy
+
+- **Ask AI** (top of the window): pick Claude Code, Codex or Gemini CLI installed on this computer, type what you want ("invert this roll, fix the colour and export it for the web"), and it works with Grainy's own AI-connection tools. Progress and tool use stream into the window; Stop, New conversation and Undo last AI task are there.
+- Each program uses your own account and subscription; Grainy handles no logins and changes no program settings. The AI gets Grainy's tools only: no commands, file edits or web.
+- The old Codex command window and its separate ChatGPT connection are replaced by Ask AI.
+
 ## 0.6.2 — AI connection: crop and straighten, look comparison sheets, culling in one call, safer
 
 - **AI connection (MCP):** crop, auto straighten and scan-border crop; compare up to 12 film looks or presets on one photo in a labelled contact sheet without virtual copies; different ratings, flags and labels per photo in one undoable batch; save a contact sheet as a JPEG up to 4000 px; export results list the files, and a dry run plans an export without writing.

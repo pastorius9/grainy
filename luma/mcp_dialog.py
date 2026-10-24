@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (QCheckBox,QDialog,QFileDialog,QHBoxLayout,QLabel,
 from .i18n import tr
 
 # Names everything get_photo and list_photos send (tests/test_mcp_service.py checks it).
-EXPLAIN=('Grainy가 실행 중이면 이 컴퓨터의 AI 프로그램(Claude Code, Codex, Claude 데스크톱)이 Grainy를 쓸 수 있습니다. 그 프로그램에 '
+EXPLAIN=('Grainy가 실행 중이면 이 컴퓨터의 AI 프로그램(Claude Code, Codex, Gemini CLI, Claude 데스크톱)이 Grainy를 쓸 수 있습니다. AI에게 시키기 창에서 요청하거나, 그 프로그램에 '
     '아래 방법으로 Grainy의 MCP를 설치하고 일을 시켰을 때만, 그 프로그램이 사진 목록과 사진 정보, 보정값, 미리보기 이미지(최대 1568픽셀)를 '
     '읽고, 보정값과 별점·선택 표시·색 라벨을 바꾸고, 가상 사본과 스냅샷을 만들고, 그 프로그램이 정한 폴더의 사진을 보관함으로 가져오고, '
     '그 프로그램이 정한 폴더로 사진을 내보내고 밀착 이미지 JPEG(최대 4000픽셀)를 저장합니다. 사진 정보는 파일 이름과 폴더 경로, 파일 형식과 픽셀 크기, 키워드, 별점, 선택·제외 표시, '

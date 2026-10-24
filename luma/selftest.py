@@ -402,7 +402,6 @@ def run():
             assert any(label.text()==f'PHOTO STUDIO  /  {__version__}' for label in window.findChildren(QLabel))
             report.update(app_version=__version__)
             from .command_batch import capture,targets,apply,restore
-            from .commands import validate_proposal,changed_settings
             command_folder=root/'command-fixture';command_folder.mkdir()
             command_ids=[]
             for index in range(2):
@@ -411,22 +410,23 @@ def run():
                 command_ids.append(window.catalog.add(path,{**defaults(),'exposure':index*.5}))
             command_snapshot=capture(window.catalog,command_ids[0],[command_ids[0]],str(command_folder))
             records=targets(command_snapshot,'folder')
-            command=validate_proposal({'message':'test','action':'adjust','scope':'folder',
-                'changes':[{'key':'monochrome','value':True,'operation':'set'}]})
-            assert apply(window.catalog,records,[changed_settings(r['settings'],command) for r in records])==command_ids
+            assert apply(window.catalog,records,[{**r['settings'],'monochrome':True} for r in records])==command_ids
             assert all(window.catalog.photo(i)['settings']['monochrome'] for i in command_ids)
             assert window.catalog.photo(command_ids[1])['settings']['exposure']==.5
             assert restore(window.catalog)==command_ids
             assert not any(window.catalog.photo(i)['settings']['monochrome'] for i in command_ids)
             assert restore(window.catalog,True)==command_ids
-            from .command_dialog import CommandDialog
-            assert not window.auth.connected
-            command_dialog=CommandDialog(window.auth,window,window.command_context,window.apply_command,window.restore_command_batch)
-            command_dialog.show();app.processEvents()
-            assert command_dialog.scope.findData('folder')>=0
-            assert command_dialog.batch_undo.isVisible()
-            command_dialog.close()
-            report.update(command_folder_scope=True,command_typed_monochrome=True,command_atomic_batch_undo=True)
+            from types import SimpleNamespace
+            from .preferences import Preferences
+            from .mcp_service import McpService
+            from .ai_dialog import AiDialog
+            preferences=Preferences(root/'settings'/'settings.json')
+            service=McpService(SimpleNamespace(preferences=preferences,window=window,data_dir=root/'catalog'))
+            dialog=AiDialog(service,window);dialog.show();app.processEvents()
+            assert dialog.notice.isVisible() and not dialog.send_button.isEnabled()
+            assert dialog.undo_button.isVisible() and not dialog.isModal()
+            dialog.close()
+            report.update(ai_window=True,photo_folder_scope=True,photo_atomic_batch_undo=True)
             from .dust import detect,repair,Options,visualize
             from .dust_dialog import DustDialog
             from PySide6.QtWidgets import QPushButton

@@ -10,14 +10,6 @@ def hdr_feature(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
-def codex_feature(monkeypatch):
-    """The Codex command window is hidden in the public build (features.codex); its code stays tested
-    and never reads the developer's own settings file. tests/test_feedback.py covers the hidden state."""
-    from luma import features
-    monkeypatch.setattr(features, 'CODEX', True)
-
-
-@pytest.fixture(autouse=True)
 def feedback_records(monkeypatch, tmp_path_factory):
     """The feedback dialog keeps sent references in the per-user settings (feedback.records); in tests a file of
     their own, made on first use, so no test can touch the real one."""

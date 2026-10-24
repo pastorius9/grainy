@@ -609,6 +609,6 @@ def test_explanation_names_every_photo_detail_sent_and_says_when_anything_is_rea
     assert all(words in mcp_dialog.EXPLAIN for words in ('Grainy가 실행 중이면','설치하고 일을 시켰을 때만','그 AI 서비스로 전송',
                                                          '인터넷으로 보내지 않으며','위치 정보는 보내지 않습니다'))
     set_language('en');english=tr(mcp_dialog.EXPLAIN)
-    assert english!=mcp_dialog.EXPLAIN and 'While Grainy is running' in english and 'Only when you install' in english
+    assert english!=mcp_dialog.EXPLAIN and 'While Grainy is running' in english and 'Only when you send a request in Ask AI' in english
     assert all(word in english for word in ('ratings','pick and reject flags','color labels','ISO','aperture','pixel size'))
     for text in (mcp_dialog.EXPLAIN,english):assert 'Lightroom' not in text and 'Adobe' not in text

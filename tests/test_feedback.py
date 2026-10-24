@@ -8,7 +8,7 @@ import urllib.request
 from datetime import date
 import pytest
 from test_studio_ui import app, wait
-from luma import __version__, feedback, features
+from luma import __version__, feedback
 from luma.preferences import Preferences
 
 
@@ -50,17 +50,15 @@ def test_send_reports_failures_without_raising(form):
 def test_shipped_form_is_configured_and_buttons_follow_the_switches(app, tmp_path, monkeypatch):
     from luma.app import MainWindow
     assert feedback.configured() and set(feedback.FIELDS) == {'version', 'message', 'system'}
-    monkeypatch.setattr(features, 'CODEX', False)
     w = MainWindow(tmp_path/'data')
     try:
         w.show()
-        assert not w.feedback_button.isHidden() and w.command_button.isHidden()      # the public build
+        assert not w.feedback_button.isHidden() and not w.ai_button.isHidden()      # the public build
         app.processEvents()      # beside the name, apart from the buttons that switch screens
         assert w.feedback_button.objectName() == 'feedback' and w.feedback_button.x() < w.width()/2 < w.library_button.x()
         w.update_button.setText('9.9.9'); w.update_button.show(); app.processEvents()      # the update notice follows it, a little apart
         assert 8 <= w.update_button.x()-w.feedback_button.geometry().right() and w.update_button.geometry().right() < w.width()/2
         w.update_button.hide()
-        w.show_commands(); assert getattr(w, 'command_dialog', None) is None and w.auth_dialog is None
     finally:
         w.close()
     monkeypatch.setattr(feedback, 'FORM_ID', '')
@@ -70,12 +68,6 @@ def test_shipped_form_is_configured_and_buttons_follow_the_switches(app, tmp_pat
         w.show(); assert w.feedback_button.isHidden()
     finally:
         w.close()
-    monkeypatch.setattr(features, 'CODEX', None)                 # the shipped default reads the settings file
-    from luma.preferences import Preferences
-    monkeypatch.setattr(Preferences, '__init__', lambda self, path=None: setattr(self, 'values', {}))
-    assert features.codex() is False
-    monkeypatch.setattr(Preferences, '__init__', lambda self, path=None: setattr(self, 'values', {'codex': True}))
-    assert features.codex() is True
 
 
 def test_dialog_sends_in_the_background_and_shows_the_result(app, tmp_path, form):

@@ -49,7 +49,7 @@ def test_learn_screens(app, tmp_path, language, monkeypatch):
         w.refresh_lists()
         garden = next(p['id'] for p in w.catalog.photos() if p['name'] == 'garden.jpg') if hasattr(w.catalog, 'photos') else None
         ident = garden or w.catalog.add(photos/'garden.jpg')
-        w.show(); w.command_button.hide()
+        w.show(); w.ai_button.hide()
         for other in [p['id'] for p in w.catalog.photos()] if hasattr(w.catalog, 'photos') else []:   # each opened once: its thumbnail
             w.activate(other); wait(lambda: w.source is not None and not w.render_running)
         w.activate(ident)

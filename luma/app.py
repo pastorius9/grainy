@@ -26,9 +26,6 @@ from .engine import defaults, normalized, load_image, develop, resize_float, to_
 from .widgets import Adjustment, Histogram, ToneCurve, PhotoView, qimage, histogram_bins, clipping_channels
 from .render_cache import DevelopmentCache
 from .folders import folder_nodes, in_folder, path_key, contains_folder
-from .auth import CodexAuth
-from .auth_dialog import AuthDialog
-from .command_dialog import CommandDialog
 from .photo_browser import PhotoModel,PhotoListView
 from .library_query import query as library_query,QueryCancelled
 from . import __version__, file_access
@@ -67,7 +64,7 @@ QPushButton#feedback { background:transparent; border:1px solid #3f7f86; color:#
 QPushButton#feedback:hover { background:#1f3a3f; border-color:#6fc0c6; color:#c9f1f2; }
 QPushButton#feedback:pressed { background:#2a4f55; border-color:#6fc0c6; color:#e2fbfb; }
 QPushButton#nav { text-align:left; padding:10px; }
-QLineEdit, QComboBox, QSpinBox { background:#15191e; border:1px solid #39414b; border-radius:0px; padding:6px; }
+QLineEdit, QComboBox, QSpinBox, QPlainTextEdit, QTextEdit { background:#15191e; border:1px solid #39414b; border-radius:0px; padding:6px; }
 QSpinBox::up-button { subcontrol-origin:border; subcontrol-position:top right; width:20px; border-left:1px solid #39414b; border-bottom:1px solid #39414b; background:#1d2228; }
 QSpinBox::down-button { subcontrol-origin:border; subcontrol-position:bottom right; width:20px; border-left:1px solid #39414b; background:#1d2228; }
 QSpinBox::up-button:hover, QSpinBox::down-button:hover { background:#363e47; }
@@ -78,7 +75,7 @@ QSpinBox::up-arrow:off, QSpinBox::up-arrow:disabled { image:url("{UI}/spin-up-of
 QSpinBox::down-arrow:off, QSpinBox::down-arrow:disabled { image:url("{UI}/spin-down-off.png"); }
 QDoubleSpinBox#adjustmentValue { background:transparent; border:1px solid transparent; border-radius:0px; padding:0px 2px; color:#aeb6bf; }
 QDoubleSpinBox#adjustmentValue:focus { background:#15191e; border-color:#b89c76; color:#f4e7d4; }
-QLineEdit:focus { border-color:#dec49f; }
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus { border-color:#dec49f; }
 QComboBox QAbstractItemView { background:#252b32; selection-background-color:#554838; }
 QListWidget { background:#15181d; border:none; outline:0; padding:4px; }
 QListWidget::item { border:1px solid transparent; border-radius:0px; padding:5px; color:#aeb6bf; }
@@ -281,10 +278,7 @@ class MainWindow(QMainWindow):
     def __init__(self, data_dir):
         super().__init__()
         self.catalog = Catalog(data_dir)
-        self.auth=CodexAuth(executable=self.catalog.preference('codex_executable'),parent=self)
-        self.auth_dialog=None
-        self.command_dialog=None
-        self.codex_login_pending=False
+        self.ai_dialog=None
         self.setWindowTitle('Grainy — Photo Studio')
         self.resize(1510,960)
         self.setMinimumSize(1120,740)
@@ -421,8 +415,6 @@ class MainWindow(QMainWindow):
         settings_menu.addAction(tr('단축키 목록…')+'\t'+key_hint('Shift+/'),self.show_shortcuts)
         settings_menu.addAction(tr('Grainy 배우기 (웹 튜토리얼)…'),lambda:QDesktopServices.openUrl(QUrl(LEARN_URL)))
         settings_menu.aboutToShow.connect(self.update_gpu_action)
-        self.auth.changed.connect(self.update_codex_button)
-        self.update_codex_button()
         self.shortcuts()
         self.refresh_lists()
         self.statusBar().showMessage(tr('준비됨  ·  사진을 가져오면 시작할 수 있습니다.'))
@@ -445,16 +437,15 @@ class MainWindow(QMainWindow):
         subtitle.setObjectName('muted')
         header.addSpacing(15)
         header.addWidget(subtitle)
-        from . import features,feedback
+        from . import feedback
         # Beside the name and in its own colour, away from the buttons that switch screens.
         self.feedback_button=button(tr('피드백'),lambda:feedback.show(self));self.feedback_button.setObjectName('feedback')
         self.feedback_button.setToolTip(tr('문제점이나 개선 아이디어 보내기'))
         header.addSpacing(18);header.addWidget(self.feedback_button);self.feedback_button.setVisible(feedback.configured())
+        self.ai_button=button(tr('AI에게 시키기'),self.show_ai);header.addSpacing(8);header.addWidget(self.ai_button)
         # Shown by the update controller when a newer release exists.
         self.update_button=button('',lambda:None,primary=True);header.addSpacing(12);header.addWidget(self.update_button);self.update_button.hide()
         header.addStretch()
-        self.command_button=button('Codex',self.show_commands)
-        header.addWidget(self.command_button);self.command_button.setVisible(features.codex())
         self.library_button = button(tr('라이브러리'), lambda: self.set_mode(1), True)
         self.edit_button = button(tr('현상'), lambda: self.set_mode(0), True)
         self.edit_button.setChecked(True)
@@ -2575,66 +2566,13 @@ class MainWindow(QMainWindow):
         box.setInformativeText(tr('원본을 건드리지 않는 사진 보정·관리 프로그램입니다.\n\nGrainy의 코드는 MIT 라이선스입니다. 함께 들어 있는 외부 부품의 라이선스 고지는 배포본의 THIRD_PARTY_LICENSES 폴더에 있습니다.\n\nAdobe, Lightroom, Photoshop은 Adobe Inc.의 상표입니다. Grainy는 Adobe가 만들거나 후원·보증한 프로그램이 아니며 Adobe와 관련이 없습니다. 그 밖의 상표는 각 소유자의 것입니다.'))
         box.exec()
 
-    def show_auth(self):
-        if self.auth_dialog is None:
-            self.auth_dialog=AuthDialog(self.auth,self,
-                on_executable=lambda path:self.catalog.save_preference('codex_executable',path))
-            self.auth_dialog.rejected.connect(self.cancel_codex_login)
-        self.auth_dialog.show()
-        self.auth_dialog.raise_()
-        self.auth_dialog.activateWindow()
-        self.auth.refresh()
-
-    def command_context(self):
-        if not self.current_id and not self.folder_filter:
-            return None
-        self.commit()
-        from .command_batch import capture
-        return capture(self.catalog,self.current_id,self.selected_ids(),self.folder_filter)
-
-    def apply_command(self,snapshot,proposal):
-        from .commands import checked_proposal,changed_settings
-        safe=checked_proposal(proposal)
-        if safe['action']=='chat':return 0
-        scope=safe['scope']
-        if scope!='current':
-            from .command_batch import targets,verify,apply
-            self.commit()
-            records=targets(snapshot,scope);verify(self.catalog,records)
-            values=self.command_auto_values(records) if safe['action']=='auto_tone' else [changed_settings(r['settings'],safe) for r in records]
-            ids=apply(self.catalog,records,values)
-            self.refresh_command_edits(ids)
-            return len(ids)
-        if not snapshot or self.source is None or self.current_id!=snapshot['photo_id']:
-            raise ValueError('선택한 사진이 바뀌었습니다. 현재 사진으로 다시 요청해 주세요.')
-        if self.settings!=snapshot['settings']:
-            raise ValueError('보정값이 바뀌었습니다. 현재 상태로 다시 요청해 주세요.')
-        previous=deepcopy(self.settings)
-        if safe['action']=='auto_tone':
-            syncing=self.manager.syncing;self.manager.syncing=True
-            try:self.auto_tone()
-            finally:self.manager.syncing=syncing
-        elif safe['action']=='adjust':
-            self.commit()
-            values=changed_settings(self.settings,safe)
-            # Explicit command scope must not expand through Auto Sync.
-            syncing=self.manager.syncing;self.manager.syncing=True
-            for key in safe['changes']:
-                value=values[key]
-                self.set_setting(key,value)
-            try:self.commit('Codex 명령')
-            finally:self.manager.syncing=syncing
-            self.load_controls()
-            self.render()
-        return int(previous!=self.settings)
-
     def command_auto_values(self,records,compute=None,name='자동톤'):
         """Compute every photo first; cancellation or failure writes no edits.
         compute(source, settings) returns the new settings (auto tone by default)."""
         compute=compute or (lambda source,settings:auto_tone_settings(source,settings)[0])
         cancel=Event();state={'done':0};directory=self.catalog.directory
         progress=QProgressDialog(f'사진별 {name}을 계산하는 중…','취소',0,len(records),self)
-        progress.setWindowTitle(tr('Codex 일괄 자동톤') if name=='자동톤' else tr(name));progress.setWindowModality(Qt.WindowModality.ApplicationModal)
+        progress.setWindowTitle(tr('일괄 자동톤') if name=='자동톤' else tr(name));progress.setWindowModality(Qt.WindowModality.ApplicationModal)
         progress.setMinimumDuration(0);progress.setAutoClose(False);progress.setAutoReset(False)
         progress.canceled.connect(cancel.set)
         self.command_running=True
@@ -2656,7 +2594,7 @@ class MainWindow(QMainWindow):
         return state['values']
 
     def refresh_command_edits(self,ids,label=None):
-        """Show edits a batch wrote to the catalog (Codex commands, photo workflow menu, AI connection)."""
+        """Show edits a batch wrote to the catalog (photo workflow menu, AI connection)."""
         self.photo_model.invalidate_thumbnails(ids)
         if self.current_id in ids:
             self.studio.cancel_stroke()
@@ -2668,41 +2606,16 @@ class MainWindow(QMainWindow):
             if self.view.crop_mode:self.view.show_crop(self.settings['crop'])
             self.render()
         count=f'{len(ids):,}'
-        self.statusBar().showMessage(tr('Codex 명령 · {0}장 변경', count) if label is None else tr('{0} · {1}장 변경', tr(label), count))
+        self.statusBar().showMessage(tr('사진 작업 · {0}장 변경', count) if label is None else tr('{0} · {1}장 변경', tr(label), count))
 
-    def restore_command_batch(self,redo=False):
-        from .command_batch import restore
-        self.commit();ids=restore(self.catalog,redo)
-        self.refresh_command_edits(ids)
-        return len(ids)
-
-    def show_commands(self):
-        from . import features
-        if self.closing or not features.codex():return
-        if not self.auth.connected:
-            self.codex_login_pending=True
-            self.show_auth()
-            return
-        self.codex_login_pending=False
-        if self.auth_dialog is not None:self.auth_dialog.hide()
-        if self.command_dialog is None:
-            self.command_dialog=CommandDialog(self.auth,self,self.command_context,self.apply_command,self.restore_command_batch)
-        self.command_dialog.show();self.command_dialog.raise_();self.command_dialog.activateWindow()
-        self.command_dialog.input.setFocus()
-        self.auth.refresh()
-
-    def cancel_codex_login(self):
-        self.codex_login_pending=False
-
-    def update_codex_button(self):
-        self.command_button.setToolTip(tr('Codex 명령창 열기') if self.auth.connected else tr('Codex에 로그인하여 명령하기'))
-        if self.auth.connected and self.codex_login_pending and not self.closing:
-            self.codex_login_pending=False
-            QTimer.singleShot(0,self.open_commands_after_login)
-
-    def open_commands_after_login(self):
-        if not self.closing and self.auth.connected and self.auth_dialog is not None and self.auth_dialog.isVisible():
-            self.show_commands()
+    def show_ai(self):
+        if self.closing:return
+        # A normal DesktopSession attaches its MCP service before the window opens.
+        if not hasattr(self,'mcp'):return
+        if self.ai_dialog is None:
+            from .ai_dialog import AiDialog
+            self.ai_dialog=AiDialog(self.mcp.service,self)
+        self.ai_dialog.show();self.ai_dialog.raise_();self.ai_dialog.activateWindow()
 
     def closeEvent(self,event):
         if getattr(self,'command_running',False):
@@ -2718,6 +2631,7 @@ class MainWindow(QMainWindow):
         self.commit()
         self.closing=True;self.library_cancel.set();self.photo_model.closed=True
         # AI connection: a running job is cancelled (it has written nothing yet) and its worker pool emptied.
+        if self.ai_dialog is not None:self.ai_dialog.shutdown()
         if hasattr(self,'mcp'):self.mcp.shutdown()
         self.studio.cancel_stroke()
         self.preview_queue.shutdown();self.photo_model.check_timer.stop()
@@ -2742,6 +2656,5 @@ class MainWindow(QMainWindow):
         self.thumbnail_render_pool.waitForDone()
         self.display_pool.waitForDone()
         if hasattr(self,'cloud_backup'):self.cloud_backup.shutdown()
-        self.auth.shutdown()
         self.catalog.close()
         event.accept()

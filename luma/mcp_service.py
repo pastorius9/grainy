@@ -118,7 +118,7 @@ def ready(w,*,write=False,export=False,ids=(),selection=False,job=None):
     if not (write or export):return w
     if nested():raise Busy('a dialog or menu is open in Grainy; ask the person to close it')
     if w.catalog.db.in_transaction:raise Busy('Grainy is saving something else')
-    if getattr(w,'command_running',False):raise Busy('a Codex command is running')
+    if getattr(w,'command_running',False):raise Busy('a photo batch is running')
     if getattr(w,'maintenance_running',False):raise Busy('a catalog task is running')
     if w.import_busy or w.import_scans:raise Busy('photos are being imported')
     if export and w.export_running:raise Busy('an export is already running')

@@ -11,7 +11,7 @@ from PIL import Image
 
 from luma import photo_service as service
 from luma.catalog import Catalog
-from luma.commands import EDIT_FIELDS,validate_proposal
+from luma.edit_fields import EDIT_FIELDS
 from luma.engine import defaults,normalized
 from luma.photo_service import FIELDS,ServiceError,Busy
 
@@ -63,23 +63,7 @@ def test_parse_changes_rejects_bool_nan_unknown_out_of_range_and_duplicates(set_
     with pytest.raises(ServiceError,match=message):service.parse_changes(set_values,add_values)
 
 
-@pytest.mark.parametrize('key,value',[(k,v) for k,(_,lo,hi) in EDIT_FIELDS.items() if k!='monochrome'
-    for v in (lo,hi,(lo+hi)/2,lo-1,hi+1,True)]+[('monochrome',True),('monochrome',False),('monochrome',1)])
-def test_parse_changes_agrees_with_codex_validation_for_set(key,value):
-    """Absolute values the Codex command accepts are accepted here, and the same values are refused."""
-    try:codex=validate_proposal({'message':'','action':'adjust','scope':'current',
-                                 'changes':[{'key':key,'value':value,'operation':'set'}]})
-    except ValueError:codex=None
-    try:ours=service.parse_changes({key:value})
-    except ServiceError:ours=None
-    assert (codex is None)==(ours is None)
-    if ours is not None:assert ours==(codex['changes'],codex['operations'])
-
-
 def test_add_deltas_may_be_negative_for_zero_based_sliders():
-    """Codex checks a relative change against the absolute range, which refuses sharpen add -20."""
-    with pytest.raises(ValueError):validate_proposal({'message':'','action':'adjust','scope':'current',
-        'changes':[{'key':'sharpen','value':-20,'operation':'add'}]})
     changes,operations=service.parse_changes(None,{'sharpen':-20,'grain':-100})
     assert changes=={'sharpen':-20.,'grain':-100.} and set(operations.values())=={'add'}
     result=service.edited({**defaults(),'sharpen':50.},changes,operations,{},1)

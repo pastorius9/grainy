@@ -16,7 +16,7 @@ from contextlib import closing
 from pathlib import Path
 from threading import Event,Lock
 
-from .commands import EDIT_FIELDS
+from .edit_fields import EDIT_FIELDS
 
 FIELDS={**EDIT_FIELDS,'negative_density':('필름 농도',-3,3),'negative_range':('필름 대비',3,10),   # app.py negative sliders
         'film_strength':('필름 강도',0,100),'film_look':('필름',0,0),                                  # film_look: a stock's name
@@ -70,7 +70,7 @@ def curve_points(value,key='curve'):
 
 
 def parse_changes(set_values=None,add_values=None):
-    """(changes, operations) in the shape of commands.validate_proposal: {key: float|bool}, {key: 'set'|'add'}.
+    """(changes, operations) : {key: float|bool}, {key: 'set'|'add'}.
     curve and rgb_curves (set only) are lists of points."""
     set_values=set_values or {};add_values=add_values or {}
     if not isinstance(set_values,dict) or not isinstance(add_values,dict):raise ServiceError('set and add must be objects')

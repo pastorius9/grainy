@@ -23,7 +23,7 @@ def main():
     from luma.user_paths import local_data
     default_data=local_data('Luma')/'Library' if getattr(sys,'frozen',False) else Path(__file__).parent/'data'
     parser.add_argument('--data-dir',type=Path,default=default_data)
-    parser.add_argument('--commands',action='store_true')
+    parser.add_argument('--ask-ai',action='store_true')
     parser.add_argument('--self-test',action='store_true')
     parser.add_argument('--self-test-hdr',action='store_true',help=argparse.SUPPRESS)
     parser.add_argument('photos',nargs='*')
@@ -57,8 +57,8 @@ def main():
     session=DesktopSession(app,args.data_dir,Preferences())
     if not session.start():return 0
     window=session.window
-    if args.commands:
-        window.show_commands()
+    if args.ask_ai:
+        window.show_ai()
     if args.photos:
         window.import_paths(args.photos)
     return app.exec()

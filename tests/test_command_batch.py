@@ -1,4 +1,4 @@
-"""No account requests: catalog transactions and the local Codex protocol peer."""
+"""Catalog transactions, shared photo workflow batches and undo conflicts."""
 import json
 import os
 from copy import deepcopy
@@ -15,11 +15,8 @@ from PySide6.QtCore import QEventLoop,QTimer,Qt
 from PySide6.QtTest import QTest
 from luma.catalog import Catalog
 from luma.engine import defaults,develop
-from luma.commands import validate_proposal,changed_settings,CommandSession
 from luma.command_batch import capture,targets,apply,restore,BATCH_KEY
 from luma.app import MainWindow
-from luma.auth import CodexAuth
-from luma.command_dialog import CommandDialog
 
 
 @pytest.fixture(scope='module')
@@ -52,17 +49,36 @@ def catalog(tmp_path):
     value=Catalog(tmp_path/'data');yield value;value.close()
 
 
-def bw(scope='folder',value=True):
-    return validate_proposal({'message':'test','action':'adjust','scope':scope,
-        'changes':[{'key':'monochrome','value':value,'operation':'set'}]})
+def bw():return {'monochrome':True}
+
+
+def changed_settings(settings,changes):
+    return {**deepcopy(settings),**changes}
+
+
+def snapshot(window):
+    window.commit()
+    return capture(window.catalog,window.current_id,window.selected_ids(),window.folder_filter)
+
+
+def apply_auto(window,record):
+    rows=targets(record,'folder')
+    ids=apply(window.catalog,rows,window.command_auto_values(rows))
+    window.refresh_command_edits(ids)
+    return len(ids)
+
+
+def restore_window(window,redo=False):
+    window.commit();ids=restore(window.catalog,redo);window.refresh_command_edits(ids)
+    return len(ids)
 
 
 def test_folder_membership_and_independent_values(catalog,tmp_path):
     ids,video=populate(catalog,tmp_path)
     catalog.update(ids[1],rating=5,flag=-1)
-    snapshot=capture(catalog,ids[0],[ids[0]],str(tmp_path/'same'))
-    assert snapshot['scopes']['folder']==ids[:3]
-    records=targets(snapshot,'folder');before={i:catalog.photo(i)['settings'] for i in ids+[video]}
+    captured=capture(catalog,ids[0],[ids[0]],str(tmp_path/'same'))
+    assert captured['scopes']['folder']==ids[:3]
+    records=targets(captured,'folder');before={i:catalog.photo(i)['settings'] for i in ids+[video]}
     fingerprints={i:Path(catalog.photo(i)['path']).read_bytes() for i in ids}
     assert apply(catalog,records,[changed_settings(r['settings'],bw()) for r in records])==ids[:3]
     for ident in ids+[video]:
@@ -77,22 +93,12 @@ def test_folder_membership_and_independent_values(catalog,tmp_path):
     np.testing.assert_allclose(image[...,1],image[...,2],atol=1e-6)
 
 
-def test_relative_exposure_preserves_each_base_and_clamps(catalog,tmp_path):
-    ids,_=populate(catalog,tmp_path)
-    snapshot=capture(catalog,ids[0],[ids[0],ids[2]])
-    proposal=validate_proposal({'message':'test','action':'adjust','scope':'selection',
-        'changes':[{'key':'exposure','value':.5,'operation':'add'}]})
-    rows=targets(snapshot,'selection');apply(catalog,rows,[changed_settings(r['settings'],proposal) for r in rows])
-    assert catalog.photo(ids[0])['settings']['exposure']==.5
-    assert catalog.photo(ids[2])['settings']['exposure']==.9
-    assert catalog.photo(ids[1])['settings']['exposure']==.2
-    assert changed_settings({**defaults(),'exposure':4.9},proposal)['exposure']==5
 
 
 @pytest.mark.parametrize('mutation',['edit','remove','move'])
 def test_stale_target_rejects_entire_batch(catalog,tmp_path,mutation):
-    ids,_=populate(catalog,tmp_path);snapshot=capture(catalog,ids[0],ids[:3])
-    rows=targets(snapshot,'selection')
+    ids,_=populate(catalog,tmp_path);captured=capture(catalog,ids[0],ids[:3])
+    rows=targets(captured,'selection')
     if mutation=='edit':catalog.edit(ids[2],{**rows[2]['settings'],'exposure':1})
     else:
         with catalog.db:
@@ -163,26 +169,16 @@ def test_batch_auto_tone_cancellation_writes_nothing(app,tmp_path,monkeypatch):
     try:
         window.select_folder(str(tmp_path/'same'));window.activate(ids[0])
         wait(lambda:window.source is not None and not window.library_loading)
-        snapshot=window.command_context();before=[window.catalog.photo(i)['settings'] for i in ids]
+        captured=snapshot(window);before=[window.catalog.photo(i)['settings'] for i in ids]
         original=module.load_image
         def slow(*args,**kwargs):time.sleep(.1);return original(*args,**kwargs)
         monkeypatch.setattr(module,'load_image',slow)
         QTimer.singleShot(20,lambda:window.findChild(QProgressDialog).reject())
-        proposal=validate_proposal({'message':'auto','scope':'folder','action':'auto_tone','changes':[]})
-        with pytest.raises(ValueError,match='취소'):window.apply_command(snapshot,proposal)
+        with pytest.raises(ValueError,match='취소'):apply_auto(window,captured)
         assert [window.catalog.photo(i)['settings'] for i in ids]==before
         assert window.catalog.preference(BATCH_KEY) is None
         assert not window.command_running
     finally:window.close()
-
-
-@pytest.mark.parametrize('key,value,operation,scope',[
-    ('monochrome',1,'set','folder'),('monochrome',True,'add','folder'),
-    ('exposure',True,'set','folder'),('exposure',.5,'multiply','folder'),
-    ('exposure',.5,'set','all_library'),('path',1,'set','folder')])
-def test_scope_and_typed_changes_validated(key,value,operation,scope):
-    with pytest.raises(ValueError):validate_proposal({'message':'x','action':'adjust','scope':scope,
-        'changes':[{'key':key,'value':value,'operation':operation}]})
 
 
 def test_real_window_folder_filter_batch_and_undo(app,tmp_path):
@@ -191,42 +187,15 @@ def test_real_window_folder_filter_batch_and_undo(app,tmp_path):
         window.select_folder(str(tmp_path/'same'));window.search.setText('a.png');window.refresh_lists()
         window.activate(ids[0]);wait(lambda:window.source is not None and not window.library_loading)
         assert window.visible_ids==[ids[0]]
-        snapshot=window.command_context();assert snapshot['scopes']['folder']==ids[:3]
+        captured=snapshot(window);assert captured['scopes']['folder']==ids[:3]
         window.manager.auto_sync=True;window.selected_ids=lambda:ids
-        assert window.apply_command(snapshot,bw())==3
+        rows=targets(captured,'folder');changed=apply(window.catalog,rows,[{**r['settings'],'monochrome':True} for r in rows])
+        window.refresh_command_edits(changed);assert len(changed)==3
         assert window.settings['monochrome'] and window.bw.isChecked()
         assert not window.catalog.photo(ids[3])['settings']['monochrome']
-        assert window.restore_command_batch()==3 and not window.settings['monochrome']
-        assert window.restore_command_batch(True)==3 and window.settings['monochrome']
-        current=window.command_context()
-        assert window.apply_command(current,bw('current',False))==1
-        assert window.catalog.photo(ids[1])['settings']['monochrome']
-        window.undo();assert window.settings['monochrome']
+        assert restore_window(window)==3 and not window.settings['monochrome']
+        assert restore_window(window,True)==3 and window.settings['monochrome']
     finally:window.close()
-
-
-def test_protocol_folder_bw_and_review_controls(app,tmp_path,monkeypatch):
-    monkeypatch.setenv('LUMA_FAKE_AUTH','folder_bw')
-    catalog=Catalog(tmp_path/'data');ids,_=populate(catalog,tmp_path)
-    home=tmp_path/'auth';home.mkdir();(home/'fake-signed-in').write_text('test')
-    client=CodexAuth(home,command=[sys.executable,str(Path(__file__).with_name('fake_codex_auth.py'))])
-    client.start();wait(lambda:client.connected)
-    snapshot=capture(catalog,ids[0],[ids[0]],str(tmp_path/'same'));applied=[]
-    dialog=CommandDialog(client,context=lambda:snapshot,apply=lambda *args:applied.append(args))
-    try:
-        dialog.show();dialog.input.setPlainText('같은 폴더의 모든 사진을 흑백으로 전환해줘')
-        QTest.mouseClick(dialog.send_button,Qt.MouseButton.LeftButton)
-        wait(lambda:dialog.apply_button.isVisible())
-        assert '3장' in dialog.apply_button.text() and '하위 폴더' in dialog.proposal_label.text()
-        assert dialog.proposal['changes']['monochrome'] is True
-        QTest.mouseClick(dialog.apply_button,Qt.MouseButton.LeftButton)
-        assert len(applied)==1 and applied[0][1]['scope']=='folder'
-        calls=[json.loads(line) for line in (home/'calls.jsonl').read_text().splitlines()]
-        prompt=next(call['params']['input'][0]['text'] for call in calls if call['method']=='turn/start')
-        assert '"folder": 3' in prompt
-        assert str(tmp_path) not in prompt and 'a.png' not in prompt and 'records' not in prompt
-        assert 'monochrome' in prompt
-    finally:dialog.close();client.shutdown();catalog.close()
 
 
 def test_batch_auto_tone_per_photo_and_failure_atomicity(app,tmp_path):
@@ -235,15 +204,14 @@ def test_batch_auto_tone_per_photo_and_failure_atomicity(app,tmp_path):
     try:
         window.select_folder(str(tmp_path/'same'));window.activate(ids[0])
         wait(lambda:window.source is not None and not window.library_loading)
-        snapshot=window.command_context();records=targets(snapshot,'folder')
+        captured=snapshot(window);records=targets(captured,'folder')
         expected=[auto_tone_settings(resize_float(load_image(r['path'],720,r['settings']['working_space'],raw_options=r['settings'])[0],720),r['settings'])[0] for r in records]
-        proposal=validate_proposal({'message':'auto','scope':'folder','action':'auto_tone','changes':[]})
-        window.apply_command(snapshot,proposal)
+        apply_auto(window,captured)
         assert [window.catalog.photo(i)['settings'] for i in ids[:3]]==expected
-        window.restore_command_batch()
-        snapshot=window.command_context();Path(records[2]['path']).unlink()
+        restore_window(window)
+        captured=snapshot(window);Path(records[2]['path']).unlink()
         before=[window.catalog.photo(i)['settings'] for i in ids]
-        with pytest.raises(ValueError,match='변경한 사진은 없습니다'):window.apply_command(snapshot,proposal)
+        with pytest.raises(ValueError,match='변경한 사진은 없습니다'):apply_auto(window,captured)
         assert [window.catalog.photo(i)['settings'] for i in ids]==before
     finally:window.close()
 
