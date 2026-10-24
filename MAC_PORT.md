@@ -364,3 +364,34 @@ Xcode 명령줄 도구(clang)가 필요하다. 전체 Xcode는 필요 없다(Met
   5. `tests/test_mcp_*.py` 전체. 맥에서는 curl로 전달하는 시험(`test_sh_bridge_forwards_and_answers_offline`)도 돈다.
 
 - 2026-10-20: 상태 표시줄의 상시 `AI 연결 켜짐` 표시를 없앴다(다른 앱의 MCP처럼 기다리는 동안은 아무것도 보이지 않음). AI 작업이 돌아가는 동안에만 `AI 작업 중단` 버튼이 보인다.
+
+## 2026-10-24 — 맥북 확인 목록: 0.5.96~0.6.x (Windows 쪽에서)
+
+소유자가 자기 맥북에서 확인한다. 손으로 볼 것(A)과, 맥의 Claude 세션에 맡길 때 할 일(B)로 나눴다. 결과는 이 문서 끝에 날짜 절로 남긴다.
+
+### A. 손으로 확인할 것
+
+0. 설치·업데이트: 이미 0.5.9x가 깔려 있으면 앱 안에서 `설정 › 업데이트 확인… › 지금 업데이트`로 올린다(업데이트 경로 확인). 새로 깔면 dmg → 응용 프로그램, 처음 열 때 "Apple은 … 확인할 수 없습니다"가 뜨면 `완료` → `시스템 설정 › 개인정보 보호 및 보안 › 그래도 열기`.
+1. 업데이트 뒤 사진(#UMJ92, 0.5.96): 외장 디스크·다운로드·문서 폴더의 사진이 `오프라인`·`접근 권한 필요` 없이 그대로 보이는지. 0.5.96부터 앱 서명이 고정이라 권한을 다시 묻지 않아야 한다.
+2. 단축키(맥은 Ctrl이 ⌘): `W K M ⇧M Q ? ⌘/`, 그리고 `J`(클리핑) `Z`(1:1/맞춤) `F`(전체 화면, Esc로 나감) `Tab`(양옆 패널) `⇧Tab`(모든 패널) `L`(조명 끄기) `6–9`(색 라벨) `⌘'`(가상 사본) `⌘[ ⌘]`(90° 회전) `⌘U`(자동 톤) `⌘⇧U`(자동 색). `?` 목록과 메뉴에 ⌘·⇧ 기호로 보이는지, F·L이 macOS 전체 화면(초록 버튼)·Mission Control과 부딪히지 않는지, Tab이 슬라이더를 누른 뒤에도 패널을 숨기는지.
+3. 패널 스위치: 보정 패널 제목줄 오른쪽 스위치로 끄고 켜기, 보정한 패널의 점 표시, 컬러 필터 패널(스위치가 예전 체크박스를 대신함).
+4. 화이트 밸런스 스포이드: 클릭 한 번, 그리고 끌어서 상자. RAW와 JPEG 둘 다(JPEG는 한 번에 색이 맞아야 한다).
+5. 하늘 선택: 마스크 › 새 마스크 맨 위. 하늘 사진 몇 장(나무·건물·바다), 민감도·경계 흐림.
+6. 톤 매핑: 기본 패널 톤 위의 `부드러운 하이라이트 (DRT)`. 밝은 하늘이 하얗게 날아가지 않는지.
+7. 필름 룩: 필름 패널과 왼쪽 프리셋의 회사별 폴더. 몇 개 골라 미리보기가 얼마나 늦어지는지(맥은 CPU 계산), 2400만 화소 내보내기 시간.
+8. AI 연결: 터미널에서 `claude mcp add --scope user grainy -- sh "$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh"` → Claude Code에서 "내 사진 목록 보여줘", "이 사진에 Kodak Portra 400 적용해줘". 방화벽이 켜진 맥에서 "들어오는 연결 허용?" 창이 뜨지 않아야 한다(위 2026-10-20 절).
+9. `설정 › Grainy 배우기 (웹 튜토리얼)…`이 Safari에서 열리고, 튜토리얼 레슨이 움직이는지.
+
+### B. 맥의 Claude 세션에 맡길 때
+
+```bash
+cd grainy && git fetch origin && git checkout mac && git merge --ff-only origin/mac   # 공개 저장소의 mac 브랜치 = main과 같은 코드
+python3.13 -m venv .venv && .venv/bin/python -m pip install -r requirements-lock-macos.txt
+.venv/bin/python tools/check.py                     # 전체 시험(맥에서만 도는 시험 포함)
+LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
+.venv/bin/python -m pytest -q tests/test_shortcuts.py tests/test_mcp_bridge.py tests/test_film_look.py tests/test_sky_mask.py tests/test_tone_mapping.py tests/test_panel_switch.py
+```
+
+- 실패하면 고치기 전에 무엇이 왜 실패했는지 이 문서에 남기고 소유자에게 알린다. 느린 시험 서버에서 `wait` 시간 초과(15초)가 가끔 났다: 같은 시험을 다시 돌려 재현되는지 먼저 본다.
+- 커밋은 공개 저장소 규칙대로 `pastorius9 <177642243+pastorius9@users.noreply.github.com>`으로만, 개인 이름·회사·메일은 넣지 않는다. 릴리스는 소유자 말이 있을 때만.
+

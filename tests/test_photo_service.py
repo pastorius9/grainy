@@ -1,6 +1,7 @@
 """photo_service: the GUI-free operations shared by the menus and the AI connection (MCP)."""
 import json
 import math
+import os
 from pathlib import Path
 from threading import Event
 
@@ -36,7 +37,7 @@ def frozen(catalog,ids):
 
 def test_parse_changes_accepts_every_field_at_its_limits():
     for key,(_,low,high) in FIELDS.items():
-        if key=='monochrome':
+        if key in ('monochrome','flip'):
             assert service.parse_changes({key:True})==({key:True},{key:'set'});continue
         if key=='film_look':
             assert service.parse_changes({key:''})==({key:''},{key:'set'});continue      # names: test_film_look.py
@@ -183,7 +184,7 @@ def test_page_rows_are_compact_and_omit_defaults(catalog,tmp_path):
 def test_summary_lists_only_non_default_values_and_classifies_every_default_key():
     grouped={key for keys in service.GROUPS.values() for key in keys}
     for key in defaults():
-        assert key in FIELDS or key in grouped or key in service.COUNTED or key in service.IGNORED,key
+        assert key in FIELDS or key in service.CURVES or key in grouped or key in service.COUNTED or key in service.IGNORED,key
     settings={**defaults(),'exposure':.304,'contrast':12.,'monochrome':True,'crop':[.1,.1,.9,.9],
               'masks':[{'a':1},{'b':2}],'hsl':[[1.,0.,0.]]+[[0.,0.,0.]]*7,'negative':True,'tone_version':1}
     record={'id':12,'name':'R12_01.NEF','path':'D:/Film/R12_01.NEF','rating':3,'flag':1,'label':'빨강','keywords':'롤12',
@@ -384,3 +385,169 @@ def test_check_naming_whitelist(naming,ok):
     if ok:service.check_naming(naming)
     else:
         with pytest.raises(ServiceError,match='naming may contain only'):service.check_naming(naming)
+
+
+def test_rotation_and_flip_turn_as_the_editor_does():
+    from luma.engine import defaults
+    base={**defaults(),'crop':[.1,.1,.9,.9]}
+    turned=service.edited(base,*service.parse_changes({'rotation':90}),{},1)
+    assert turned['rotation']==1 and turned['crop'] is None                      # a quarter turn clockwise; the crop starts over
+    back=service.edited(turned,*service.parse_changes(None,{'rotation':-90}),{},1)
+    assert back['rotation']==0
+    assert service.edited({**base,'rotation':3},*service.parse_changes(None,{'rotation':180}),{},1)['rotation']==1
+    same=service.edited(base,*service.parse_changes({'rotation':0}),{},1)
+    assert same['crop']==[.1,.1,.9,.9]                                           # no turn: the crop stays
+    assert service.edited(base,*service.parse_changes({'flip':True}),{},1)['flip'] is True
+    for bad in ({'rotation':45},{'rotation':360},{'flip':1}):
+        with pytest.raises(service.ServiceError):service.parse_changes(bad)
+    with pytest.raises(service.ServiceError):service.parse_changes(None,{'flip':True})
+    record={'id':1,'name':'a.jpg','path':'D:/a.jpg','settings':{**defaults(),'rotation':3,'flip':True}}
+    assert service.summary(record)['edits']=={'rotation':270,'flip':True}
+
+
+# --- curves, presets and copied settings ----------------------------------------------------------
+
+def test_curves_are_set_only_point_lists_and_reach_get_photo():
+    curve=[[0,0],[.25,.2],[.75,.8],[1,1]]
+    changes,operations=service.parse_changes({'curve':curve,'rgb_curves':[curve,[[0,0],[1,.9]],[[0,.1],[1,1]]]})
+    assert changes['curve']==[[0.,0.],[.25,.2],[.75,.8],[1.,1.]] and operations=={'curve':'set','rgb_curves':'set'}
+    result=service.edited({**defaults(),'panels_off':['curve','effects']},changes,operations,{},1)
+    assert result['curve']==changes['curve'] and result['rgb_curves'][1]==[[0.,0.],[1.,.9]]
+    assert result['panels_off']==['effects']                     # an edit in a switched-off panel switches it on
+    edits=service.summary({'id':1,'name':'a','path':'p','settings':result})['edits']
+    assert edits=={'curve':[[0,0],[.25,.2],[.75,.8],[1,1]],'rgb_curves':result['rgb_curves']}
+    for bad in ([[0,0]],[[0,0],[.5,.5]],[[.1,0],[1,1]],[[0,0],[.5,.5],[.5,.6],[1,1]],[[0,0],[1,1.2]],[[0,0],[1,True]],
+                [[0,0,0],[1,1]],[[0,0]]*17,'x'):
+        with pytest.raises(ServiceError,match='curve must be 2 to 16'):service.parse_changes({'curve':bad})
+    with pytest.raises(ServiceError,match='rgb_curves must be 3 curves'):service.parse_changes({'rgb_curves':[curve]})
+    with pytest.raises(ServiceError,match=r'rgb_curves\[2\] must be'):service.parse_changes({'rgb_curves':[curve,curve,[[0,0]]]})
+    with pytest.raises(ServiceError,match='curve can only be set'):service.parse_changes(None,{'curve':curve})
+
+
+def test_unknown_film_without_close_names_points_to_list_films():
+    with pytest.raises(ServiceError,match="no film named 'zzzz qqqq'; call list_films for the film names"):
+        service.parse_changes({'film_look':'zzzz qqqq'})
+
+
+def test_preset_settings_apply_like_the_presets_panel_and_keep_the_framing():
+    base={**defaults(),'crop':[.1,.1,.9,.9],'rotation':1,'straighten':2.,'flip':True,'exposure':1.}
+    preset=normalized({'contrast':12,'exposure':.15})
+    result=service.preset_settings(preset,base,{'path':'D:/a.jpg','info':{'format':'JPEG'}})
+    assert result['contrast']==12 and result['exposure']==.15
+    assert [result[k] for k in service.GEOMETRY]==[[.1,.1,.9,.9],1,2.,True]
+
+
+def test_copied_settings_paste_like_the_editor_with_its_groups():
+    from luma.manager import EDIT_GROUPS
+    assert set(service.COPY_GROUPS.values())==set(EDIT_GROUPS)-{'HDR'}
+    every=service.copy_keys()
+    assert every==set(defaults())-set(EDIT_GROUPS['크롭·회전'])-{'panels_off'}      # LibraryManager's default copy items
+    assert service.copy_keys(['curves','light'])==set(EDIT_GROUPS['커브'])|set(EDIT_GROUPS['빛'])
+    curve=[[0.,0.],[.5,.6],[1.,1.]]
+    source={**defaults(),'exposure':.7,'curve':curve,'crop':[.2,.2,.8,.8],'panels_off':['curve'],'temperature':9.}
+    target={**defaults(),'contrast':5.,'crop':[.1,.1,.9,.9]};info={'format':'JPEG'}
+    pasted=service.copied_settings(source,target,info,every)
+    assert pasted['exposure']==.7 and pasted['curve']==curve and pasted['contrast']==0 and pasted['crop']==[.1,.1,.9,.9]
+    assert pasted['panels_off']==['curve'] and pasted['temperature']==9      # a pasted panel keeps the source's off state
+    only=service.copied_settings(source,target,info,service.copy_keys(['curves']))
+    assert only['curve']==curve and only['exposure']==0 and only['contrast']==5 and only['panels_off']==['curve']
+    framed=service.copied_settings(source,target,info,service.copy_keys(['crop']))
+    assert framed['crop']==[.2,.2,.8,.8] and framed['exposure']==0 and framed['panels_off']==[]
+
+
+def test_batch_remembers_the_preset_and_undo_and_redo_set_it(catalog,tmp_path):
+    ids=[photo(catalog,tmp_path/f'{n}.png') for n in range(2)]+[photo(catalog,tmp_path/'off.png',panels_off=['basic'])]
+    records=frozen(catalog,ids)
+    values=[{**r['settings'],'exposure':.4} for r in records]
+    service.apply_batch(catalog,records,values,label='AI 보정',tool='apply_edits',snapshot_name='x',snapshotted=set(),
+                        switch=False,presets={ids[0]:'Soft daylight'})
+    assert catalog.photo(ids[0])['user_metadata'][service.PRESET_KEY]=='Soft daylight'
+    assert service.PRESET_KEY not in catalog.photo(ids[1])['user_metadata']
+    assert catalog.photo(ids[2])['settings']['panels_off']==['basic']           # switch=False: the values bring their panels
+    assert service.name_values(catalog.photo(ids[0]))['preset']=='Soft daylight'
+    service.undo_batch(catalog)
+    assert service.PRESET_KEY not in catalog.photo(ids[0])['user_metadata'] and catalog.photo(ids[0])['settings']['exposure']==0
+    service.undo_batch(catalog,redo=True)
+    assert catalog.photo(ids[0])['user_metadata'][service.PRESET_KEY]=='Soft daylight'
+
+
+# --- export naming, sizes and folders -------------------------------------------------------------
+
+@pytest.mark.parametrize('naming,values,expected',[
+    ('{stem}_{film}',{'film':'Kodak Portra 400'},'roll_Kodak Portra 400'),('{stem}_{film}',{},'roll'),
+    ('{film}_{stem}',{},'roll'),('{date}-{camera}-{n:03d}',{'date':'2026-10-01'},'2026-10-01-007'),
+    ('{film} {preset}',{},'roll'),('{film}_{preset}_{stem}',{'preset':'Soft'},'Soft_roll'),('{stem}',{},'roll'),
+    ('{camera}.{date}',{'camera':'Z 6'},'Z 6'),('R12_{n:02d}',{},'R12_07')])
+def test_file_stem_drops_an_empty_token_with_one_separator(naming,values,expected):
+    assert service.file_stem(naming,'roll',7,values)==expected
+
+
+def test_name_values_are_file_safe_and_empty_when_unknown():
+    from luma import film_look
+    film=film_look.find('Kodak Portra 400')[0]
+    record={'settings':{**defaults(),'film_look':film},'info':{'camera':'X/Y:Z','date':'2026:10:01 10:00:00'},
+            'user_metadata':{service.PRESET_KEY:'a/b'}}
+    assert service.name_values(record)=={'film':'Kodak Portra 400','preset':'a_b','camera':'X_Y_Z','date':'2026-10-01'}
+    shifted={**record,'user_metadata':{'DateTimeOriginal':'2025:01:02 03:04:05'}}
+    assert service.name_values(shifted)['date']=='2025-01-02' and service.name_values(shifted)['preset']==''
+    assert service.name_values({'settings':defaults(),'info':{},'user_metadata':{}})=={'film':'','preset':'','camera':'','date':''}
+
+
+@pytest.mark.parametrize('naming,ok',[('{stem}_{film}',True),('{date}_{camera}_{preset}_{n:03d}',True),('{film}',True),
+    ('{films}',False),('{date:%Y}',False),('{camera.x}',False),('{preset!r}',False)])
+def test_check_naming_takes_the_metadata_tokens(naming,ok):
+    if ok:service.check_naming(naming)
+    else:
+        with pytest.raises(ServiceError,match='naming may contain only'):service.check_naming(naming)
+
+
+@pytest.mark.parametrize('box,expected',[((1080,0,'inside'),1080),((0,1350,'inside'),2025),((1080,1080,'inside'),1080),
+    ((1080,1080,'cover'),1620),((8000,0,'inside'),6000),((0,0,'inside'),6000),((1000,1000,'cover'),1500),(2000,2000)])
+def test_export_longest_fits_a_box_and_never_enlarges(box,expected):
+    from luma.engine import export_longest
+    assert export_longest((4000,6000,3),box)==expected
+
+
+def test_export_longest_keeps_the_box_after_rounding():
+    from luma.engine import export_longest
+    for h,w in ((2999,4001),(4000,6000),(1001,3333),(5472,3648),(37,4999)):
+        for limits in ((1000,0),(0,1000),(1001,999),(333,777),(7,5)):
+            for fit in ('inside','cover'):
+                longest=export_longest((h,w,3),(*limits,fit));factor=longest/max(w,h)
+                size=(max(1,round(w*factor)),max(1,round(h*factor)))
+                bounded=[(side,limit) for side,limit in zip(size,limits) if limit]
+                if fit=='inside':assert all(side<=limit for side,limit in bounded),(h,w,limits,size)
+                elif factor<1:assert all(side>=limit for side,limit in bounded),(h,w,limits,size)
+
+
+def test_export_records_fill_tokens_and_fit_a_box(catalog,tmp_path):
+    from luma import film_look
+    a=photo(catalog,tmp_path/'A'/'roll.png',size=(96,64),film_look=film_look.find('Kodak Portra 400')[0])
+    out=tmp_path/'out';out.mkdir()
+    result=service.export_records([catalog.photo(a)],out,'PNG',longest=(48,40,'inside'),naming='{stem}_{film}_{camera}')
+    path=Path(result['outputs'][0]['path'])
+    assert result['failures']==[] and path.name=='roll_Kodak Portra 400.png'
+    with Image.open(path) as image:assert image.size==(48,32)
+    cover=service.export_records([catalog.photo(a)],out,'PNG',longest=(40,40,'cover'),naming='{stem}')
+    with Image.open(cover['outputs'][0]['path']) as image:assert image.size==(60,40)
+
+
+def test_named_folder_needs_an_absolute_path_outside_grainys_own_folders(tmp_path):
+    own=[(tmp_path/'library').resolve(),(tmp_path/'mcp').resolve()]
+    assert service.named_folder(str(tmp_path/'out'/'new'),own)==(tmp_path/'out'/'new').resolve()
+    for bad in ('relative/folder','.','','   ','\\no drive' if os.name=='nt' else 'no/slash'):
+        with pytest.raises(ServiceError,match='path must be'):service.named_folder(bad,own)
+    for inside in (tmp_path/'library',tmp_path/'library'/'thumbnails',tmp_path/'mcp'/'..'/'library'/'x'):
+        with pytest.raises(ServiceError,match='a folder Grainy manages itself'):service.named_folder(str(inside),own)
+    with pytest.raises(ServiceError,match='a folder Grainy manages itself'):service.export_folder(tmp_path,'library',own)
+    assert not (tmp_path/'library').exists()
+
+
+def test_image_files_lists_what_the_import_takes(tmp_path):
+    for name in ('a.jpg','b.PNG','notes.txt','sub/c.tif','sub/deep/d.nef'):
+        path=tmp_path/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes(b'x')
+    names=lambda files:[Path(f).relative_to(tmp_path).as_posix() for f in files]
+    assert names(service.image_files(tmp_path,False,Event(),10))==['a.jpg','b.PNG']
+    assert names(service.image_files(tmp_path,True,Event(),10))==['a.jpg','b.PNG','sub/c.tif','sub/deep/d.nef']
+    assert service.image_files(tmp_path,True,Event(),3)['error'].startswith('more than 3 image files')
+    cancel=Event();cancel.set();assert service.image_files(tmp_path,True,cancel,10) is None

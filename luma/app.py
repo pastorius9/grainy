@@ -370,6 +370,8 @@ class MainWindow(QMainWindow):
         self.commit_timer.setInterval(450)
         self.commit_timer.timeout.connect(self.commit)
         self.build_ui()
+        from .screen_modes import ScreenModes
+        self.screen_modes=ScreenModes(self)
         self.import_cancel_button=button(tr('가져오기 중단'),self.cancel_import)
         self.statusBar().addPermanentWidget(self.import_cancel_button);self.import_cancel_button.hide()
         self.preview_cancel_button=button(tr('일괄 미리보기 중단'),self.preview_queue.stop)
@@ -431,7 +433,8 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(root)
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(0)
-        header = QHBoxLayout()
+        self.header_bar = QWidget()          # a widget, so that Shift+Tab can hide it (luma/screen_modes.py)
+        header = QHBoxLayout(self.header_bar)
         header.setContentsMargins(24,13,20,13)
         brand = QLabel('Grainy')
         brand.setObjectName('brand')
@@ -459,10 +462,10 @@ class MainWindow(QMainWindow):
         header.addWidget(button(tr('사진 가져오기'), self.import_files))
         self.export_button = button(tr('내보내기'), self.export_dialog, primary=True)
         header.addWidget(self.export_button)
-        layout.addLayout(header)
-        split = QSplitter(Qt.Orientation.Horizontal)
+        layout.addWidget(self.header_bar)
+        split = self.split = QSplitter(Qt.Orientation.Horizontal)
         layout.addWidget(split,1)
-        left_scroll=QScrollArea()
+        left_scroll=self.library_column=QScrollArea()
         left_scroll.setWidgetResizable(True)
         left_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         left_scroll.setMinimumWidth(230)
@@ -602,11 +605,15 @@ class MainWindow(QMainWindow):
         self.grid.photoClicked.connect(self.open_library_photo)
         self.stack.addWidget(self.grid)
         center_box.addWidget(self.stack,1)
-        tools = QHBoxLayout()
+        self.view_bar = QWidget()
+        tools = QHBoxLayout(self.view_bar)
         tools.setContentsMargins(12,9,12,9)
-        tools.addWidget(button(tr('맞춤'), self.view.fit_photo))
-        tools.addWidget(button('1:1', self.view.actual_size))
+        fit = button(tr('맞춤'), self.view.fit_photo);fit.setToolTip(tr('사진 전체를 화면에 맞춥니다. ({0}로 1:1과 번갈아 봅니다)',key_hint('Z')))
+        tools.addWidget(fit)
+        actual = button('1:1', self.view.actual_size);actual.setToolTip(tr('원본 100%로 봅니다. ({0}로 화면 맞춤과 번갈아 봅니다)',key_hint('Z')))
+        tools.addWidget(actual)
         self.clipping_button=button(tr('클리핑'),self.toggle_clipping,True)
+        self.clipping_button.setToolTip(tr('검정이나 흰색으로 날아간 곳을 사진 위에 표시합니다. ({0})',key_hint('J')))
         tools.addWidget(self.clipping_button)
         self.zoom_label = QLabel(tr('화면 맞춤'))
         self.zoom_label.setObjectName('muted')
@@ -621,12 +628,12 @@ class MainWindow(QMainWindow):
         tools.addWidget(self.before_button)
         tools.addWidget(button(tr('실행 취소'), self.undo))
         tools.addWidget(button(tr('다시 실행'), self.redo))
-        center_box.addLayout(tools)
+        center_box.addWidget(self.view_bar)
         self.filmstrip = self.photo_list(grid=False)
         self.filmstrip.setFixedHeight(132)
         center_box.addWidget(self.filmstrip)
         split.addWidget(center)
-        right = QWidget()
+        right = self.edit_column = QWidget()
         right.setMinimumWidth(290)
         right.setMaximumWidth(360)
         right_box = QVBoxLayout(right)
@@ -646,10 +653,10 @@ class MainWindow(QMainWindow):
         self.profile_box=QVBoxLayout();edits.addLayout(self.profile_box)
         auto_row = QHBoxLayout()
         self.auto_button=button(tr('자동 톤'),self.auto_tone)
-        self.auto_button.setToolTip(tr('현재 크롭 영역의 밝기 하위·상위 0.1%를 기준으로 분석합니다. 검정·흰색 양끝에 3% 여유를 두고 약 8–247/255로 보정합니다.'))
+        self.auto_button.setToolTip(tr('현재 크롭 영역의 밝기 하위·상위 0.1%를 기준으로 분석합니다. 검정·흰색 양끝에 3% 여유를 두고 약 8–247/255로 보정합니다.')+f" ({key_hint('Ctrl+U')})")
         auto_row.addWidget(self.auto_button)
         self.auto_color_button=button(tr('자동 색'),lambda:self.auto_color())
-        self.auto_color_button.setToolTip(tr('어두운 곳·중간·밝은 곳의 무채색 영역을 각각 찾아 색 틀어짐(녹색 끼 등)을 채널 커브로 바로잡습니다. 밝기는 그대로 둡니다. 강한 색 조명만 있는 영역은 건드리지 않습니다.'))
+        self.auto_color_button.setToolTip(tr('어두운 곳·중간·밝은 곳의 무채색 영역을 각각 찾아 색 틀어짐(녹색 끼 등)을 채널 커브로 바로잡습니다. 밝기는 그대로 둡니다. 강한 색 조명만 있는 영역은 건드리지 않습니다.')+f" ({key_hint('Ctrl+Shift+U')})")
         auto_row.addWidget(self.auto_color_button)
         self.hdr_button=button('HDR',self.toggle_hdr,True)
         auto_row.addWidget(self.hdr_button)
@@ -793,7 +800,8 @@ class MainWindow(QMainWindow):
         self.border_crop_button=button(tr('스캔 테두리 자동 자르기'),self.auto_border_crop)
         self.border_crop_button.setToolTip(tr('필름 스캔 가장자리의 검은 필름 테두리를 찾아 크롭합니다. 크롭 초기화나 실행 취소로 되돌릴 수 있습니다.'))
         crop.addWidget(self.border_crop_button)
-        crop.addWidget(button(tr('시계 방향으로 90° 회전'), self.rotate_photo))
+        rotate = button(tr('시계 방향으로 90° 회전'), self.rotate_photo);rotate.setToolTip(tr('{0}: 선택한 사진을 왼쪽 · 오른쪽으로 90° 돌립니다.',key_hint('Ctrl+[')))
+        crop.addWidget(rotate)
         crop.addWidget(button(tr('좌우 반전'), lambda:self.set_setting('flip',not self.settings['flip'])))
         self.auto_level_button=button(tr('자동 수평 맞추기'),self.auto_straighten)
         self.auto_level_button.setToolTip(tr('사진의 수평·수직 직선을 분석해 기울기를 보정합니다.'))
@@ -921,10 +929,14 @@ class MainWindow(QMainWindow):
         from .shortcut_list import bind
         bind(self)          # every key is a row of luma/shortcut_list.TABLE, which is also what the shortcut list shows
 
-    def safe_shortcut(self, action):
-        if isinstance(QApplication.focusWidget(), (QLineEdit,QAbstractSpinBox,QTextEdit,QPlainTextEdit)):
-            return
-        action()
+    def typing(self):
+        return isinstance(QApplication.focusWidget(), (QLineEdit,QAbstractSpinBox,QTextEdit,QPlainTextEdit))
+
+    def safe_shortcut(self, action, forward=None):
+        """Run the key's action, unless a text field has the focus. `forward` is for Tab and Shift+Tab: the field then
+        gets the key's usual job, to move the focus on (True) or back (False)."""
+        if not self.typing():action()
+        elif forward is not None:QApplication.focusWidget().focusNextPrevChild(forward)
 
     def show_shortcuts(self):
         from .shortcut_list import ShortcutDialog
@@ -998,10 +1010,9 @@ class MainWindow(QMainWindow):
 
     def set_mode(self,index):
         self.stack.setCurrentIndex(index)
-        self.library_toolbar.setVisible(index==1)
         self.library_button.setChecked(index==1)
         self.edit_button.setChecked(index==0)
-        self.filmstrip.setVisible(index==0)
+        self.screen_modes.apply()          # the photo list and the library toolbar, unless the panels are hidden
 
     def set_filter(self,mode):
         self.filter_mode=mode
@@ -1786,6 +1797,8 @@ class MainWindow(QMainWindow):
                 if event.key()==Qt.Key.Key_Escape:self.cancel_crop()
                 else:self.view.accept_crop()
                 event.accept();return
+        if event.key()==Qt.Key.Key_Escape and self.screen_modes.leave():
+            event.accept();return
         super().keyPressEvent(event)
 
     def canvas_size(self):

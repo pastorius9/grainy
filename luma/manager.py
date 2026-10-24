@@ -15,6 +15,7 @@ from .library import matches,move_files,move_folder,relink,duplicate_groups,rest
 from .engine import normalized,defaults,load_image,develop,resize_float
 from .widgets import PhotoView
 from .panel_keys import carried,panels_of
+from .shortcut_list import key_hint,LABELS
 
 
 EDIT_GROUPS={
@@ -107,8 +108,8 @@ class LibraryManager:
         try:fn()
         except Exception as e:QMessageBox.warning(self.w,tr('작업을 완료하지 못했습니다'),tr(str(e)))
 
-    def add(self,menu,title,fn):
-        action=menu.addAction(tr(title));action.triggered.connect(lambda _:self.run(fn));return action
+    def add(self,menu,title,fn,hint=''):
+        action=menu.addAction(tr(title)+('\t'+hint if hint else ''));action.triggered.connect(lambda _:self.run(fn));return action
 
     def build_menus(self):
         bar=self.w.menuBar()
@@ -119,12 +120,13 @@ class LibraryManager:
             ('오프라인 편집용 미리보기 만들기',self.smart_previews),('카탈로그 백업',self.backup),('구글 드라이브 백업…',self.cloud_backup),('카탈로그 복원',self.restore),
             ('카탈로그 최적화',self.optimize_catalog),('카탈로그 검사',self.integrity)]:self.add(files,text,fn)
         library=bar.addMenu(tr('사진 관리'))
-        for text,fn in [('가상 사본 만들기',self.virtual_copy),('현재 보정 스냅샷 저장',self.snapshot),('스냅샷 불러오기',self.restore_snapshot),
+        self.add(library,'가상 사본 만들기',self.virtual_copy,key_hint("Ctrl+'"))
+        for text,fn in [('현재 보정 스냅샷 저장',self.snapshot),('스냅샷 불러오기',self.restore_snapshot),
             ('선택 사진 스택으로 묶기',self.stack),('선택 사진 스택 해제',self.unstack),('메타데이터 편집',self.metadata),
             ('촬영 시각 일괄 이동',self.shift_date),('XMP 저장',self.write_xmp),('XMP 불러오기',self.read_xmp),
             ('프리셋 파일 가져오기',self.import_preset),('프리셋 파일 내보내기',self.export_preset),('사용자 프리셋 삭제',self.delete_preset)]:self.add(library,text,fn)
-        labels=library.addMenu(tr('색 라벨'))
-        for name in ['','빨강','노랑','초록','파랑','보라']:self.add(labels,name or '해제',lambda n=name:self.set_label(n))
+        labels=library.addMenu(tr('색 라벨'));label_keys={name:key for key,name in LABELS.items()}
+        for name in ['','빨강','노랑','초록','파랑','보라']:self.add(labels,name or '해제',lambda n=name:self.set_label(n),label_keys.get(name,''))
         view=bar.addMenu(tr('보기·필터'))
         for text,fn in [('상세 필터',self.filter_dialog),('필터·컬렉션 해제',self.clear_filter),('선택 사진 비교',lambda:self.w.compare.start('photos')),
             ('선택 사진 모아보기',lambda:self.compare(12)),('현재 사진 전·후 비교',lambda:self.w.compare.start('before'))]:self.add(view,text,fn)
@@ -138,6 +140,9 @@ class LibraryManager:
         for label,key in [(tr('검정'),'black'),(tr('어두운 회색'),'dark_grey'),(tr('중간 회색'),'mid_grey'),(tr('흰색'),'white')]:
             a=bg_menu.addAction(label);a.setCheckable(True);a.triggered.connect(lambda _=False,k=key:self.w.set_view_background(k))
             self.bg_group.append((key,a))
+        view.addSeparator();screen=self.w.screen_modes
+        for text,key,fn in [('전체 화면','F',screen.toggle_full_screen),('양옆 패널 숨기기·보이기','Tab',screen.toggle_sides),
+            ('모든 패널 숨기기·보이기','Shift+Tab',screen.toggle_bars),('조명 끄기','L',screen.toggle_lights)]:self.add(view,text,fn,key_hint(key))
         self.add(library,'전체 EXIF 메타데이터 새로 읽기',self.refresh_metadata)
         self.add(library,'RAW 가져오기 기본 보정',self.w.studio.raw_defaults)
         self.add(files,'선택 사진 미리보기 다시 만들기',lambda:self.w.preview_queue.start_batch(self.w.selected_ids()))
@@ -231,6 +236,11 @@ class LibraryManager:
     def set_label(self,label):
         self.w.catalog.update_many(self.w.selected_ids(),'label',label)
         self.w.refresh_lists()
+
+    def toggle_label(self,label):
+        """The keys 6–9: the label on the selected photos, or none when they all have it already."""
+        photos=self.selected_photos()
+        if photos:self.set_label('' if all(p['label']==label for p in photos) else label)
 
     def virtual_copy(self):
         self.w.commit()

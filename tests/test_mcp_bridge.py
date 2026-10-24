@@ -143,7 +143,7 @@ def test_powershell_bridge_forwards_and_skips_notifications(server,tmp_path):
     bridge.send(message('tools/call','call-3',{'name':'list_photos','arguments':{'text':'현상 사진 "따옴표"'}}))
     first,second,third=bridge.reply(),bridge.reply(),bridge.reply()
     assert first['id']==1 and first['result']['protocolVersion']=='2025-06-18'
-    assert second['id']==2 and len(second['result']['tools'])==12
+    assert second['id']==2 and len(second['result']['tools'])==len(mcp_tools.DEFINITIONS)
     assert third['id']=='call-3' and json.loads(third['result']['content'][0]['text'])=={'text':'현상 사진 "따옴표"'}
     code,rest=bridge.finish()
     assert code==0 and rest==[]
@@ -305,7 +305,7 @@ def test_powershell_bridge_answers_offline_from_templates(tmp_path,endpoint):
         bridge.send(message('initialize',ident,{'protocolVersion':'2025-06-18'}))
         reply=bridge.reply();assert reply['id']==ident and reply['result']['protocolVersion']==mcp_protocol.OFFLINE_VERSION
         bridge.send(message('tools/list',ident))
-        reply=bridge.reply();assert reply['id']==ident and len(reply['result']['tools'])==12
+        reply=bridge.reply();assert reply['id']==ident and len(reply['result']['tools'])==len(mcp_tools.DEFINITIONS)
     bridge.send(message('notifications/initialized'))
     bridge.send(message('tools/call',13,{'name':'list_photos','arguments':{}}))
     reply=bridge.reply();assert reply['id']==13 and reply['result']['isError']
@@ -317,6 +317,42 @@ def test_powershell_bridge_answers_offline_from_templates(tmp_path,endpoint):
     bridge.send('not json at all');bridge.send('')
     code,rest=bridge.finish()
     assert code==0 and rest==[]
+
+
+@needs_powershell
+def test_powershell_bridge_tool_call_waits_for_grainy_starting(tmp_path,monkeypatch):
+    """The first call while Grainy starts: its connection files appear only once its window is up, and its port listens
+    a moment later. A tool call waits for that (nothing reached Grainy before, so it cannot run twice); initialize and
+    tools/list answer offline at once, and a call with Grainy gone answers offline after the short wait."""
+    import socket,time
+    monkeypatch.setattr(mcp_http,'POLL_SECONDS',.05)
+    with socket.socket() as probe:probe.bind(('127.0.0.1',0));port=probe.getsockname()[1]
+    folder=folder_for(tmp_path)                                   # Grainy is not up yet: no endpoint, no auth-header
+    bridge=Bridge(desktop_command(folder));servers=[]
+    try:
+        bridge.send(message('initialize',1,{'protocolVersion':'2025-06-18'}))
+        assert bridge.reply()['result']['protocolVersion']==mcp_protocol.OFFLINE_VERSION
+        started=time.monotonic();bridge.send(message('tools/list',2))
+        assert len(bridge.reply()['result']['tools'])==len(mcp_tools.DEFINITIONS) and time.monotonic()-started<1.5
+
+        def grainy_starts():
+            time.sleep(.5)
+            (folder/'endpoint').write_text(f'http://127.0.0.1:{port}/mcp/stdio',encoding='utf-8')
+            (folder/'auth-header').write_text(f'Authorization: Bearer {TOKEN}',encoding='utf-8')
+            time.sleep(.5)                                          # the files are there; nothing listens on the port yet
+            host=Host();servers.append(mcp_http.start(port,host))
+        threading.Thread(target=grainy_starts,daemon=True).start()
+        started=time.monotonic();bridge.send(message('tools/call',3,{'name':'get_job','arguments':{'job':'j3'}}))
+        reply=bridge.reply()
+        assert reply['result']['isError'] is False and json.loads(reply['result']['content'][0]['text'])=={'job':'j3'}
+        assert time.monotonic()-started>=.9 and [note[0] for note in servers[0].host.notes]==['get_job']     # sent once
+        (folder/'endpoint').unlink()                                 # Grainy quits
+        started=time.monotonic();bridge.send(message('tools/call',4,{'name':'list_photos','arguments':{}}))
+        offline=bridge.reply()['result']
+        assert offline['isError'] and offline['content'][0]['text']==mcp_protocol.OFFLINE_TEXT and time.monotonic()-started>=3.5
+        assert bridge.finish()[0]==0
+    finally:
+        for value in servers:value.shutdown();value.close_connections();value.server_close()
 
 
 @needs_powershell
@@ -362,8 +398,22 @@ def test_sh_field_parser_finds_top_level_id_and_method(tmp_path):
     replies=[json.loads(line) for line in run.stdout.decode().splitlines()]
     # An array is no JSON-RPC id: that line, like the notification, gets no reply.
     assert [r['id'] for r in replies]==[5,'quote " and \\ backslash',17,8,'a|b&c',9]
-    assert replies[0]['result']['isError'] and replies[1]['result']=={} and len(replies[3]['result']['tools'])==12
+    assert replies[0]['result']['isError'] and replies[1]['result']=={} and len(replies[3]['result']['tools'])==len(mcp_tools.DEFINITIONS)
     assert replies[4]['result']['protocolVersion']==mcp_protocol.OFFLINE_VERSION and replies[5]['error']['code']==-32601
+
+
+@pytest.mark.skipif(posix_tools() is None,reason='sh and awk are needed')
+def test_sh_bridge_waits_briefly_for_grainy_on_a_tool_call_only(tmp_path):
+    import time
+    sh,bin_folder=posix_tools();folder=folder_for(tmp_path,script='grainy-mcp-bridge.sh')
+    env={**os.environ,'GRAINY_MCP_DIR':str(folder),'PATH':bin_folder+os.pathsep+os.environ.get('PATH','')}
+    for line,least,most in ((message('tools/list',1),0,2.5),(message('tools/call',2,{'name':'list_photos','arguments':{}}),3.5,30)):
+        started=time.monotonic()
+        run=subprocess.run([sh,str(folder/'grainy-mcp-bridge.sh')],input=json.dumps(line).encode()+b'\n',capture_output=True,env=env,
+                           timeout=120,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        elapsed=time.monotonic()-started;reply=json.loads(run.stdout)
+        assert run.returncode==0 and reply['id']==line['id'] and least<=elapsed<=most,(elapsed,run.stderr)
+    assert reply['result']['content'][0]['text']==mcp_protocol.OFFLINE_TEXT
 
 
 @pytest.mark.skipif(posix_tools() is None,reason='sh and awk are needed')
@@ -392,7 +442,7 @@ def test_documented_macos_lines_start_the_bridge_from_home(tmp_path):
                            creationflags=windows_flags)
         replies=[json.loads(line) for line in run.stdout.decode().splitlines()]
         assert run.returncode==0 and [r['id'] for r in replies]==[1,2,3],run.stderr
-        assert replies[0]['result']['protocolVersion']==mcp_protocol.OFFLINE_VERSION and len(replies[1]['result']['tools'])==12
+        assert replies[0]['result']['protocolVersion']==mcp_protocol.OFFLINE_VERSION and len(replies[1]['result']['tools'])==len(mcp_tools.DEFINITIONS)
         assert replies[0]['result']['instructions'].endswith(mcp_protocol.OFFLINE_NOTE)
         assert replies[2]['result']['content'][0]['text']==mcp_protocol.OFFLINE_TEXT
     assert folder.is_dir()
@@ -412,4 +462,4 @@ def test_sh_bridge_forwards_and_answers_offline(server,tmp_path):
     (folder/'endpoint').unlink()
     run=subprocess.run(['/bin/sh',str(folder/'grainy-mcp-bridge.sh')],input=json.dumps(message('tools/list',3)).encode()+b'\n',
                        capture_output=True,env=env,timeout=120)
-    assert json.loads(run.stdout)['id']==3 and len(json.loads(run.stdout)['result']['tools'])==12
+    assert json.loads(run.stdout)['id']==3 and len(json.loads(run.stdout)['result']['tools'])==len(mcp_tools.DEFINITIONS)

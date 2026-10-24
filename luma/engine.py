@@ -304,6 +304,25 @@ def resize_export(a, longest, hdr=False):
     return np.maximum(result, 0) if hdr else np.clip(result, 0, 1)
 
 
+def export_longest(shape, longest):
+    """The long side resize_export gets: `longest` itself, or for a (width, height, fit) box (0 = no limit on that
+    side) the long side that fits the photo inside the box ('inside') or makes it cover the box ('cover'). Floor and
+    ceiling keep the result within, or at least, the box; a photo is never enlarged."""
+    if not isinstance(longest, (tuple, list)):
+        return int(longest)
+    import math
+    width, height, fit = longest
+    h, w = shape[:2]
+    factors = [limit / side for limit, side in ((width, w), (height, h)) if limit]
+    if not factors:
+        return max(w, h)
+    factor = max(factors) if fit == 'cover' else min(factors)
+    if factor >= 1:
+        return max(w, h)
+    side = max(w, h) * factor
+    return max(1, math.ceil(side - 1e-6) if fit == 'cover' else math.floor(side + 1e-6))
+
+
 _rotate_pool = None
 
 
@@ -997,8 +1016,8 @@ def export_image(source_path, output_path, settings, format='JPEG', quality=95, 
         if not settings['hdr']:raise ValueError('HDR TIFF를 저장하려면 사진의 HDR 모드를 켜 주세요.')
         result=to_linear(develop(source,settings,output_space=None))
     else:result = develop(source, settings,output_space=color_space)
-    if longest:
-        result = resize_export(result, int(longest), hdr_export)
+    if longest:      # the long side in pixels, or a (width, height, fit) box: export_longest
+        result = resize_export(result, export_longest(result.shape, longest), hdr_export)
     from .colorio import profile,convert,export_exif,jpeg_iptc,iptc_bytes,xmp_metadata,append_tiff_exif
     icc=profile(('Linear ProPhoto' if settings['working_space']=='ProPhoto' else 'Linear sRGB') if hdr_export else color_space)
     gray=_neutral_gray(result) if grayscale and color_space=='sRGB' and format in ('JPEG','PNG','TIFF 8-bit','TIFF 16-bit') else None

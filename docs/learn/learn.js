@@ -517,6 +517,11 @@ function startMasks() {
 const KEYS = [
   ['\\', '\\', '보정 전후 바꿔 보기', 'Before / after'],
   ['c', 'C', '나란히 비교', 'Compare side by side'],
+  ['j', 'J', '클리핑 표시 켜기/끄기', 'Show / hide clipping'],
+  ['z', 'Z', '1:1과 화면 맞춤 번갈아 보기', 'Switch between 1:1 and fit'],
+  ['f', 'F', '전체 화면 (Esc로 나옴)', 'Full screen (Esc leaves)'],
+  ['Tab', 'Tab', '양옆 패널 숨기기/보이기 (Shift+Tab: 전부)', 'Hide / show the side panels (Shift+Tab: all)'],
+  ['l', 'L', '조명 끄기: 사진만 보기', 'Lights out: the photo only'],
   ['w', 'W', '화이트 밸런스 스포이드', 'White balance eyedropper'],
   ['k', 'K', '새 브러시 마스크', 'New brush mask'],
   ['m', 'M', '새 선형 그레이디언트', 'New linear gradient'],
@@ -529,6 +534,7 @@ const KEYS = [
   ['p', 'P', '선택 표시', 'Pick'],
   ['x', 'X', '제외 표시', 'Reject'],
   ['5', '0–5', '별점', 'Rating'],
+  ['6', '6–9', '색 라벨 (빨강·노랑·초록·파랑)', 'Color label (red, yellow, green, blue)'],
   ['[', '[ ]', '브러시 크기', 'Brush size'],
   ['?', '?', '단축키 목록', 'Shortcut list'],
 ];
@@ -551,7 +557,7 @@ function startKeys() {
       mode.innerHTML = compare ? '<span lang="ko">비교 · 왼쪽 보정 전</span><span lang="en">Compare · left is before</span>' : before ? '<span lang="ko">보정 전</span><span lang="en">Before</span>' : '<span lang="ko">현상</span><span lang="en">Develop</span>';
     };
     function press(key) {
-      const k = KEYS.find(x => x[0] === key || (key >= '0' && key <= '5' && x[0] === '5') || (key === ']' && x[0] === '['));
+      const k = KEYS.find(x => x[0] === key || (key >= '0' && key <= '5' && x[0] === '5') || (key >= '6' && key <= '9' && x[0] === '6') || (key === ']' && x[0] === '['));
       if (!k) return;
       if (key === '\\') { before = !before; compare = false; mark('keys.before'); draw(); }
       if (key === 'c') { compare = !compare; before = false; mark('keys.compare'); draw(); }
@@ -573,9 +579,10 @@ function startKeys() {
     $$('.key', list).forEach(b => b.addEventListener('click', () => press(b.dataset.key)));
     document.addEventListener('keydown', e => {
       if (current !== 'keys' || typing() || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Tab') { press('Tab'); return; }                  // the page keeps Tab for moving around
       const key = e.key === 'M' || (e.key.toLowerCase() === 'm' && e.shiftKey) ? 'M' : e.key.length === 1 ? (e.key === '?' ? '?' : e.key.toLowerCase()) : null;
       if (!key) return;
-      if (KEYS.some(x => x[0] === key) || (key >= '0' && key <= '5') || key === ']') { press(key); e.preventDefault(); }
+      if (KEYS.some(x => x[0] === key) || (key >= '0' && key <= '9') || key === ']') { press(key); e.preventDefault(); }
     });
     draw();
   });

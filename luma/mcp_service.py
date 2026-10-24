@@ -32,6 +32,8 @@ GRACE_SECONDS=8          # GUI work that already started may finish this long af
 QUEUE_SECONDS=10         # longest wait for the GUI thread to start a call
 WAIT_SECONDS=40          # longest a tool waits for its job before returning the job id
 RETRY_SECONDS=60         # a finished job waits this long for Grainy to be ready to write
+MAX_IMPORT=10000         # image files one import_folder call takes
+MAX_REPORTED=500         # photo ids listed in one job result
 DEFAULT_PORT=47821
 TOKEN_PATTERN=re.compile(r'[0-9a-f]{64}')
 STOP_SECONDS=3           # stop() waits this long for requests in flight
@@ -271,6 +273,17 @@ class McpService(QObject):
         saved=self.preferences.values.get('mcp_export_folder')
         if isinstance(saved,str) and saved and Path(saved).is_dir():return Path(saved)
         return pictures_folder()
+
+    def own_folders(self):
+        """Folders whose files Grainy manages itself: the library, the bridges' folder (mcp/) and the program. AI
+        exports and imports never go there."""
+        folders=[self.directory,self.folder,Path(__file__).resolve().parents[1]]
+        if getattr(sys,'frozen',False):folders.append(Path(sys.executable).parent)
+        result=[]
+        for folder in folders:
+            try:result.append(Path(folder).resolve())
+            except OSError:result.append(Path(folder))
+        return result
 
     def note(self,name,outcome,ms=0):
         """One line of the dialog's recent activity; never a header value or the key. outcome is a short English
@@ -575,6 +588,88 @@ class McpService(QObject):
         if not started:
             self.end_job(job,'failed',error='an export is already running')
             raise Busy('an export is already running')
+        return job
+
+    def start_import(self,w,folder,recursive):
+        """GUI thread, after ready(write=True): find the image files in a job, then import them with the window's
+        own import (MainWindow.import_paths: the same duplicate handling; originals are only read). The job is done
+        when none of its files is waiting any more; its result has the ids of the photos it added."""
+        from .folders import path_key,stored_path
+        job=self.new_job('import_folder',0);job.phase='finding photos'
+        state=w.mcp;first_try=[];watch={}
+
+        def scan():
+            files=photo_service.image_files(folder,recursive,job.cancel,MAX_IMPORT)
+            if not isinstance(files,list):return files
+            return [(file,path_key(str(Path(file).resolve())),stored_path(Path(file).resolve())) for file in files]
+
+        def known(window,stored):
+            """{stored path key: id} of the originals (not virtual copies) among stored paths."""
+            found={}
+            for start in range(0,len(stored),500):
+                part=stored[start:start+500]
+                rows=window.catalog.db.execute('SELECT id,path FROM photos WHERE virtual_source IS NULL AND path COLLATE NOCASE IN ('
+                                               +','.join('?'*len(part))+')',part)
+                for row in rows:found[path_key(row['path'])]=row['id']
+            return found
+
+        def scanned(files):
+            if files is None or self.stale(job):
+                return self.end_job(job,'cancelled',error=self.stale(job) or 'stopped; nothing was imported')
+            if isinstance(files,dict):return self.end_job(job,'failed',error=files['error'])
+            w=self.window()
+            if not first_try:first_try.append(time.monotonic())
+            try:ready(w,write=True,job=job)
+            except Busy as busy:
+                if time.monotonic()-first_try[0]<RETRY_SECONDS:
+                    job.phase='waiting for Grainy'
+                    QTimer.singleShot(500,w if w is not None else self,lambda:guarded(scanned,files));return
+                return self.end_job(job,'failed',error=f'{busy}; nothing was imported. Run it again.')
+            before=known(w,[stored for _,_,stored in files])
+            new=[(file,key) for file,key,_ in files if key not in before]
+            watch.update(files=files,before=before,keys={key for _,key in new},window=w)
+            job.total=len(new);job.phase=None
+            if new:
+                w.import_paths([str(folder)] if recursive else [file for file,_ in new])
+                timer=QTimer(w);timer.setInterval(250);watch['timer']=timer
+                timer.timeout.connect(lambda:guarded(poll));timer.start()
+            else:finish()
+
+        def poll():
+            w=watch['window']
+            if job.state!='running' or w.closing:return watch['timer'].stop()
+            if job.cancel.is_set():
+                watch['timer'].stop()
+                if job.stopped:w.cancel_import();return self.end_job(job,'cancelled',error='stopped; the photos imported so far stay')
+                return self.end_job(job,'cancelled',error='the AI connection was turned off or restarted; Grainy goes on importing')
+            waiting=watch['keys']&w.import_pending_paths
+            if not w.import_scans:job.done=job.total-len(waiting)
+            if w.import_scans or waiting:return
+            watch['timer'].stop();finish()
+
+        def finish():
+            w=watch['window'];files=watch['files'];before=watch['before']
+            after=known(w,[stored for _,_,stored in files])
+            ids=[after[key] for _,key,_ in files if key in after and key not in before]
+            missing=[Path(file).name for file,key,_ in files if key not in after]
+            result={'imported':len(ids),'ids':ids[:MAX_REPORTED],'already':len(before),'folder':str(folder),'recursive':recursive}
+            if len(ids)>MAX_REPORTED:result['more_ids']=len(ids)-MAX_REPORTED
+            if missing:result.update(not_imported=len(missing),failures=missing[:20])
+            self.end_job(job,'done',result=result)
+
+        def guarded(step,*values):
+            try:step(*values)
+            except Exception as error:
+                if 'timer' in watch:watch['timer'].stop()
+                last=str(error).strip().splitlines()[-1] if str(error).strip() else type(error).__name__
+                self.end_job(job,'failed',error=f'could not finish: {last}')
+
+        def failed(error):
+            last=str(error).strip().splitlines()[-1] if str(error).strip() else 'unknown error'
+            try:self.end_job(job,'failed',error=f'could not read the folder: {last}')
+            except Exception:pass
+
+        w.spawn(scan,lambda files:guarded(scanned,files),failed,pool=state.pool)
         return job
 
 

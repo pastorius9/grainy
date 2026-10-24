@@ -24,7 +24,7 @@ META_CAPABILITIES='io.modelcontextprotocol/clientCapabilities'
 META_SERVER='io.modelcontextprotocol/serverInfo'
 INSTRUCTIONS=("Grainy is a photo editor running on this computer; these tools drive its open window and catalog. "
     "Edits are non-destructive: original files are never written, and every editing call is one batch that "
-    "undo_last_batch reverts. Work in few calls: target many photos at once (ids, a where filter, or scope "
+    "undo_last_batch reverts (ratings, labels, imports and virtual copies are not edits). Work in few calls: target many photos at once (ids, a where filter, or scope "
     "'selection'/'current'), give different values per photo in one apply_edits call, and prefer relative add values "
     "(no need to read values first). Look at many photos with contact_sheet before using get_preview. Calls that "
     "take long return a job id; poll it with get_job. If a call says Grainy is busy, nothing was changed: wait briefly "

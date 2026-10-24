@@ -91,7 +91,7 @@ class CompareLayout(QObject):
         if mode:
             self.mode=mode;self.other_id=None;self.swapped=False
         self.on=True;self.shown=None;self.full=not w.view.fit_mode
-        self.bar.show();self.other_pane.show();w.compare_button.setChecked(True)
+        self.bar.show();self.other_pane.show();w.compare_button.setChecked(True);w.screen_modes.apply()
         self.sync();self.timer.start()
 
     def stop(self,show_other=False):

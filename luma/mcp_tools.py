@@ -40,7 +40,7 @@ FILTER={
 SCOPE={'type':'string','enum':['selection','current'],
        'description':'selection: photos selected in Grainy; current: the photo open in the editor.'}
 # Inside targets the filters and scope go without their descriptions (list_photos has them): tools/list
-# stays under 16,000 characters.
+# stays under 22,000 characters.
 BARE_FILTER={key:{k:v for k,v in value.items() if k!='description'} for key,value in FILTER.items()}
 
 
@@ -59,17 +59,17 @@ def _range(low,high):
 def _edits_description():
     groups={}
     for key,(_,low,high) in FIELDS.items():
-        if key in ('monochrome','straighten','exposure','negative_density','negative_range','film_look'):continue
+        if key in ('monochrome','straighten','exposure','negative_density','negative_range','film_look','rotation','flip'):continue
         groups.setdefault(_range(low,high),[]).append(key)
     ranges='; '.join(f'{", ".join(keys)} {span}' for span,keys in groups.items())
-    return ("Change edit values on many photos as one undoable batch. Each entry targets one of ids, where (list_photos "
-        "filters) or scope ('selection' or 'current') and gives absolute values in set and/or relative changes in add; "
-        "results are clamped to the ranges. Ranges: exposure "+_range(*FIELDS['exposure'][1:])+" (stops); "+ranges+
-        "; straighten "+_range(*FIELDS['straighten'][1:])+" degrees (the crop follows as in the editor); monochrome "
-        "true/false (set only); negative_density "+_range(*FIELDS['negative_density'][1:])+" (brightness) and "
-        "negative_range "+_range(*FIELDS['negative_range'][1:])+" (contrast), only on photos inverted with "
-        "invert_negatives; film_look a film by name, e.g. 'Kodak Portra 400', 'Fujifilm Velvia 50', 'Ilford HP5 Plus' "
-        "('' none; brings its grain). Entries apply in order, later ones refine earlier ones. Originals never change.")
+    return ("Change edits on many photos as one undoable batch. Each entry targets one of ids, where (list_photos "
+        "filters) or scope ('selection' or 'current'), may start from a preset (list_films type presets) or copy_from "
+        "(a photo id: all but crop, or the groups given), then takes absolute set and relative add values, clamped to: "
+        "exposure "+_range(*FIELDS['exposure'][1:])+" (stops); "+ranges+"; straighten "+_range(*FIELDS['straighten'][1:])+
+        " degrees (crop follows); rotation 0..270 clockwise in steps of 90 (crop resets); negative_density "
+        +_range(*FIELDS['negative_density'][1:])+", negative_range "+_range(*FIELDS['negative_range'][1:])+" only after "
+        "invert_negatives. Set only: monochrome, flip (mirror) true/false; film_look a film name ('' none); curve, "
+        "rgb_curves [r,g,b]: [x,y] points 0..1, x from 0 rising to 1. Entries apply in order. Originals never change.")
 
 
 def _tool(name,title,description,properties,required=(),read_only=False,idempotent=None):
@@ -80,12 +80,19 @@ def _tool(name,title,description,properties,required=(),read_only=False,idempote
     return {'name':name,'title':title,'description':description,'inputSchema':schema,'annotations':{'title':title,**annotations}}
 
 
+CURVE={'type':'array','minItems':2,'maxItems':photo_service.CURVE_POINTS,
+       'items':{'type':'array','minItems':2,'maxItems':2,'items':{'type':'number','minimum':0,'maximum':1}}}
 EDIT_ENTRY={'type':'object','additionalProperties':False,'properties':{**TARGET(),
+    'preset':{'type':'string','minLength':1,'maxLength':200},
+    'copy_from':{'type':'integer','minimum':1,'maximum':MAX_ID},
+    'groups':{'type':'array','minItems':1,'uniqueItems':True,'items':{'type':'string','enum':list(photo_service.COPY_GROUPS)}},
     'set':{'type':'object','additionalProperties':False,'minProperties':1,'properties':
-           {k:{'type':'boolean'} if k=='monochrome' else {'type':'string'} if k=='film_look' else {'type':'number','minimum':lo,'maximum':hi}
-            for k,(_,lo,hi) in FIELDS.items()}},
+           {**{k:{'type':'boolean'} if k in ('monochrome','flip') else {'type':'string'} if k=='film_look'
+               else {'type':'integer','enum':[0,90,180,270]} if k=='rotation' else {'type':'number'} for k in FIELDS},
+            'curve':CURVE,'rgb_curves':{'type':'array','minItems':3,'maxItems':3,'items':CURVE}}},
     'add':{'type':'object','additionalProperties':False,'minProperties':1,'properties':
-           {k:{'type':'number','minimum':lo-hi,'maximum':hi-lo} for k,(_,lo,hi) in FIELDS.items() if k not in ('monochrome','film_look')}}}}
+           {k:{'type':'number'} for k in FIELDS if k not in ('monochrome','film_look','flip')}}}}
+FILM_TYPES=('all','color','bw','slide','cine','presets')
 
 DEFINITIONS=[
     _tool('list_photos','List photos',
@@ -112,6 +119,11 @@ DEFINITIONS=[
         f"{SHEET_CELLS}) page through the matches. cell: thumbnail px (default 160).",
         {**TARGET(SHEET_CELLS),'offset':{'type':'integer','minimum':0},'count':{'type':'integer','minimum':1,'maximum':SHEET_CELLS},
          'cell':{'type':'integer','minimum':96,'maximum':256}},read_only=True),
+    _tool('list_films','Films and presets',
+        "Film looks for apply_edits film_look: name, iso, type (color, bw or slide) and maker; cine=1 marks "
+        "motion-picture stocks. type filters them (color, bw, slide, cine; default all); type 'presets' lists Grainy's "
+        "develop presets instead (built in, and saved by the person) for apply_edits preset.",
+        {'type':{'type':'string','enum':list(FILM_TYPES)}},read_only=True),
     _tool('apply_edits','Apply edits',_edits_description(),
         {'edits':{'type':'array','minItems':1,'maxItems':100,'items':EDIT_ENTRY}},required=['edits']),
     _tool('auto_tone','Auto tone',
@@ -137,21 +149,48 @@ DEFINITIONS=[
     _tool('export_photos','Export photos',
         "Export developed copies as new files (existing files are never replaced; a number is added). format JPEG "
         "(default), TIFF 16-bit, TIFF 8-bit, PNG, PNG 16-bit, AVIF or JPEG XL (sRGB only); color_space sRGB (default), "
-        "Adobe RGB, Display P3 or ProPhoto RGB. destination 'default' is the AI export folder set in Grainy "
-        "(Pictures/Grainy unless changed), 'last' the folder of the person's last export from Grainy; subfolder adds one "
-        "folder level. naming uses {stem} and {n}. "+TARGET_TEXT+" Returns the result, or a job id for get_job.",
+        "Adobe RGB, Display P3 or ProPhoto RGB. Size: longest (long side px), or width and/or height px with fit "
+        "'inside' that box (default) or 'cover' it; never enlarged. destination 'default' is the AI export folder set in "
+        "Grainy (Pictures/Grainy unless changed), 'last' the folder of the person's last export from Grainy, 'path' the "
+        "absolute folder given in path (made if missing); subfolder adds one folder level. naming uses {stem}, {n}, "
+        "{film}, {preset} (the last one apply_edits applied), {camera} and {date} (capture, YYYY-MM-DD); an empty token "
+        "goes with one separator beside it. "+TARGET_TEXT+" Returns the result, or a job id for get_job.",
         {**TARGET(),'format':{'type':'string','enum':EXPORT_FORMATS},'quality':{'type':'integer','minimum':40,'maximum':100},
          'longest':{'type':'integer','minimum':0,'maximum':30000,'description':'Long side px; 0 = full size.'},
+         'width':{'type':'integer','minimum':1,'maximum':30000},'height':{'type':'integer','minimum':1,'maximum':30000},
+         'fit':{'type':'string','enum':['inside','cover']},
          'color_space':{'type':'string','enum':COLOR_SPACES},'keep_metadata':{'type':'boolean'},
-         'naming':{'type':'string','minLength':1,'maxLength':80},'destination':{'type':'string','enum':['default','last']},
-         'subfolder':{'type':'string','minLength':1,'maxLength':80}}),
+         'naming':{'type':'string','minLength':1,'maxLength':80},'destination':{'type':'string','enum':['default','last','path']},
+         'path':{'type':'string','minLength':1,'maxLength':1024},'subfolder':{'type':'string','minLength':1,'maxLength':80}}),
+    _tool('import_folder','Import folder',
+        "Import a folder's photos into the library as Grainy's own import does: files already there are skipped; "
+        "originals are only read. path: an absolute folder; recursive: include subfolders (default false). Returns a job "
+        "id; get_job gives progress and, when done, the new photo ids (list_photos with folder and recursive finds them too).",
+        {'path':{'type':'string','minLength':1,'maxLength':1024},'recursive':{'type':'boolean'}},required=['path']),
+    _tool('create_virtual_copies','Virtual copies',
+        "Make count virtual copies of a photo (Grainy's Make Virtual Copy): new library entries of the same original, "
+        "starting from its current edits, e.g. to try different looks. Returns their ids; undo_last_batch does not "
+        "remove them.",
+        {'id':{'type':'integer','minimum':1,'maximum':MAX_ID},'count':{'type':'integer','minimum':1,'maximum':20}},
+        required=['id','count']),
+    _tool('set_labels','Rating, flag, label',
+        "Set the star rating (0-5, 0 none), flag (picked, rejected, unflagged) and/or color label (red, yellow, green, "
+        "blue, purple, none) of photos. These are not edits: undo_last_batch does not change them back. "+TARGET_TEXT,
+        {**TARGET(),'rating':{'type':'integer','minimum':0,'maximum':5},'flag':{'type':'string','enum':list(photo_service.FLAGS)},
+         'label':{'type':'string','enum':[*photo_service.LABELS,'none']}},idempotent=True),
+    _tool('snapshot','Snapshots',
+        "Named snapshots of photo edits, as in Grainy's Snapshot menu. save keeps the current edits under name; list "
+        "gives each photo's snapshots, newest first; restore sets the edits back to the newest snapshot of that name as "
+        "one undoable batch. Grainy itself saves a 'Before AI edits' snapshot before a photo's first AI edit. "+TARGET_TEXT,
+        {**TARGET(),'action':{'type':'string','enum':['save','restore','list']},'name':{'type':'string','minLength':1,'maxLength':80}},
+        required=['action']),
     _tool('open_photo','Open photo',
         "Show a photo in the Grainy window (editor or library view). Does not change the photo.",
         {'id':{'type':'integer','minimum':1,'maximum':MAX_ID},'view':{'type':'string','enum':['edit','library']}},
         required=['id'],idempotent=True),
     _tool('get_job','Job progress',
-        "Progress or result of a job started by auto_tone, auto_color, invert_negatives or export_photos. Waits up to "
-        "wait seconds (default 20) for it to finish.",
+        "Progress or result of a job started by auto_tone, auto_color, invert_negatives, export_photos or import_folder. "
+        "Waits up to wait seconds (default 20) for it to finish.",
         {'job':{'type':'string','pattern':'^j[0-9]+$'},'wait':{'type':'integer','minimum':0,'maximum':40}},
         required=['job'],read_only=True,idempotent=False),
 ]
@@ -161,7 +200,7 @@ SCHEMAS={definition['name']:definition['inputSchema'] for definition in DEFINITI
 def _published(schema,inside_add=False):
     """The schema as tools/list shows it: without uniqueItems and minProperties, the add limits (the whole width
     of each range both ways, which the description gives) and the id maximum (2**53-1, the largest integer JSON
-    readers keep exactly), so tools/list stays under 16,000 characters. The checker still applies all of them."""
+    readers keep exactly), so tools/list stays under 22,000 characters. The checker still applies all of them."""
     if isinstance(schema,list):return [_published(item) for item in schema]
     if not isinstance(schema,dict):return schema
     result={}
@@ -175,6 +214,10 @@ def _published(schema,inside_add=False):
 
 
 for _definition in DEFINITIONS:_definition['inputSchema']=_published(_definition['inputSchema'])
+# The curves as tools/list shows them: their point counts and the 0..1 range are in the description.
+_shown=next(d for d in DEFINITIONS if d['name']=='apply_edits')['inputSchema']['properties']['edits']['items']['properties']['set']
+_shown['properties']['curve']={'type':'array','items':{'type':'array','items':{'type':'number'}}}
+_shown['properties']['rgb_curves']={'type':'array','minItems':3,'maxItems':3,'items':_shown['properties']['curve']}
 
 
 # --- argument checker -----------------------------------------------------------------------------
@@ -465,40 +508,83 @@ class Tools:
 
     # write tools
     def tool_apply_edits(self,arguments,deadline):
-        from .mcp_service import ready,capped
+        from .mcp_service import ready,safe_commit
+        from .engine import VIDEO_EXTENSIONS as VIDEO
         entries=[]
         for index,entry in enumerate(arguments['edits']):
-            try:changes=photo_service.parse_changes(entry.get('set'),entry.get('add'))
-            except ServiceError as error:raise ServiceError(f'arguments.edits[{index}]: {error}') from None
+            where=f'arguments.edits[{index}]'
+            if not any(key in entry for key in ('preset','copy_from','set','add')):raise ServiceError(f'{where} needs preset, copy_from, set or add')
+            if 'preset' in entry and 'copy_from' in entry:raise ServiceError(f'{where}: give preset or copy_from, not both')
+            if 'groups' in entry and 'copy_from' not in entry:raise ServiceError(f'{where}: groups needs copy_from')
+            try:changes=photo_service.parse_changes(entry.get('set'),entry.get('add')) if 'set' in entry or 'add' in entry else None
+            except ServiceError as error:raise ServiceError(f'{where}: {error}') from None
             kind=[key for key in ('ids','where','scope') if key in entry]
-            if len(kind)!=1:raise ServiceError(f'arguments.edits[{index}] needs exactly one of ids, where or scope')
+            if len(kind)!=1:raise ServiceError(f'{where} needs exactly one of ids, where or scope')
             ids=list(entry['ids']) if kind[0]=='ids' else self.query(entry['where'],deadline) if kind[0]=='where' else None
             if ids is not None:self.limit(ids)
-            entries.append((changes,ids,entry.get('scope')))
+            entries.append({'changes':changes,'ids':ids,'scope':entry.get('scope'),'preset':entry.get('preset'),
+                            'copy_from':entry.get('copy_from'),'groups':entry.get('groups')})
         service=self.service
 
         def work():
             w=ready(service.window())
-            resolved=[(changes,ids if ids is not None else self.scope_ids(w,scope)) for changes,ids,scope in entries]
-            targets=self.limit(list(dict.fromkeys(i for _,ids in resolved for i in ids)))
-            ready(w,write=True,ids=targets,selection=any(scope=='selection' for _,_,scope in entries))
+            for entry in entries:
+                if entry['ids'] is None:entry['ids']=self.scope_ids(w,entry['scope'])
+            targets=self.limit(list(dict.fromkeys(i for entry in entries for i in entry['ids'])))
+            ready(w,write=True,ids=targets,selection=any(entry['scope']=='selection' for entry in entries))
             if w.current_id is not None and w.current_id in targets:w.commit();w.save_keywords()
+            sources={}
+            for entry in entries:
+                if entry['preset'] is not None:entry['preset_name'],entry['base']=self.find_preset(w,entry['preset'])
+                if entry['copy_from'] is not None:
+                    ident=entry['copy_from']
+                    if ident not in sources:
+                        if ident==w.current_id and ident not in targets:safe_commit(w)
+                        source=w.catalog.photo(ident)
+                        if source is None:raise ServiceError(f'copy_from photo {ident} is not in the catalog')
+                        if Path(source['path']).suffix.lower() in VIDEO:raise ServiceError(f'copy_from photo {ident} is a video')
+                        sources[ident]=source['settings']
+                    entry['base']=sources[ident];entry['keys']=photo_service.copy_keys(entry['groups'])
+                entry['members']=set(entry['ids'])
             records,errors=photo_service.freeze(w.catalog,targets)
-            members=[set(ids) for _,ids in resolved]
-            used=[];values=[]
+            used=[];values=[];presets={}
             for record in records:
-                groups=[changes for (changes,_),ids in zip(resolved,members) if record['id'] in ids]
-                try:values.append(photo_service.compose(record['settings'],groups,record['info'],record['id']))
+                steps=[];preset=None
+                for entry in (e for e in entries if record['id'] in e['members']):
+                    if entry['preset'] is not None:
+                        steps.append(lambda s,base=entry['base'],r=record:photo_service.preset_settings(base,s,r))
+                        preset=entry['preset_name']
+                    elif entry['copy_from'] is not None:
+                        steps.append(lambda s,base=entry['base'],keys=entry['keys'],r=record:
+                                     photo_service.copied_settings(base,s,r['info'],keys))
+                    if entry['changes'] is not None:steps.append(entry['changes'])
+                try:values.append(photo_service.compose(record['settings'],steps,record['info'],record['id']))
                 except ServiceError as error:errors.append({'id':record['id'],'error':str(error)});continue
                 used.append(record)
-            self.usable(used,errors)
-            snapshot=tr_snapshot()
-            bid,changed=photo_service.apply_batch(w.catalog,used,values,label='AI 보정',tool='apply_edits',
-                                                  snapshot_name=snapshot,snapshotted=service.snapshotted)
-            if changed:w.refresh_command_edits(changed,'AI 보정')
-            return {'batch':bid,'changed':len(changed),'unchanged':len(used)-len(changed),**capped(errors)}
+                if preset:presets[record['id']]=preset
+            return self.write_batch(w,used,values,errors,label='AI 보정',tool='apply_edits',presets=presets)
 
         return [text_block(self.gui(work,deadline))]
+
+    def write_batch(self,w,used,values,errors,*,label,tool,presets=None):
+        """GUI thread: one undoable batch of settings that bring their own panel states (photo_service.edited
+        switched on what set/add changed); the reply apply_edits and snapshot restore give."""
+        from .mcp_service import capped
+        self.usable(used,errors)
+        bid,changed=photo_service.apply_batch(w.catalog,used,values,label=label,tool=tool,snapshot_name=tr_snapshot(),
+                                              snapshotted=self.service.snapshotted,switch=False,presets=presets)
+        if changed:w.refresh_command_edits(changed,label)
+        return {'batch':bid,'changed':len(changed),'unchanged':len(used)-len(changed),**capped(errors)}
+
+    @staticmethod
+    def find_preset(w,name):
+        """(name, settings) of one of Grainy's presets (built in or saved), by name in any case."""
+        presets=w.all_presets
+        found=name if name in presets else next((key for key in presets if key.casefold()==name.strip().casefold()),None)
+        if found is None:
+            names=list(presets)
+            raise ServiceError(f'no preset named {name!r}; presets: '+', '.join(names[:40])+(f' and {len(names)-40} more' if len(names)>40 else ''))
+        return found,presets[found]
 
     def tool_undo_last_batch(self,arguments,deadline):
         from .mcp_service import ready
@@ -562,9 +648,17 @@ class Tools:
     def tool_export_photos(self,arguments,deadline):
         from .mcp_service import ready
         naming=arguments.get('naming','{stem}_grainy');photo_service.check_naming(naming)
-        options=dict(format=arguments.get('format','JPEG'),quality=arguments.get('quality',90),longest=arguments.get('longest',0),
+        boxed='width' in arguments or 'height' in arguments
+        if boxed and arguments.get('longest'):raise ServiceError('give longest, or width and/or height, not both')
+        if 'fit' in arguments and not boxed:raise ServiceError('fit needs width and/or height')
+        size=(arguments.get('width',0),arguments.get('height',0),arguments.get('fit','inside')) if boxed else arguments.get('longest',0)
+        options=dict(format=arguments.get('format','JPEG'),quality=arguments.get('quality',90),longest=size,
                      color_space=arguments.get('color_space','sRGB'),keep_metadata=arguments.get('keep_metadata',False),naming=naming)
         if options['format']=='JPEG XL' and options['color_space']!='sRGB':raise ServiceError('JPEG XL is exported in sRGB only')
+        destination=arguments.get('destination','path' if 'path' in arguments else 'default')
+        if (destination=='path')!=('path' in arguments):
+            raise ServiceError("destination 'path' needs path, and path needs destination 'path'")
+        named=photo_service.named_folder(arguments['path'],self.service.own_folders()) if destination=='path' else None
         ids=self.pre_ids(arguments,deadline)
         if ids is not None:self.limit(ids)
         scope=arguments.get('scope');service=self.service
@@ -574,7 +668,8 @@ class Tools:
             w=ready(service.window())
             targets=self.limit(ids if ids is not None else self.scope_ids(w,scope))
             ready(w,export=True,ids=targets,selection=scope=='selection')
-            if arguments.get('destination','default')=='last':
+            if named is not None:root=named
+            elif destination=='last':
                 last=previous(w.catalog)
                 if not last:raise ServiceError("the person has not exported from Grainy yet; use destination 'default'")
                 if not Path(last['folder']).is_dir():
@@ -582,12 +677,157 @@ class Tools:
                                        "example on a drive that is not connected; use destination 'default'")
                 root=Path(last['folder'])
             else:root=service.export_root()
-            folder=photo_service.export_folder(root,arguments.get('subfolder'))
+            folder=photo_service.export_folder(root,arguments.get('subfolder'),service.own_folders())
             records,errors=photo_service.freeze(w.catalog,targets)
             self.usable(records,errors)
             return service.start_export(w,[r['id'] for r in records],folder,options,extra_errors=errors)
 
         return self.job_reply(self.gui(work,deadline),deadline)
+
+    def tool_import_folder(self,arguments,deadline):
+        from .mcp_service import ready
+        folder=photo_service.named_folder(arguments['path'],self.service.own_folders())
+        if not folder.is_dir():raise ServiceError(f'{folder} is not a folder on this computer (or not available now)')
+        recursive=arguments.get('recursive',False);service=self.service
+
+        def work():
+            w=ready(service.window())
+            ready(w,write=True)
+            return service.start_import(w,folder,recursive)
+
+        return self.job_reply(self.gui(work,deadline),deadline)
+
+    def tool_create_virtual_copies(self,arguments,deadline):
+        from .mcp_service import ready
+        from .engine import VIDEO_EXTENSIONS
+        ident=arguments['id'];count=arguments['count']
+
+        def work():
+            w=ready(self.service.window())
+            ready(w,write=True,ids=[ident])
+            photo=w.catalog.photo(ident)
+            if photo is None:raise ServiceError(f'photo {ident} is not in the catalog')
+            if Path(photo['path']).suffix.lower() in VIDEO_EXTENSIONS:raise ServiceError(f'photo {ident} is a video')
+            if w.current_id==ident:w.commit();w.save_keywords()      # the copies start from what the editor shows
+            copies=[w.catalog.virtual_copy(ident) for _ in range(count)]
+            w.refresh_lists()
+            return {'copies':copies}
+
+        return [text_block(self.gui(work,deadline))]
+
+    def tool_set_labels(self,arguments,deadline):
+        from .mcp_service import ready
+        fields={}
+        if 'rating' in arguments:fields['rating']=arguments['rating']
+        if 'flag' in arguments:fields['flag']=photo_service.FLAGS[arguments['flag']]
+        if 'label' in arguments:fields['label']=photo_service.LABELS.get(arguments['label'],'')
+        if not fields:raise ServiceError('give rating, flag and/or label')
+        ids=self.pre_ids(arguments,deadline)
+        if ids is not None:self.limit(ids)
+        scope=arguments.get('scope')
+
+        def work():
+            w=ready(self.service.window())
+            targets=self.limit(ids if ids is not None else self.scope_ids(w,scope))
+            ready(w,write=True,ids=targets,selection=scope=='selection')
+            rows={}
+            for start in range(0,len(targets),500):
+                part=targets[start:start+500]
+                for row in w.catalog.db.execute('SELECT id,rating,flag,label FROM photos WHERE id IN ('+','.join('?'*len(part))+')',part):
+                    rows[row['id']]=dict(row)
+            found=[ident for ident in targets if ident in rows]
+            changed=[ident for ident in found if any(rows[ident][key]!=value for key,value in fields.items())]
+            for key,value in fields.items():w.catalog.update_many(changed,key,value)      # as the Library's own setters
+            if changed:
+                w.refresh_lists()
+                if w.current_id in changed:w.load_controls()
+            errors=[{'id':ident,'error':'not in the catalog'} for ident in targets if ident not in rows]
+            from .mcp_service import capped
+            return {'changed':len(changed),'unchanged':len(found)-len(changed),**capped(errors)}
+
+        return [text_block(self.gui(work,deadline))]
+
+    def tool_snapshot(self,arguments,deadline):
+        from .mcp_service import ready
+        action=arguments['action'];name=arguments.get('name')
+        if action!='list' and name is None:raise ServiceError(f'{action} needs name')
+        if name is not None and not name.strip():raise ServiceError('name must not be blank')
+        ids=self.pre_ids(arguments,deadline)
+        if ids is not None:self.limit(ids)
+        scope=arguments.get('scope')
+        if action=='list':
+            if ids is None:
+                ids=self.gui(lambda:self.scope_ids(ready(self.service.window()),scope),deadline)
+            return [text_block(self.snapshot_list(ids,name))]
+
+        def work():
+            w=ready(self.service.window())
+            targets=self.limit(ids if ids is not None else self.scope_ids(w,scope))
+            ready(w,write=True,ids=targets,selection=scope=='selection')
+            if w.current_id is not None and w.current_id in targets:w.commit();w.save_keywords()
+            records,errors=photo_service.freeze(w.catalog,targets)
+            if action=='save':
+                self.usable(records,errors)
+                for record in records:w.catalog.snapshot(record['id'],name.strip())
+                from .mcp_service import capped
+                return {'saved':len(records),**capped(errors)}
+            used=[];values=[]
+            for record in records:
+                stored=self.find_snapshot(w.catalog,record['id'],name)
+                if stored is None:errors.append({'id':record['id'],'error':f'no snapshot named {name!r}'});continue
+                used.append(record);values.append(stored)
+            return self.write_batch(w,used,values,errors,label='AI 스냅샷 복원',tool='snapshot')
+
+        return [text_block(self.gui(work,deadline))]
+
+    @staticmethod
+    def find_snapshot(catalog,ident,name):
+        """The settings of the photo's newest snapshot called name (exactly, or else in any case), or None."""
+        from .engine import normalized
+        rows=catalog.db.execute('SELECT name,edits FROM snapshots WHERE photo_id=? ORDER BY id DESC',(ident,)).fetchall()
+        row=next((r for r in rows if r['name']==name),None) or next((r for r in rows if (r['name'] or '').casefold()==name.strip().casefold()),None)
+        return None if row is None else normalized(catalog.profiles.loads(row['edits']))
+
+    def snapshot_list(self,ids,name=None):
+        """{photos: [{id, snapshots: [{name, created}]}]}, newest first, at most 20 a photo; read in this thread."""
+        from datetime import datetime
+        from .catalog import Catalog
+        found={}
+        with Catalog.open_reader(self.directory) as reader:
+            for start in range(0,len(ids),500):
+                part=ids[start:start+500]
+                for row in reader.db.execute('SELECT photo_id,name,created FROM snapshots WHERE photo_id IN ('+','.join('?'*len(part))+
+                                             ') ORDER BY id DESC',part):
+                    if name is not None and (row['name'] or '').casefold()!=name.strip().casefold():continue
+                    try:created=datetime.fromisoformat(row['created']).astimezone().strftime('%Y-%m-%d %H:%M')
+                    except (TypeError,ValueError):created=''
+                    found.setdefault(row['photo_id'],[]).append({'name':row['name'],'created':created})
+            present={row[0] for start in range(0,len(ids),500)
+                     for row in reader.db.execute('SELECT id FROM photos WHERE id IN ('+','.join('?'*len(ids[start:start+500]))+')',
+                                                  ids[start:start+500])}
+        out={'photos':[{'id':ident,'snapshots':found.get(ident,[])[:20]} for ident in ids if ident in present]}
+        missing=[ident for ident in ids if ident not in present]
+        if missing:out['missing']=missing
+        return out
+
+    def tool_list_films(self,arguments,deadline):
+        kind=arguments.get('type','all')
+        if kind=='presets':
+            from .mcp_service import ready
+            def names():
+                w=ready(self.service.window())
+                saved=set(w.catalog.presets())
+                return [n for n in w.all_presets if n not in saved],[n for n in w.all_presets if n in saved]
+            built_in,saved=self.gui(names,deadline)
+            return [text_block({'built_in':built_in,'saved':saved})]
+        from . import film_look
+        types={'colour-negative':'color','bw-negative':'bw','colour-slide':'slide'}
+        films=[]
+        for entry in film_look.catalog():
+            film_type=types.get(entry.get('kind'),entry.get('kind'));cine=entry.get('group')=='cine'
+            if kind not in ('all',film_type) and not (kind=='cine' and cine):continue
+            films.append({'name':entry['name'],'iso':entry.get('iso'),'type':film_type,'maker':entry.get('maker'),**({'cine':1} if cine else {})})
+        return [text_block({'films':films})]
 
     def tool_open_photo(self,arguments,deadline):
         from .mcp_service import ready

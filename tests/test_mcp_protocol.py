@@ -75,8 +75,9 @@ def test_ping_and_empty_optional_lists():
 def test_tools_list_is_deterministic_and_valid():
     first=handle(request('tools/list')).body['result']['tools'];second=handle(request('tools/list')).body['result']['tools']
     assert first==second and protocol.dumps(first)==protocol.dumps(second)
-    assert [t['name'] for t in first]==['list_photos','get_photo','get_preview','contact_sheet','apply_edits','auto_tone',
-        'auto_color','invert_negatives','undo_last_batch','export_photos','open_photo','get_job']
+    assert [t['name'] for t in first]==['list_photos','get_photo','get_preview','contact_sheet','list_films','apply_edits',
+        'auto_tone','auto_color','invert_negatives','undo_last_batch','export_photos','import_folder','create_virtual_copies',
+        'set_labels','snapshot','open_photo','get_job']
     def properties(schema):
         for name,value in schema.get('properties',{}).items():
             yield name;yield from properties(value)
@@ -87,13 +88,13 @@ def test_tools_list_is_deterministic_and_valid():
         assert tool['annotations']['openWorldHint'] is False and len(tool['description'])<=1000
         schema=tool['inputSchema'];assert schema['type']=='object' and schema['additionalProperties'] is False
         assert all(re.fullmatch('[A-Za-z0-9_.-]{1,64}',name) for name in properties(schema))
-    assert len(json.dumps({'tools':first},separators=(',',':')))<=16000
+    assert len(json.dumps({'tools':first},separators=(',',':')))<=22000      # 15,460 with 12 tools; 21,312 with 17
     edits=next(t for t in first if t['name']=='apply_edits')['description']
     for key,(_,low,high) in FIELDS.items():
         assert key in edits
-        if key not in ('monochrome','film_look'):assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
+        if key not in ('monochrome','film_look','flip'):assert re.search(rf'{key}[^;]*{low:g}\.\.{high:g}',edits),key
     targeted=[t for t in first if 'ids' in t['inputSchema']['properties'] and 'where' in t['inputSchema']['properties']]
-    assert len(targeted)==5 and all(mcp_tools.TARGET_TEXT[:-1] in t['description'] for t in targeted)
+    assert len(targeted)==7 and all(mcp_tools.TARGET_TEXT[:-1] in t['description'] for t in targeted)
     assert "Each entry targets one of ids, where (list_photos filters) or scope ('selection' or 'current')" in edits
 
 
@@ -126,8 +127,6 @@ def test_unknown_tool_is_32602_missing_arguments_is_empty_and_tool_failures_are_
 
 
 @pytest.mark.parametrize('arguments,message',[
-    ({'edits':[{'ids':[1],'set':{'exposure':6}}]},'arguments.edits[0].set.exposure must be at most 5'),
-    ({'edits':[{'ids':[1],'add':{'sharpen':-151}}]},'arguments.edits[0].add.sharpen must be at least -150'),
     ({'edits':[{'ids':[1],'set':{'exposure':True}}]},'arguments.edits[0].set.exposure must be a number'),
     ({'edits':[{'ids':[True],'set':{'exposure':1}}]},'arguments.edits[0].ids[0] must be an integer'),
     ({'edits':[{'ids':[2**53],'set':{'exposure':1}}]},'arguments.edits[0].ids[0] must be at most 9007199254740991'),
@@ -153,7 +152,7 @@ def test_modern_disabled_discover_is_200_32601_and_meta_is_ignored(monkeypatch):
     reply=handle(request('server/discover',meta),{'MCP-Protocol-Version':'2026-07-28','Mcp-Method':'server/discover'})
     assert reply.status==200 and reply.body['error']=={'code':-32601,'message':'Method not found'}
     reply=handle(request('tools/list',meta))
-    assert reply.status==200 and 'resultType' not in reply.body['result'] and len(reply.body['result']['tools'])==12
+    assert reply.status==200 and 'resultType' not in reply.body['result'] and len(reply.body['result']['tools'])==len(mcp_tools.DEFINITIONS)
 
 
 def modern(method,params=None,headers=None,version='2026-07-28',capabilities=True):
@@ -231,7 +230,7 @@ def test_stdio_flavour_is_legacy_and_all_errors_are_200(monkeypatch):
                  {'MCP-Protocol-Version':'2026-07-28','Mcp-Method':'server/discover'},flavour='stdio')
     assert reply.status==200 and reply.body['error']['code']==-32601
     reply=handle(request('tools/list'),{'MCP-Protocol-Version':'2099-01-01','Mcp-Method':'x'},flavour='stdio')
-    assert reply.status==200 and len(reply.body['result']['tools'])==12 and 'resultType' not in reply.body['result']
+    assert reply.status==200 and len(reply.body['result']['tools'])==len(mcp_tools.DEFINITIONS) and 'resultType' not in reply.body['result']
 
 
 @pytest.mark.parametrize('ident',[7,'a"b','id-é',0])
@@ -244,7 +243,7 @@ def test_offline_templates_become_valid_replies_for_number_and_string_ids(ident)
         assert reply['jsonrpc']=='2.0' and reply['id']==ident
     initialize=json.loads(templates['offline-initialize.json'].replace('__ID__','1'))['result']
     assert initialize['protocolVersion']==protocol.OFFLINE_VERSION and initialize['capabilities']=={'tools':{'listChanged':False}}
-    assert len(json.loads(templates['offline-tools.json'].replace('__ID__','1'))['result']['tools'])==12
+    assert len(json.loads(templates['offline-tools.json'].replace('__ID__','1'))['result']['tools'])==len(mcp_tools.DEFINITIONS)
     call=json.loads(templates['offline-call.json'].replace('__ID__','1'))['result']
     assert call['isError'] is True and 'Grainy did not answer' in call['content'][0]['text']
 

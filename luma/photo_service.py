@@ -19,9 +19,17 @@ from threading import Event,Lock
 from .commands import EDIT_FIELDS
 
 FIELDS={**EDIT_FIELDS,'negative_density':('필름 농도',-3,3),'negative_range':('필름 대비',3,10),   # app.py negative sliders
-        'film_strength':('필름 강도',0,100),'film_look':('필름',0,0)}                                  # film_look: a stock's name
-NUMERIC=[k for k in FIELDS if k not in ('monochrome','film_look')]
+        'film_strength':('필름 강도',0,100),'film_look':('필름',0,0),                                  # film_look: a stock's name
+        'rotation':('회전',0,270),'flip':('좌우 반전',0,1)}       # rotation: degrees clockwise; the editor stores quarter turns
+NUMERIC=[k for k in FIELDS if k not in ('monochrome','film_look','flip')]
 NEGATIVE_ONLY=('negative_density','negative_range')
+CURVES=('curve','rgb_curves')    # tone curve points as the editor stores them: [[x, y], ...]; rgb_curves [red, green, blue]
+CURVE_POINTS=16
+# apply_edits copy_from groups: Grainy's copy/sync groups (manager.EDIT_GROUPS) by an English name. HDR editing is off.
+COPY_GROUPS={'working_space':'작업 색공간','light':'빛','white_balance':'화이트 밸런스','raw_profile':'RAW 프로파일',
+             'color':'색상','film':'필름','color_filter':'컬러 필터','curves':'커브','detail':'디테일','effects':'효과',
+             'negative':'네거티브 반전','lens':'렌즈·원근','crop':'크롭·회전','masks':'마스크','retouch':'복구'}
+GEOMETRY=('crop','rotation','straighten','flip')   # what a preset leaves as it is (app.apply_preset)
 MAX_TARGETS=500
 MAX_ID=2**53-1
 MCP_DEPTH=5                      # MCP batches that can be undone in order (owner decision)
@@ -47,26 +55,54 @@ def _number(value):
     return not isinstance(value,bool) and isinstance(value,(int,float)) and math.isfinite(value)
 
 
+def curve_points(value,key='curve'):
+    """A curve as the editor stores it, [[x, y], ...] as floats; ServiceError unless it has 2 to 16 points with
+    x and y in 0..1 and x rising from 0 to 1 (the editor's end points stay at x 0 and 1)."""
+    message=f'{key} must be 2 to {CURVE_POINTS} [x, y] points, x and y 0..1, x rising from 0 to 1'
+    if not isinstance(value,list) or not 2<=len(value)<=CURVE_POINTS:raise ServiceError(message)
+    points=[]
+    for point in value:
+        if not isinstance(point,list) or len(point)!=2 or not all(_number(v) and 0<=v<=1 for v in point):raise ServiceError(message)
+        points.append([float(point[0]),float(point[1])])
+    xs=[x for x,_ in points]
+    if xs[0]!=0 or xs[-1]!=1 or any(b<=a for a,b in zip(xs,xs[1:])):raise ServiceError(message)
+    return points
+
+
 def parse_changes(set_values=None,add_values=None):
-    """(changes, operations) in the shape of commands.validate_proposal: {key: float|bool}, {key: 'set'|'add'}."""
+    """(changes, operations) in the shape of commands.validate_proposal: {key: float|bool}, {key: 'set'|'add'}.
+    curve and rgb_curves (set only) are lists of points."""
     set_values=set_values or {};add_values=add_values or {}
     if not isinstance(set_values,dict) or not isinstance(add_values,dict):raise ServiceError('set and add must be objects')
     if not set_values and not add_values:raise ServiceError('give at least one value in set or add')
     changes={};operations={}
     for operation,values in (('set',set_values),('add',add_values)):
         for key,value in values.items():
+            if key in CURVES:
+                if operation!='set':raise ServiceError(f'{key} can only be set')
+                if key=='curve':changes[key]=curve_points(value)
+                else:
+                    if not isinstance(value,list) or len(value)!=3:raise ServiceError('rgb_curves must be 3 curves: red, green, blue')
+                    changes[key]=[curve_points(c,f'rgb_curves[{n}]') for n,c in enumerate(value)]
+                operations[key]=operation;continue
             if key not in FIELDS:raise ServiceError(f'{key} is not an edit value Grainy accepts')
             if key in changes:raise ServiceError(f'{key} is given in both set and add')
             _,low,high=FIELDS[key]
-            if key=='monochrome':
-                if operation!='set':raise ServiceError('monochrome can only be set (true or false)')
-                if not isinstance(value,bool):raise ServiceError('monochrome must be true or false')
+            if key in ('monochrome','flip'):
+                if operation!='set':raise ServiceError(f'{key} can only be set (true or false)')
+                if not isinstance(value,bool):raise ServiceError(f'{key} must be true or false')
                 changes[key]=value
+            elif key=='rotation':
+                if not _number(value) or value%90 or (operation=='set' and not 0<=value<=270) or abs(value)>270:
+                    raise ServiceError('rotation must be 0, 90, 180 or 270 (add: a multiple of 90 up to 270)')
+                changes[key]=float(value)
             elif key=='film_look':
                 if operation!='set' or not isinstance(value,str):raise ServiceError('film_look can only be set, to a film name')
                 from . import film_look
                 found,close=film_look.find(value)
-                if found is None:raise ServiceError(f'no film named {value!r}'+(f'; close: {", ".join(close)}' if close else ''))
+                if found is None:
+                    raise ServiceError(f'no film named {value!r}'+(f'; close: {", ".join(close)}' if close else
+                                                                   '; call list_films for the film names'))
                 changes[key]=found
             else:
                 if not _number(value):raise ServiceError(f'{key} must be a number')
@@ -85,8 +121,10 @@ def canvas(settings,info):
 
 
 def edited(settings,changes,operations,info,ident):
-    """settings with one group of changes, as the editor's sliders would make them (pure)."""
+    """settings with one group of changes, as the editor's sliders would make them (pure): a change in a panel
+    that is switched off switches it on, as in the editor (panel_keys.switch_on)."""
     from .engine import normalized
+    from .panel_keys import switch_on,changed_keys
     if any(key in changes for key in NEGATIVE_ONLY) and not settings.get('negative'):
         raise ServiceError(f'photo {ident} is not an inverted negative; negative_density and negative_range apply only after invert_negatives')
     result=deepcopy(settings);previous_angle=float(result.get('straighten') or 0)
@@ -94,8 +132,15 @@ def edited(settings,changes,operations,info,ident):
         from .film_look import with_film
         result=with_film(result,changes['film_look'],explicit=set(changes))
     for key,value in changes.items():
-        if key=='monochrome':result[key]=bool(value);continue
+        if key in ('monochrome','flip'):result[key]=bool(value);continue
         if key=='film_look':continue
+        if key in CURVES:result[key]=deepcopy(value);continue
+        if key=='rotation':
+            # The editor's 90° turn (photo_actions.transform_selected): quarter turns, and the crop starts over.
+            turns=int(value//90)
+            quarter=turns%4 if operations.get(key)=='set' else (int(result.get('rotation') or 0)+turns)%4
+            if quarter!=int(result.get('rotation') or 0):result['rotation']=quarter;result['crop']=None
+            continue
         _,low,high=FIELDS[key]
         if operations.get(key)=='add':value=max(low,min(high,float(result.get(key) or 0)+value))
         result[key]=float(value)
@@ -106,14 +151,56 @@ def edited(settings,changes,operations,info,ident):
         if size is None:raise ServiceError(f'photo {ident}: its size is not known yet; open it once in Grainy')
         from . import straighten
         result['crop']=straighten.refit(result.get('crop'),previous_angle,float(result['straighten']),*size,None)
-    return normalized(result)
+    return normalized(switch_on(result,changed_keys(settings,result)))
 
 
 def compose(settings,groups,info,ident):
-    """edited() for each (changes, operations) group in order: later groups refine earlier ones."""
+    """Each group in order, later ones refining earlier ones: a (changes, operations) pair goes through edited();
+    a function (a preset or copied settings) gets the settings so far and returns new ones."""
     result=settings
-    for changes,operations in groups:result=edited(result,changes,operations,info,ident)
+    for group in groups:
+        result=group(result) if callable(group) else edited(result,*group,info,ident)
     return result
+
+
+def preset_settings(preset,settings,record):
+    """settings after applying a preset as the editor's Presets panel does (app.apply_preset): an imported
+    preset resolved for this photo, lens and RAW colour settings fitted to it, its crop and rotation kept."""
+    from .adobe_preset import resolve
+    from .engine import normalized
+    from .optics import retarget
+    from .rawcolor import retarget as retarget_raw
+    try:value=resolve(deepcopy(preset),settings,record['path'])
+    except (ValueError,TypeError) as error:raise ServiceError(f'the preset cannot be applied to this photo ({type(error).__name__})') from None
+    try:value=retarget(value,record['info'])
+    except ValueError:raise ServiceError("the preset's lens profile does not fit this photo's lens") from None
+    value=retarget_raw(value,record['info'])
+    for key in GEOMETRY:value[key]=deepcopy(settings[key])
+    return normalized(value)
+
+
+def copy_keys(groups=None):
+    """The settings copy_from copies: Grainy's default copy items (everything but crop and rotation) or the
+    named COPY_GROUPS. GUI-side (manager imports widgets)."""
+    from .engine import defaults
+    from .manager import EDIT_GROUPS
+    if not groups:return set(defaults())-set(EDIT_GROUPS['크롭·회전'])-{'panels_off'}
+    return {key for name in groups for key in EDIT_GROUPS[COPY_GROUPS[name]]}
+
+
+def copied_settings(source,settings,info,keys):
+    """settings with `keys` pasted from source, as Grainy's Paste Settings does (app.paste_edits): each pasted
+    panel takes the source's on/off state, a lens profile and RAW colour settings are fitted to this photo."""
+    from .engine import normalized
+    from .panel_keys import carried,panels_of
+    from .rawcolor import retarget as retarget_raw
+    value=deepcopy(settings);value.update({key:deepcopy(source[key]) for key in keys if key in source})
+    value['panels_off']=carried(settings,source,panels_of(keys))
+    if 'lensfun' in keys:
+        from .optics import retarget
+        try:value=retarget(value,info)
+        except ValueError:raise ServiceError("the source's lens profile does not fit this photo's lens; copy without the lens group") from None
+    return normalized(retarget_raw(value,info))
 
 
 # --- targets --------------------------------------------------------------------------------------
@@ -216,8 +303,8 @@ def fmt(value):
 
 
 GROUPS={
-    'crop':('crop','rotation','flip','upright','perspective_v','perspective_h','aspect_scale','shift_x','shift_y','transform_scale','guides'),
-    'curve':('curve','rgb_curves','parametric'),
+    'crop':('crop','upright','perspective_v','perspective_h','aspect_scale','shift_x','shift_y','transform_scale','guides'),
+    'parametric_curve':('parametric',),          # curve and rgb_curves are edits (CURVES)
     'color_mix':('hsl','mixer_mode','calibration','point_colors'),
     'grading':('grading','grading_balance'),
     'raw_color':('raw_mode','raw_kelvin','raw_tint','raw_neutral','kelvin','kelvin_enabled','wb_reference'),
@@ -251,7 +338,11 @@ def summary(record):
         if record.get(key):result[name]=record[key]
     if record.get('label'):result['l']=LABEL_NAMES.get(record['label'],record['label'])
     if record.get('keywords'):result['keywords']=record['keywords']
-    edits={k:fmt(settings[k]) for k in FIELDS if k in settings and settings[k]!=base[k]}
+    edits={k:fmt(settings[k]*90 if k=='rotation' else settings[k]) for k in FIELDS if k in settings and settings[k]!=base[k]}
+    point=lambda p:[round(float(v),4) for v in p]
+    if settings.get('curve',base['curve'])!=base['curve']:edits['curve']=[point(p) for p in settings['curve']]
+    if settings.get('rgb_curves',base['rgb_curves'])!=base['rgb_curves']:
+        edits['rgb_curves']=[[point(p) for p in channel] for channel in settings['rgb_curves']]
     if edits:result['edits']=edits
     other=[name for name,keys in GROUPS.items() if any(settings.get(k)!=base.get(k) for k in keys)]
     other+=[f'{key}:{len(settings[key])}' for key in COUNTED if settings.get(key)]
@@ -352,9 +443,26 @@ def _write_index(catalog,entries):
     catalog.db.execute('INSERT OR REPLACE INTO preferences VALUES(?,?)',(INDEX_KEY,json.dumps(entries,ensure_ascii=False)))
 
 
-def apply_batch(catalog,records,values,*,label,tool,snapshot_name,snapshotted):
+PRESET_KEY='_preset'             # user metadata: the preset apply_edits applied last (export naming {preset})
+
+
+def _set_preset(catalog,ident,name):
+    """Inside the batch transaction: the photo's PRESET_KEY (None removes it); returns the value before."""
+    row=catalog.db.execute('SELECT extras FROM photos WHERE id=?',(ident,)).fetchone()
+    extras=json.loads(row[0] or '{}') if row else {}
+    before=extras.get(PRESET_KEY)
+    if name:extras[PRESET_KEY]=name
+    else:extras.pop(PRESET_KEY,None)
+    if before!=extras.get(PRESET_KEY):
+        catalog.db.execute('UPDATE photos SET extras=? WHERE id=?',(json.dumps(extras,ensure_ascii=False),ident))
+    return before
+
+
+def apply_batch(catalog,records,values,*,label,tool,snapshot_name,snapshotted,switch=True,presets=None):
     """One undoable MCP batch: (batch id or None, changed ids). Each photo the AI edits first in this app
-    run gets a pre-AI snapshot; snapshotted is the service's set of those photos."""
+    run gets a pre-AI snapshot; snapshotted is the service's set of those photos. switch: command_batch.apply's
+    (False when the values bring their own panel states). presets: {id: preset name} remembered with the
+    photos the batch changes (PRESET_KEY), and set back when the batch is undone."""
     from . import command_batch
     entries=batch_index(catalog);taken={entry.get('id') for entry in entries}
     bid='b'+secrets.token_hex(3)
@@ -368,6 +476,7 @@ def apply_batch(catalog,records,values,*,label,tool,snapshot_name,snapshotted):
             if ident in snapshotted:continue
             payload=json.dumps(catalog.profiles.pack(deepcopy(frozen[ident]['settings']),internal=True))
             catalog.db.execute('INSERT INTO snapshots(photo_id,name,edits,created) VALUES(?,?,?,?)',(ident,snapshot_name,payload,now))
+        named={str(ident):[_set_preset(catalog,ident,presets[ident]),presets[ident]] for ident in ids if (presets or {}).get(ident)}
         kept=[entry for entry in entries if entry.get('state')!='undone']
         applied=[entry for entry in kept if entry.get('state')=='applied']
         dropped=[entry for entry in entries if entry.get('state')=='undone']+applied[:max(0,len(applied)-(MCP_DEPTH-1))]
@@ -375,12 +484,13 @@ def apply_batch(catalog,records,values,*,label,tool,snapshot_name,snapshotted):
         for entry in dropped:
             catalog.db.execute('DELETE FROM preferences WHERE key=?',(BATCH_PREFIX+str(entry.get('id')),))
         remaining=[entry for entry in entries if entry.get('id') not in drop_ids]
-        remaining.append({'id':bid,'tool':tool,'label':label,'count':len(ids),'created':now,'state':'applied'})
+        remaining.append({'id':bid,'tool':tool,'label':label,'count':len(ids),'created':now,'state':'applied',
+                          **({'presets':named} if named else {})})
         _write_index(catalog,remaining)
 
     if catalog.db.in_transaction:raise Busy('Grainy is saving something else')
     ids=command_batch.apply(catalog,records,values,label,remember=True,batch_key=BATCH_PREFIX+bid,after_apply=after,
-                            meta={'id':bid,'tool':tool},compact=True)
+                            meta={'id':bid,'tool':tool},compact=True,switch=switch)
     snapshotted.update(ids)
     return (bid if ids else None),ids
 
@@ -398,6 +508,8 @@ def undo_batch(catalog,batch=None,redo=False):
     def flip(ids):
         for entry in entries:
             if entry.get('id')==cid:entry['state']='applied' if redo else 'undone'
+        for ident,(before,after) in (candidate.get('presets') or {}).items():
+            _set_preset(catalog,int(ident),after if redo else before)
         _write_index(catalog,entries)
 
     if catalog.db.in_transaction:raise Busy('Grainy is saving something else')
@@ -412,21 +524,54 @@ def undo_batch(catalog,batch=None,redo=False):
 
 # --- export ---------------------------------------------------------------------------------------
 
-NAMING=re.compile(r'(?:[^{}<>:"/\\|?*\x00-\x1f]|\{stem\}|\{n(?::0[2-6]d)?\})+')
+TOKENS=('film','preset','camera','date')        # naming tokens that can be empty for a photo
+NAMING=re.compile(r'(?:[^{}<>:"/\\|?*\x00-\x1f]|\{stem\}|\{n(?::0[2-6]d)?\}|\{(?:film|preset|camera|date)\})+')
 DEVICES={'CON','PRN','AUX','NUL',*{f'COM{i}' for i in range(1,10)},*{f'LPT{i}' for i in range(1,10)}}
+OWN_TEXT="a folder Grainy manages itself (its library, its AI connection files or the program); choose another folder"
+EMPTY='\x00'                                   # an empty token while a name is put together
+UNSAFE=str.maketrans({**{c:'_' for c in '<>:"/\\|?*'},**{chr(i):'_' for i in range(32)}})
 
 
 def check_naming(naming):
-    """Only {stem}, {n} and {n:02d}..{n:06d} with file-name characters; nothing str.format could misuse."""
-    message='naming may contain only {stem}, {n} or {n:02d}..{n:06d} and no path characters'
+    """Only {stem}, {n}, {n:02d}..{n:06d}, {film}, {preset}, {camera} and {date} with file-name characters; nothing
+    str.format could misuse."""
+    message='naming may contain only {stem}, {n} or {n:02d}..{n:06d}, {film}, {preset}, {camera}, {date} and no path characters'
     if not isinstance(naming,str) or not 1<=len(naming)<=80 or naming[-1] in '. ' or not NAMING.fullmatch(naming):
         raise ServiceError(message)
-    name=naming.format(stem='photo',n=1)
+    name=naming.format(stem='photo',n=1,film='Film',preset='Preset',camera='Camera',date='2026-01-01')
     if not name.strip() or Path(name).name!=name or name.split('.')[0].strip().upper() in DEVICES:raise ServiceError(message)
 
 
-def export_folder(root,subfolder):
-    """root, or one folder level below it; created when missing."""
+def _safe(value,limit=60):
+    """A metadata value as part of a file name: path and control characters become '_', no dot or space at the end."""
+    return str(value).translate(UNSAFE).strip()[:limit].rstrip('. ')
+
+
+def name_values(record):
+    """{film, preset, camera, date} of a catalog record for export naming; '' where the photo has none."""
+    from . import film_look
+    settings=record.get('settings') or {};info=record.get('info') or {};extras=record.get('user_metadata') or {}
+    film=film_look.entry(settings.get('film_look'))
+    stamp=str(extras.get('DateTimeOriginal') or info.get('date') or '')
+    date=re.match(r'(\d{4})[:\-](\d{2})[:\-](\d{2})',stamp)
+    return {'film':_safe(film['name']) if film else '','preset':_safe(extras.get(PRESET_KEY) or ''),
+            'camera':_safe(info.get('camera') or ''),'date':'-'.join(date.groups()) if date else ''}
+
+
+def file_stem(naming,stem,n,values):
+    """naming filled in: an empty token is dropped together with one separator (space, '_', '-' or '.') before it,
+    or after it when it starts the name; a name left empty is the source's stem."""
+    name=naming.format(stem=stem,n=n,**{key:values.get(key) or EMPTY for key in TOKENS})
+    if EMPTY not in name:return name
+    while EMPTY in name:
+        name=re.sub('^'+EMPTY+r'[ _.\-]?','',name) if name.startswith(EMPTY) else re.sub(r'[ _.\-]?'+EMPTY,'',name,count=1)
+    return name.strip().rstrip('. ') or stem
+
+
+def export_folder(root,subfolder,own=()):
+    """root, or one folder level below it; created when missing. Never inside one of the `own` folders
+    (named_folder)."""
+    from .folders import contains_folder
     root=Path(root)
     if subfolder is not None:
         bad=(not isinstance(subfolder,str) or not 1<=len(subfolder)<=80 or subfolder in ('.','..')
@@ -436,9 +581,39 @@ def export_folder(root,subfolder):
         target=(root/subfolder).resolve()
         if target.parent!=root.resolve():raise ServiceError('subfolder must be one folder name without path characters')
     else:target=root.resolve()
+    if any(contains_folder(folder,target) for folder in own):
+        raise ServiceError('the export folder is inside '+OWN_TEXT)
     try:target.mkdir(parents=True,exist_ok=True)
     except OSError as error:raise ServiceError(f'the export folder cannot be created ({error.strerror or type(error).__name__})') from None
     return target
+
+
+def named_folder(text,own,what='path'):
+    """A folder the AI program named: absolute, resolved, and outside Grainy's own folders (`own`: its library,
+    settings and program folders), whose files Grainy manages itself. It need not exist."""
+    from .folders import contains_folder
+    if not isinstance(text,str) or not text.strip() or '\x00' in text:raise ServiceError(f'{what} must be a folder path')
+    path=Path(text.strip())
+    if not path.is_absolute():raise ServiceError(f'{what} must be an absolute folder path (with its drive or starting at /)')
+    try:path=path.resolve()
+    except (OSError,RuntimeError):raise ServiceError(f'{what} cannot be used') from None
+    if any(contains_folder(folder,path) for folder in own):
+        raise ServiceError(f'{what} is inside '+OWN_TEXT)
+    return path
+
+
+def image_files(folder,recursive,cancel,limit):
+    """The image files Grainy imports in folder (and its subfolders), sorted; None when cancelled, or
+    {'error'} past `limit` files. Any thread."""
+    from .engine import IMAGE_EXTENSIONS
+    found=[]
+    for path in (Path(folder).rglob('*') if recursive else Path(folder).iterdir()):
+        if cancel.is_set():return None
+        if path.suffix.lower() in IMAGE_EXTENSIONS and path.is_file():
+            found.append(str(path))
+            if len(found)>limit:
+                return {'error':f'more than {limit} image files; import fewer at a time (subfolders, or recursive false)'}
+    return sorted(found)
 
 
 def export_records(records,folder,format='JPEG',quality=95,longest=0,color_space='sRGB',keep_metadata=False,
@@ -461,7 +636,7 @@ def export_records(records,folder,format='JPEG',quality=95,longest=0,color_space
             # A macOS file name may hold characters Windows forbids (Finder shows ':' as '/', as in a
             # date); the exported name gets '_' there instead of the export failing.
             source_stem=Path(record['path']).stem.translate(str.maketrans({c:'_' for c in '<>:"/\\|?*'}))
-            stem=naming.format(stem=source_stem,n=n)
+            stem=file_stem(naming,source_stem,n,name_values(record) if any('{'+t+'}' in naming for t in TOKENS) else {})
             if not stem.strip() or Path(stem).name!=stem or any(c in stem for c in '<>:"/\\|?*'):
                 raise ValueError(tr('유효하지 않은 출력 이름'))
             destination=folder/(stem+suffix);index=2

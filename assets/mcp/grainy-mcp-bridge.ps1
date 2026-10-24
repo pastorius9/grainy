@@ -14,18 +14,44 @@ try {
   $stdout = [Console]::OpenStandardOutput()
   function Read-Text($name) { $p = Join-Path $dir $name; if (Test-Path -LiteralPath $p) { [IO.File]::ReadAllText($p, $utf8).Trim() } else { $null } }
   function Send-Line($text) { $b = $utf8.GetBytes(($text -replace "[`r`n]+", ' ') + "`n"); $stdout.Write($b, 0, $b.Length); $stdout.Flush() }
-  function Forward($line) {
+  # Send once: the reply text, or 'retry' when nothing reached Grainy (no connection files, nothing listening on the
+  # port, or the key being replaced), or $null when Grainy may have got the request (no answer in time).
+  function Send($line) {
     $url = Read-Text 'endpoint'; $auth = Read-Text 'auth-header'
-    if (-not $url -or -not $auth) { return $null }
+    if (-not $url -or -not $auth) { return 'retry' }
     try {
       $req = New-Object System.Net.Http.HttpRequestMessage([System.Net.Http.HttpMethod]::Post, $url)
       $req.Content = New-Object System.Net.Http.StringContent($line, $utf8, 'application/json')
       [void]$req.Headers.TryAddWithoutValidation('Accept', 'application/json, text/event-stream')
       [void]$req.Headers.TryAddWithoutValidation('Authorization', $auth.Substring($auth.IndexOf(':') + 1).Trim())
       $res = $client.SendAsync($req).GetAwaiter().GetResult()
-      if (-not $res.IsSuccessStatusCode) { return $null }
-      return ,($res.Content.ReadAsStringAsync().GetAwaiter().GetResult())
-    } catch { return $null }
+      if ($res.IsSuccessStatusCode) { return ,($res.Content.ReadAsStringAsync().GetAwaiter().GetResult()) }
+      if ([int]$res.StatusCode -eq 401) { return 'retry' }
+      return $null
+    } catch {
+      $e = $_.Exception
+      while ($e) {
+        if (($e -is [System.Net.WebException] -and $e.Status -eq 'ConnectFailure') -or
+            ($e -is [System.Net.Sockets.SocketException] -and $e.SocketErrorCode -eq 'ConnectionRefused')) { return 'retry' }
+        $e = $e.InnerException
+      }
+      return $null
+    }
+  }
+  # A tool call made while Grainy is starting (its connection files appear once its window is up) or restarting
+  # its connection waits for it up to 4 s; nothing was sent before, so it cannot run twice. Other requests answer
+  # at once (offline when Grainy is not there).
+  function Forward($line) {
+    $body = Send $line
+    if ($body -ne 'retry') { return ,$body }
+    if ($line -notmatch '"method"\s*:\s*"tools/call"') { return $null }
+    $until = [DateTime]::UtcNow.AddSeconds(4)
+    while ([DateTime]::UtcNow -lt $until) {
+      Start-Sleep -Milliseconds 250
+      $body = Send $line
+      if ($body -ne 'retry') { return ,$body }
+    }
+    return $null
   }
   function Offline($line) {
     try { $m = $line | ConvertFrom-Json } catch { return $null }

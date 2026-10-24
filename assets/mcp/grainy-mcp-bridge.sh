@@ -52,12 +52,28 @@ offline() {
     *) reply "$id" '"error":{"code":-32601,"message":"Method not found"}' ;;
   esac
 }
+send() {   # send LINE: Grainy's reply on stdout; status 0, curl's (7: nothing listening, 22: refused, e.g. a new key), 99: no files
+  [ -f "$DIR/endpoint" ] && [ -f "$DIR/auth-header" ] || return 99
+  printf '%s' "$1" | "$CURL" -sS --fail --noproxy '*' --max-time 56 -X POST \
+    -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -H 'Expect:' \
+    -H @"$DIR/auth-header" --data-binary @- "$(cat "$DIR/endpoint")" 2>/dev/null
+}
 while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in *[![:space:]]*) ;; *) continue ;; esac
-  if [ -f "$DIR/endpoint" ] && [ -f "$DIR/auth-header" ] && \
-     body=$(printf '%s' "$line" | "$CURL" -sS --fail --noproxy '*' --max-time 56 -X POST \
-       -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -H 'Expect:' \
-       -H @"$DIR/auth-header" --data-binary @- "$(cat "$DIR/endpoint")" 2>/dev/null); then
+  body=$(send "$line"); code=$?
+  # A tool call made while Grainy is starting or restarting its connection waits for it up to 4 s; nothing reached
+  # Grainy before (no files, nothing listening, or refused), so it cannot run twice. Other requests answer at once.
+  case $code in 7|22|99)
+    if [ "$(field method "$line")" = '"tools/call"' ]; then
+      tries=16
+      while [ $tries -gt 0 ]; do
+        sleep 0.25 2>/dev/null || sleep 1
+        body=$(send "$line"); code=$?
+        case $code in 7|22|99) tries=$((tries-1)) ;; *) tries=0 ;; esac
+      done
+    fi ;;
+  esac
+  if [ $code -eq 0 ]; then
     [ -n "$body" ] && { printf '%s' "$body" | tr '\r\n' '  '; printf '\n'; }
     continue
   fi

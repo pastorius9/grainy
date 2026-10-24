@@ -19,3 +19,17 @@
 새 마스크 만들기 · 브러시 {0} · 선형 {1} · 방사형 {2} => Create New Mask · brush {0} · linear {1} · radial {2}
 마스크 · 새 마스크: 브러시 {0} · 선형 {1} · 방사형 {2} => Masks · new mask: brush {0} · linear {1} · radial {2}
 Grainy 배우기 (웹 튜토리얼)… => Learn Grainy (web tutorial)…
+클리핑 표시 켜기·끄기 => Show / hide clipping
+1:1과 화면 맞춤 번갈아 보기 => Switch between 1:1 and fit
+전체 화면 켜기·끄기 (Esc로 나옴) => Full screen on / off (Esc leaves)
+양옆 패널 숨기기·보이기 => Hide / show the side panels
+모든 패널 숨기기·보이기 => Hide / show all panels
+조명 끄기: 사진만 보기 (Esc로 나옴) => Lights out: the photo only (Esc leaves)
+90° 회전 (왼쪽 · 오른쪽) => Rotate 90° (left · right)
+색 라벨: 빨강 · 노랑 · 초록 · 파랑 (같은 키를 한 번 더 누르면 해제) => Color label: red · yellow · green · blue (press again to clear)
+전체 화면 => Full screen
+조명 끄기 => Lights out
+사진 전체를 화면에 맞춥니다. ({0}로 1:1과 번갈아 봅니다) => Fit the whole photo on screen. ({0} switches between this and 1:1)
+원본 100%로 봅니다. ({0}로 화면 맞춤과 번갈아 봅니다) => View at 100%. ({0} switches between this and Fit)
+검정이나 흰색으로 날아간 곳을 사진 위에 표시합니다. ({0}) => Mark the areas lost to black or white on the photo. ({0})
+{0}: 선택한 사진을 왼쪽 · 오른쪽으로 90° 돌립니다. => {0}: rotate the selected photos 90° left · right.

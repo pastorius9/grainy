@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.1 — More shortcuts; the AI connection rotates, copies, imports and exports to any folder
+
+- **More shortcuts:** J clipping, Z 1:1 / fit, F full screen, L lights out, Tab side panels, Shift+Tab all panels (Esc leaves lights out and full screen); Ctrl+U Auto tone, Ctrl+Shift+U Auto Color, Ctrl+[ / Ctrl+] rotate 90°; 6–9 colour labels (the same key again clears), Ctrl+' virtual copy, Ctrl+/ the shortcut list. On a Mac, Ctrl is ⌘.
+- **AI connection (MCP):** rotate and flip, virtual copies, export to a folder the AI names (made if missing, never replacing files) with width/height and {film} {preset} {camera} {date} file names, folder import, film and preset lists, presets and copied settings (curves included), snapshots, ratings, flags and labels. A call made while Grainy is still starting now waits a few seconds instead of failing.
+
 ## 0.6.0 — Panel switches, more shortcuts, Select Sky, smooth highlights, a hands-on tutorial
 
 - **Every edit panel has the same on/off switch in its header**, and a small dot when it holds edits, so you can see at a glance what is active. Switching a panel off leaves its values as they are.

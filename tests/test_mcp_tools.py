@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QDialog
 
 from test_studio_ui import app,wait
 from mcp_support import make_session,close_session,add_photos,gradient,call,start_call,finish,rpc
-from luma import mcp_service,mcp_protocol,photo_service
+from luma import mcp_service,mcp_protocol,mcp_tools,photo_service
 from luma.engine import defaults,load_image,resize_float,auto_tone_settings
 from luma.i18n import set_language
 
@@ -375,7 +375,7 @@ def test_initialize_and_tools_list_answer_while_a_modal_dialog_is_open(session,t
     blocked=time.monotonic()              # the GUI thread is blocked, as by a long task or a native dialog
     while not all(p.done() for p in pending) and time.monotonic()-blocked<8:time.sleep(.05)
     assert all(p.done() for p in pending) and all(p.seconds<3 for p in pending)
-    assert pending[0].value[1]['result']['protocolVersion']=='2025-06-18' and len(pending[1].value[1]['result']['tools'])==12
+    assert pending[0].value[1]['result']['protocolVersion']=='2025-06-18' and len(pending[1].value[1]['result']['tools'])==len(mcp_tools.DEFINITIONS)
     dialog=QDialog(session.window);dialog.open()
     try:
         assert not call(session,'list_photos',{}).error
@@ -392,7 +392,10 @@ def test_every_tool_replies_within_deadline(session,tmp_path,monkeypatch):
     arguments={'list_photos':{},'get_photo':{'ids':ids},'get_preview':{'ids':ids},'contact_sheet':{'ids':ids},
         'apply_edits':{'edits':[{'ids':ids,'add':{'exposure':.1}}]},'auto_tone':{'ids':ids},'auto_color':{'ids':ids},
         'invert_negatives':{'ids':ids},'undo_last_batch':{},'export_photos':{'ids':ids},'open_photo':{'id':ids[0]},
-        'get_job':{'job':'j1','wait':40}}
+        'get_job':{'job':'j1','wait':40},'list_films':{'type':'presets'},'import_folder':{'path':str(tmp_path/'p')},
+        'create_virtual_copies':{'id':ids[0],'count':1},'set_labels':{'ids':ids,'rating':1},
+        'snapshot':{'ids':ids,'action':'save','name':'x'}}
+    assert set(arguments)=={tool['name'] for tool in mcp_tools.DEFINITIONS}
     port,token=session.mcp.bound_port,session.mcp.token
     calls=[Pending(port,token,{'jsonrpc':'2.0','id':n,'method':'tools/call','params':{'name':name,'arguments':args}})
            for n,(name,args) in enumerate(arguments.items())]
@@ -507,3 +510,162 @@ def test_close_cancels_running_job_and_stops_server(session,tmp_path,gate):
     import socket
     with pytest.raises(OSError):socket.create_connection(('127.0.0.1',port),timeout=1).close()
     assert not (session.mcp.folder/'endpoint').exists()
+
+
+# --- virtual copies, presets, copied settings, curves, snapshots, labels, films, import, export to a folder -----------
+
+def test_virtual_copies_start_from_the_open_edits_and_take_their_own_film_looks(session,tmp_path):
+    from luma import film_look
+    w=session.window;ids=add_photos(w,tmp_path/'p',1);w.activate(ids[0])
+    wait(lambda:w.source is not None and not w.render_running)
+    w.set_setting('exposure',.6)                          # not saved yet: the copies start from what the editor shows
+    copies=call(session,'create_virtual_copies',{'id':ids[0],'count':3}).value['copies']
+    assert len(set(copies))==3 and ids[0] not in copies
+    master=w.catalog.photo(ids[0])
+    for copy in copies:
+        row=w.catalog.photo(copy)
+        assert row['virtual_source']==ids[0] and row['path']==master['path'] and row['settings']==master['settings']
+    assert master['settings']['exposure']==pytest.approx(.6)
+    films=[entry['name'] for entry in film_look.catalog()[:3]]
+    result=call(session,'apply_edits',{'edits':[{'ids':[c],'set':{'film_look':f}} for c,f in zip(copies,films)]})
+    assert not result.error and result.value['changed']==3
+    assert [w.catalog.photo(c)['settings']['film_look'] for c in copies]==[film_look.find(f)[0] for f in films]
+    listed=call(session,'list_photos',{}).value['photos']
+    assert [p.get('v') for p in listed]==[None,1,1,1]
+    assert call(session,'undo_last_batch',{}).value['photos']==3
+    assert all(w.catalog.photo(c) is not None for c in copies)          # undoing the edits leaves the copies
+    video=w.catalog.add(tmp_path/'p'/'clip.mp4')
+    for bad,text in (({'id':ids[0],'count':21},'at most 20'),({'id':ids[0],'count':0},'at least 1'),
+                     ({'id':999,'count':1},'not in the catalog'),({'id':video,'count':1},'is a video')):
+        reply=call(session,'create_virtual_copies',bad);assert reply.error and text in reply.text,bad
+
+
+def test_apply_edits_presets_copied_settings_and_curves_in_one_undoable_batch(session,tmp_path):
+    w=session.window;ids=add_photos(w,tmp_path/'p',4)
+    curve=[[0,0],[.3,.2],[.7,.85],[1,1]];red=[[0,0],[.5,.6],[1,1]]
+    source={**w.catalog.photo(ids[0])['settings'],'crop':[.1,.1,.9,.9],'panels_off':['effects'],'vignette':-20.}
+    w.catalog.set_settings(ids[0],source)
+    shaped=call(session,'apply_edits',{'edits':[{'ids':[ids[0]],'set':{'curve':curve,'rgb_curves':[red,[[0,0],[1,1]],[[0,0],[1,1]]]},
+                                                 'add':{'exposure':.4}}]})
+    assert not shaped.error and shaped.value['changed']==1
+    seen=call(session,'get_photo',{'ids':[ids[0]]}).value['photos'][0]['edits']
+    assert seen['curve']==curve and seen['rgb_curves'][0]==red and seen['exposure']==.4
+    w.catalog.save_preset('Mine',{**w.catalog.photo(ids[3])['settings'],'contrast':22.,'vibrance':15.});w.refresh_presets()
+    w.catalog.set_settings(ids[3],{**w.catalog.photo(ids[3])['settings'],'crop':[.2,.2,.8,.8]})
+    result=call(session,'apply_edits',{'edits':[{'ids':ids[1:3],'copy_from':ids[0]},{'ids':[ids[2]],'add':{'exposure':.1}},
+                                                {'ids':[ids[3]],'preset':'mine','add':{'contrast':3}}]})
+    assert not result.error and result.value['changed']==3,result
+    one,two,three=settings_of(w,ids[1:])
+    assert one['curve']==[[float(x),float(y)] for x,y in curve] and one['exposure']==pytest.approx(.4) and one['crop'] is None
+    assert one['panels_off']==['effects'] and one['vignette']==-20                  # the pasted panel stays switched off
+    assert two['exposure']==pytest.approx(.5) and two['rgb_curves'][0]==[[0.,0.],[.5,.6],[1.,1.]]
+    assert three['contrast']==25 and three['vibrance']==15 and three['crop']==[.2,.2,.8,.8]    # a preset keeps the framing
+    assert w.catalog.photo(ids[3])['user_metadata'][photo_service.PRESET_KEY]=='Mine'
+    framed=call(session,'apply_edits',{'edits':[{'ids':[ids[1]],'copy_from':ids[0],'groups':['crop']}]})
+    assert framed.value['changed']==1 and w.catalog.photo(ids[1])['settings']['crop']==[.1,.1,.9,.9]
+    assert call(session,'undo_last_batch',{}).value['photos']==1
+    assert call(session,'undo_last_batch',{}).value=={'undone':result.value['batch'],'tool':'apply_edits','photos':3}
+    assert all(s['curve']==defaults()['curve'] and s['exposure']==0 for s in settings_of(w,ids[1:3]))
+    assert settings_of(w,[ids[3]])[0]['contrast']==0 and photo_service.PRESET_KEY not in w.catalog.photo(ids[3])['user_metadata']
+    for bad,text in (({'ids':[ids[1]],'preset':'Nope'},"no preset named 'Nope'; presets: "),
+                     ({'ids':[ids[1]],'preset':'Mine','copy_from':ids[0]},'give preset or copy_from, not both'),
+                     ({'ids':[ids[1]],'groups':['crop'],'add':{'exposure':1}},'groups needs copy_from'),
+                     ({'ids':[ids[1]],'copy_from':999},'copy_from photo 999 is not in the catalog'),
+                     ({'ids':[ids[1]],'groups':['crop']},'needs preset, copy_from, set or add'),
+                     ({'ids':[ids[1]],'copy_from':ids[0],'groups':['sky']},'must be one of'),
+                     ({'ids':[ids[1]],'set':{'curve':[[0,0],[.5,1.5],[1,1]]}},'curve[1][1] must be at most 1'),
+                     ({'ids':[ids[1]],'set':{'curve':[[0,0],[.6,.5],[.5,.6],[1,1]]}},'curve must be 2 to 16'),
+                     ({'ids':[ids[1]],'set':{'film_look':'zzzz qqqq'}},'call list_films')):
+        reply=call(session,'apply_edits',{'edits':[bad]});assert reply.error and text in reply.text,(bad,reply.text)
+    assert 'Soft daylight' in call(session,'apply_edits',{'edits':[{'ids':[ids[1]],'preset':'Nope'}]}).text
+
+
+def test_snapshots_save_list_and_restore_as_an_undoable_batch(session,tmp_path):
+    w=session.window;ids=add_photos(w,tmp_path/'p',2)
+    assert not call(session,'apply_edits',{'edits':[{'ids':ids,'set':{'exposure':.5}}]}).error
+    assert call(session,'snapshot',{'ids':ids,'action':'save','name':' warm '}).value=={'saved':2,'errors':[]}
+    assert not call(session,'apply_edits',{'edits':[{'ids':ids,'add':{'exposure':.5,'contrast':10}}]}).error
+    listed=call(session,'snapshot',{'ids':ids+[999],'action':'list'}).value
+    names=[s['name'] for s in listed['photos'][0]['snapshots']]
+    assert names[0]=='warm' and names[1].startswith('AI 작업 전 · ') and listed['missing']==[999]
+    assert [s['name'] for s in w.catalog.snapshots(ids[0])][0]=='warm'           # the ones Grainy's Snapshot menu shows
+    restored=call(session,'snapshot',{'where':{'folder':str(tmp_path/'p')},'action':'restore','name':'WARM'}).value
+    assert restored['changed']==2 and all(s['exposure']==.5 and s['contrast']==0 for s in settings_of(w,ids))
+    assert photo_service.last_batch(w.catalog)['tool']=='snapshot'
+    assert call(session,'undo_last_batch',{}).value['tool']=='snapshot'
+    assert all(s['exposure']==1 and s['contrast']==10 for s in settings_of(w,ids))
+    missing=call(session,'snapshot',{'ids':ids,'action':'restore','name':'cool'})
+    assert missing.error and "no snapshot named 'cool'" in missing.text
+    for bad in ({'ids':ids,'action':'save'},{'ids':ids,'action':'restore','name':'  '},{'ids':ids,'action':'drop','name':'x'}):
+        assert call(session,'snapshot',bad).error,bad
+
+
+def test_set_labels_changes_rating_flag_and_label_outside_the_batches(session,tmp_path):
+    w=session.window;ids=add_photos(w,tmp_path/'p',3)
+    value=call(session,'set_labels',{'ids':ids[:2]+[999],'rating':4,'flag':'picked','label':'green'}).value
+    assert value=={'changed':2,'unchanged':0,'errors':[{'id':999,'error':'not in the catalog'}]}
+    assert [(r['rating'],r['flag'],r['label']) for r in map(w.catalog.photo,ids)]==[(4,1,'초록'),(4,1,'초록'),(0,0,'')]
+    assert call(session,'set_labels',{'ids':ids[:2],'rating':4}).value['unchanged']==2
+    assert call(session,'set_labels',{'where':{'label':'green'},'label':'none','flag':'rejected'}).value['changed']==2
+    assert [p.get('f') for p in call(session,'list_photos',{}).value['photos']]==[-1,-1,None]
+    assert w.catalog.photo(ids[0])['label']=='' and photo_service.batch_index(w.catalog)==[]
+    for bad in ({'ids':ids},{'ids':ids,'rating':6},{'ids':ids,'label':'pink'}):assert call(session,'set_labels',bad).error,bad
+
+
+def test_list_films_by_type_and_the_presets(session,tmp_path):
+    from luma import film_look
+    films=call(session,'list_films',{}).value['films']
+    assert len(films)==len(film_look.catalog()) and set(films[0])>={'name','iso','type','maker'}
+    bw=call(session,'list_films',{'type':'bw'}).value['films']
+    assert bw and all(f['type']=='bw' for f in bw) and any(f.get('cine') for f in bw)     # Double-X is a b&w cine stock
+    cine=call(session,'list_films',{'type':'cine'}).value['films']
+    assert cine and all(f['cine']==1 for f in cine) and {f['type'] for f in cine}=={'color','bw','slide'}
+    w=session.window;w.catalog.save_preset('Mine',defaults());w.refresh_presets()
+    presets=call(session,'list_films',{'type':'presets'}).value
+    assert 'Soft daylight' in presets['built_in'] and presets['saved']==['Mine']
+
+
+def test_import_folder_adds_new_photos_once_and_reports_their_ids(session,tmp_path,tmp_path_factory):
+    w=session.window;folder=tmp_path_factory.mktemp('scans')
+    files=[gradient(folder/f'scan-{n}.png') for n in range(2)]+[gradient(folder/'sub'/'deep.png')]
+    (folder/'notes.txt').write_text('x',encoding='utf-8')
+    before=[f.read_bytes() for f in files]
+    first=call(session,'import_folder',{'path':str(folder)}).value
+    assert first['imported']==2 and first['already']==0 and first['recursive'] is False and len(first['ids'])==2
+    assert sorted(Path(w.catalog.photo(i)['path']).name for i in first['ids'])==['scan-0.png','scan-1.png']
+    assert [p['id'] for p in call(session,'list_photos',{'folder':first['folder']}).value['photos']]==first['ids']
+    second=call(session,'import_folder',{'path':str(folder),'recursive':True}).value
+    assert second['imported']==1 and second['already']==2 and Path(w.catalog.photo(second['ids'][0])['path']).name=='deep.png'
+    again=call(session,'import_folder',{'path':str(folder),'recursive':True}).value
+    assert again=={'imported':0,'ids':[],'already':3,'folder':first['folder'],'recursive':True}
+    assert [f.read_bytes() for f in files]==before and len(w.catalog.photos())==3
+    assert [job.tool for job in session.mcp.jobs.values()]==['import_folder']*3
+    for bad,text in (('relative','absolute'),(str(folder/'missing'),'not a folder'),(str(files[0]),'not a folder'),
+                     (str(w.catalog.directory),'a folder Grainy manages itself'),(str(session.mcp.folder),'a folder Grainy manages itself')):
+        reply=call(session,'import_folder',{'path':bad});assert reply.error and text in reply.text,(bad,reply.text)
+
+
+def test_export_to_a_named_folder_with_a_size_box_and_metadata_names(session,tmp_path,tmp_path_factory):
+    from luma import film_look
+    w=session.window;ids=add_photos(w,tmp_path/'p',2,size=(240,160))
+    film=film_look.catalog()[0]['name']
+    assert not call(session,'apply_edits',{'edits':[{'ids':[ids[0]],'set':{'film_look':film}},
+                                                    {'ids':[ids[1]],'preset':'Soft daylight'}]}).error
+    out=tmp_path_factory.mktemp('exports')/'roll 12'/'web'                 # made when missing
+    arguments={'ids':ids,'path':str(out),'width':120,'naming':'{film}_{preset}_{stem}','format':'PNG'}
+    value=call(session,'export_photos',arguments).value
+    assert value['exported']==2 and value['failed']==0 and Path(value['folder'])==out.resolve()
+    assert sorted(p.name for p in out.iterdir())==sorted([f'{film}_photo-0.png','Soft daylight_photo-1.png'])
+    for path in out.iterdir():
+        with Image.open(path) as image:assert image.size==(120,80)
+    again=call(session,'export_photos',{**arguments,'width':100,'height':100,'fit':'cover','destination':'path'}).value
+    assert again['exported']==2 and len(list(out.iterdir()))==4                   # never replaced: a number is added
+    with Image.open(out/'Soft daylight_photo-1_2.png') as image:assert image.size==(150,100)
+    for bad,text in (({'ids':ids,'path':'relative/out'},'absolute'),({'ids':ids,'path':str(w.catalog.directory/'x')},'manages itself'),
+                     ({'ids':ids,'path':str(session.mcp.folder)},'manages itself'),
+                     ({'ids':ids,'path':str(out),'subfolder':'x','longest':100,'width':50},'not both'),
+                     ({'ids':ids,'path':str(out),'fit':'cover'},'fit needs width'),({'ids':ids,'destination':'path'},'needs path'),
+                     ({'ids':ids,'destination':'default','path':str(out)},'needs path'),
+                     ({'ids':ids,'naming':'{stem}_{lens}'},'naming may contain only')):
+        reply=call(session,'export_photos',bad);assert reply.error and text in reply.text,(bad,reply.text)
+    assert not (w.catalog.directory/'x').exists()
