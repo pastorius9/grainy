@@ -30,7 +30,8 @@ def test_buttons_toggle_follow_the_settings_and_undo(app, tmp_path):
     w = MainWindow(tmp_path/'data')
     try:
         ident = w.catalog.add(path); w.refresh_lists(); w.activate(ident); w.show()
-        wait(lambda: w.source is not None and not w.render_running and not w.library_loading)
+        wait(lambda: w.source is not None and not w.render_running and not w.library_loading,
+             state=lambda: f'source {w.source is not None}, render running {w.render_running}, library loading {w.library_loading}')
         tungsten, daylight = w.studio.film_buttons['tungsten'], w.studio.film_buttons['daylight']
         tungsten.click()
         assert (w.settings['kelvin_enabled'], w.settings['wb_reference'], w.settings['kelvin']) == (True, 3200., 5500.)

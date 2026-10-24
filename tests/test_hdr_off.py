@@ -26,7 +26,8 @@ def test_hdr_controls_and_export_format_are_gone(app, tmp_path, shipped):
     w = MainWindow(tmp_path/'data')
     try:
         ident = w.catalog.add(path, settings={**defaults(), 'hdr': True}); w.refresh_lists(); w.activate(ident); w.show()
-        wait(lambda: w.source is not None and not w.render_running and not w.library_loading)
+        wait(lambda: w.source is not None and not w.render_running and not w.library_loading,
+             state=lambda: f'source {w.source is not None}, render running {w.render_running}, library loading {w.library_loading}')
         assert w.hdr_button.isHidden() and w.hdr_panel.isHidden() and not w.settings['hdr']
         w.catalog.save_preference(PREFERENCE, dict(folder=str(tmp_path), format='TIFF HDR 32-bit', quality=90, longest=0,
                                                    color_space='sRGB', keep_metadata=True, naming='{stem}'))

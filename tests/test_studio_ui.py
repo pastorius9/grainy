@@ -1,4 +1,5 @@
 import os
+import sys
 os.environ.setdefault('QT_QPA_PLATFORM','offscreen')
 from pathlib import Path
 from copy import deepcopy
@@ -12,15 +13,19 @@ from PySide6.QtTest import QTest
 from luma.app import MainWindow,configure_application
 from luma.engine import geometry,develop
 
+# The shared macOS runner, with three test workers, can take longer than 15 s to open a fresh window.
+SLOW=3 if os.environ.get('CI') and sys.platform=='darwin' else 1
 
-def wait(predicate,timeout=15000):
-    loop=QEventLoop();poll=QTimer();poll.setInterval(10);poll.timeout.connect(lambda:loop.quit() if predicate() else None)
+
+def wait(predicate,timeout=15000,state=None):
+    """Run the event loop until predicate() holds; state() describes what was still missing when it did not."""
+    timeout*=SLOW;loop=QEventLoop();poll=QTimer();poll.setInterval(10);poll.timeout.connect(lambda:loop.quit() if predicate() else None)
     deadline=QTimer();deadline.setSingleShot(True);deadline.timeout.connect(loop.quit)
     poll.start();deadline.start(timeout)
     # A paint/timer in the same event batch can queue a new thumbnail after
     # the poll requested exit. Recheck without resetting the original timeout.
     while not predicate() and deadline.isActive():loop.exec()
-    poll.stop();deadline.stop();assert predicate()
+    poll.stop();deadline.stop();assert predicate(),state() if state else f'not within {timeout/1000:g} s'
 
 
 @pytest.fixture(scope='module')
