@@ -144,7 +144,7 @@ def test_the_question_mark_opens_the_list(window, monkeypatch):
     assert opened == [w, w]
     menu = w.findChild(QMenu, 'settingsMenu')
     entry = next(a for a in menu.actions() if a.text().startswith(tr('단축키 목록…')))
-    assert entry.text().endswith('\t? / Ctrl+/'); entry.trigger()
+    assert entry.text().endswith('\t'+key_hint('Ctrl+/')); entry.trigger()
     assert opened == [w, w, w]
 
 
@@ -421,7 +421,7 @@ def test_ctrl_apostrophe_makes_a_virtual_copy_like_the_menu(window):
         wait(lambda: not w.library_loading); return w.catalog.db.execute('SELECT COUNT(*) FROM photos WHERE virtual_source IS NOT NULL').fetchone()[0]
     assert copies() == 0
     press(w, Qt.Key.Key_Apostrophe, CTRL); assert copies() == 1
-    entry = menu_entry(w, '사진 관리', '가상 사본 만들기'); assert entry.text().endswith("\tCtrl+'")
+    entry = menu_entry(w, '사진 관리', '가상 사본 만들기'); assert entry.text().endswith('\t'+key_hint("Ctrl+'"))
     entry.trigger(); assert copies() == 2
 
 
