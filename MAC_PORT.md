@@ -419,11 +419,30 @@ LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
   - 참고(문제 아님): 미리보기가 요청 크기보다 작게 올 때가 있다(컬러 필름의 그레인 때문에 JPEG가 커서 `PREVIEW_BYTES`에 맞춰 870px). 그리고 AI 프로그램은 세션을 시작할 때 도구 목록을 받는다(`listChanged: False`): Grainy가 꺼진 채로 시작한 이 맥의 Claude Code 세션은 업데이트 뒤에도 0.5.97 때의 도구 12개만 보였다. 새 세션은 17개를 본다.
 - 9 튜토리얼: `https://pastorius9.github.io/grainy/learn/`이 열리고, 레슨 이동과 필름 레슨에서 Portra 400 고르기가 화면에 반영된다. 콘솔 오류 없음. Safari가 아니라 앱 내장 브라우저(Chromium)로 봤다.
 
-### 찾은 문제 2건 (공통 코드라 Windows에도 해당, 아직 고치지 않았다)
+### 찾은 문제 2건
 
-1. **필름 룩이 걸린 사진은 `get_photo`가 실패한다.** `Grainy could not finish this call: ValueError: could not convert string to float: 'cinestill-800t'`. `photo_service.summary()`가 `FIELDS`의 값을 모두 `fmt()`(float 변환)에 넣는데 `film_look`은 필름 id 문자열이다. 재현: 아무 사진에 `apply_edits`로 `film_look`을 넣고 `get_photo`. 같은 사진이 여러 장 섞여 있으면 그 호출 전체가 실패한다. 제안: `film_look`은 `film_look.entry(id)['name']`(apply_edits가 받는 이름)으로 내보내고 `fmt`를 거치지 않게 한다. 시험은 필름 룩을 건 사진의 `get_photo`로.
-2. **AI의 `import_folder`가 읽을 수 없는 파일을 만나면 Grainy 창에 `읽을 수 없는 사진` 정보 창(모달)이 뜨고, 사람이 닫을 때까지 이후의 쓰기 호출이 모두 `Grainy is busy: a dialog or menu is open in Grainy`로 거절된다.** 결과에는 이미 `failures`가 들어 있다. 경로: `McpService`의 import_folder → `MainWindow.import_paths` → `import_next`의 `QMessageBox.information(self, tr('읽을 수 없는 사진'), …)`(app.py 2394 근처). 제안: AI 작업이 넣은 파일의 오류는 창 없이 결과로만 알린다(`folder_sync`의 `auto`처럼 조용히 둘 키 목록).
+바로 아래 절 "PC에서 고칠 것"에 고칠 내용만 따로 적었다.
 
 ### 남은 것 (사람 손이나 다른 환경)
 
 - 외장 디스크·데스크탑·문서 폴더 사진으로 업데이트 뒤 권한 유지(1), 실제 키 입력(2), 패널 스위치·스포이드 클릭·끌기(3·4)의 손 확인, 방화벽이 켜진 맥(8), Safari(9), Claude 데스크톱·Codex 등록(8).
+
+## 2026-10-24 — PC에서 고칠 것 2건 (0.6.1 맥 확인에서 나옴)
+
+둘 다 플랫폼과 무관한 공통 코드다. 맥에서는 고치지 않았다.
+
+### 1. 필름 룩이 걸린 사진은 AI의 `get_photo`가 실패한다
+
+- 증상: `Grainy could not finish this call: ValueError: could not convert string to float: 'cinestill-800t'`. 여러 장을 한 번에 물으면 그중 한 장만 필름 룩이 있어도 호출 전체가 실패한다. "Portra 400 적용해줘" 다음의 "지금 보정값 알려줘"가 안 된다.
+- 재현: 아무 사진에 `apply_edits`로 `{"set": {"film_look": "Kodak Portra 400"}}` → 그 사진으로 `get_photo`.
+- 원인: `luma/photo_service.py` `summary()`(341행)의 `edits={k:fmt(...) for k in FIELDS ...}`가 `film_look`(필름 id 문자열)까지 `fmt()`에 넣고, `fmt()`는 `float()`로 바꾼다. `FIELDS`에서 문자열 값은 `film_look` 하나다(`NUMERIC` 참고).
+- 고칠 방향: `film_look`은 `fmt`를 거치지 않게 하고, `film_look.entry(id)['name']`(예: `Kodak Portra 400`, `apply_edits`가 받는 이름)으로 내보낸다. 목록에 없는 id면 id 그대로.
+- 시험: 필름 룩을 건 사진과 안 건 사진을 함께 `get_photo` → 둘 다 나오고, `edits.film_look`이 이름이며, 그 값을 그대로 `apply_edits`에 넣으면 같은 필름이 된다.
+
+### 2. AI의 `import_folder`가 읽을 수 없는 파일을 만나면 모달 창이 떠서 이후 AI 작업이 막힌다
+
+- 증상: 가져오기가 끝날 때 Grainy 창에 `읽을 수 없는 사진` 정보 창(`QMessageBox`, 모달)이 뜬다. 사람이 닫을 때까지 이후 쓰기 호출이 모두 `Grainy is busy: a dialog or menu is open in Grainy; ask the person to close it.`로 거절된다. AI가 혼자 작업 중이면 사람이 없어서 계속 막혀 있다. 실패한 파일은 이미 도구 결과의 `failures`에 들어 있으므로 이 창은 필요 없다.
+- 재현: 읽을 수 없는 파일이 든 폴더로 `import_folder`(맥에서는 Nikon Z 8 고효율 NEF 2개가 든 공개 RAW 샘플 폴더) → 끝난 뒤 `apply_edits` 아무거나.
+- 원인: `McpService`의 import_folder가 `MainWindow.import_paths(...)`(`luma/mcp_service.py` 633행)로 앱의 가져오기를 그대로 쓰고, `MainWindow.import_next`가 끝에서 `import_errors`가 있으면 `QMessageBox.information(self,tr('읽을 수 없는 사진'),...)`(`luma/app.py` 2395행)을 띄운다. 오류는 2422행에서 쌓인다. 자동 가져오기는 `folder_sync.import_failed()`로 이미 조용히 넘긴다.
+- 고칠 방향: AI 작업이 넣은 파일(그 job의 키)의 실패는 `import_errors`에 넣지 않고 job 결과로만 알린다. `folder_sync.auto`와 같은 방식. 사람이 직접 시작한 가져오기의 오류 창은 지금처럼 둔다(둘이 섞여 돌 때도 사람 쪽 파일만 창에 나오게).
+- 시험: 읽을 수 없는 파일이 든 폴더로 `import_folder` → 끝난 뒤 `QApplication.activeModalWidget()`이 없고, 바로 다음 `apply_edits`가 busy가 아니며, 결과의 `failures`에 그 파일이 있다. 사람이 같은 폴더를 가져오면 오류 창은 여전히 뜬다.
