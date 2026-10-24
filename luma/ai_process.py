@@ -71,8 +71,8 @@ class ProcessTree:
             else:
                 try:
                     os.killpg(self.process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+                except (ProcessLookupError, PermissionError):
+                    pass    # gone; macOS answers EPERM for a group whose members are all exited (zombies)
 
     def close(self):
         self.stop()
