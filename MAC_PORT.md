@@ -395,3 +395,35 @@ LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
 - 실패하면 고치기 전에 무엇이 왜 실패했는지 이 문서에 남기고 소유자에게 알린다. 느린 시험 서버에서 `wait` 시간 초과(15초)가 가끔 났다: 같은 시험을 다시 돌려 재현되는지 먼저 본다.
 - 커밋은 공개 저장소 규칙대로 `pastorius9 <177642243+pastorius9@users.noreply.github.com>`으로만, 개인 이름·회사·메일은 넣지 않는다. 릴리스는 소유자 말이 있을 때만.
 
+## 2026-10-24 — 맥북 확인 결과: 0.6.1 (맥 쪽에서)
+
+개발용 Mac(M1 Pro, macOS 15.0.1). 소스는 `mac` = `21518ea`, 설치된 앱은 0.6.1. 위 절의 B를 모두 하고, A는 화면을 직접 누르지 않고 할 수 있는 만큼 했다.
+
+### B. 자동 시험 — 모두 통과
+
+- `tools/check.py`: 1,902개 통과(병렬 1,881 + 조작 21), 16개 건너뜀. 건너뛴 것은 모두 Windows 전용이다(디스플레이 색 5, PowerShell 중계 10, `test_mcp_service`의 PowerShell 1). 맥에서만 도는 sh 중계 시험 3개(`test_sh_bridge_forwards_and_answers_offline`, `..._waits_briefly_for_grainy_on_a_tool_call_only`, `test_documented_macos_lines_start_the_bridge_from_home`)는 돌았고 통과했다.
+- `main.py --self-test`: 134개 항목 통과. GPU는 Apple M1 Pro, GPU 결과가 CPU와 같다.
+- 지시된 개별 시험 6개 파일: 153개 통과, 10개 건너뜀(Windows 전용).
+
+### A. 확인한 것
+
+- 0 업데이트: 0.5.97에서 앱 안 업데이트로 0.6.1이 됐다(`Update/update.log`). 0.5.86 → 0.5.97도 같은 방식으로 됐다.
+- 1 업데이트 뒤 권한: 0.5.97과 0.6.1의 지정 요구 사항(designated requirement)이 같다: identifier `io.github.pastorius9.grainy`와 같은 인증서(leaf `41467881…`). 0.5.86은 임시 서명이라 cdhash였다. 그러므로 macOS가 업데이트를 같은 앱으로 보고 `파일 및 폴더` 권한을 유지할 조건은 갖췄다. **실제 사진으로는 확인하지 못했다**: 이 맥의 보관함(111장)은 원본을 디스크에서 지운 상태라 모두 원본 없음(`x`)으로 나오며, 이것은 맞는 표시다. Gatekeeper(`spctl`)는 거부한다(Apple 개발자 서명이 없으므로 예상대로, 처음 열 때 "그래도 열기").
+- 2 단축키: 창의 단축키 49개를 macOS 표기로 뽑았다. 모두 ⌘·⇧·⌥ 기호로 나오고, macOS가 쓰는 조합(⌘H ⌘M ⌘Q ⌘W ⌘Tab ⌘Space ⌃⌘F ⌘, ⌘` 등)과 겹치는 것과 한 키에 두 동작이 걸린 것은 없다. 실제 키 입력(F·L·Tab, 슬라이더를 누른 뒤의 Tab)은 사람이 볼 일이다.
+- 5 하늘 선택: 공개 RAW 샘플 4장으로 앱과 같은 경로(`develop`의 `masks`, 색 원본)를 돌렸다. 하늘을 잘 잡는다(크레인·지붕선 제외). 알프스 사진(Leica M240)에서는 햇빛 받은 눈 덮인 능선 일부도 하늘로 들어가고, 흐린 먼 산 일부(Canon 5D Mark IV)도 들어간다. 나무 사이로만 보이는 흰 하늘(Sony A7 III)은 잡지 않는다(가지가 경계라서, 설계대로로 보인다).
+- 6 DRT: 같은 사진들을 +1 EV로 올렸을 때 하얗게 잘린 픽셀이 기본 렌더링 0.5~0.6%에서 DRT 0.0%로 줄었다. 보기에도 하늘이 날아가지 않는다.
+- 7 필름 룩: Sony A7 III(6024×4024) 원본 크기 JPEG 내보내기가 보정 없이 2.0초, Kodak Portra 400을 걸고 3.7초. AI 미리보기(1024px)는 0.2~0.6초. Portra 400·Tri-X 400·CineStill 800T 모두 정상으로 보인다.
+- 8 AI 연결
+  - 실제 앱: `~/.claude.json`의 `grainy` 항목이 홈 경로가 풀린 `sh …/grainy-mcp-bridge.sh`이고, Claude Code에서 도구가 응답한다. 앱은 `127.0.0.1:47821`에만 열려 있다. `mcp` 폴더 0700, 파일 0600, `owner.lock` 있음. 중계 스크립트로 `initialize`·`tools/list`를 보내면 0.6.1과 도구 17개가 온다. 이 맥은 방화벽이 꺼져 있어 "들어오는 연결 허용?" 창은 확인하지 못했다.
+  - 임시 보관함 Grainy(`tools/try_mcp.py`와 같은 방식, 화면 없이, 소스 0.6.1)에 중계 스크립트로 붙어 도구 17개를 모두 불렀다: `import_folder`(공개 RAW 샘플 17개 → 15개 가져옴, Z 8 고효율 2개는 `failures`), `list_photos`, `contact_sheet`, `list_films`(필름·프리셋), `apply_edits`(필름 룩, 프리셋, `copy_from`, 회전·뒤집기, 노출), `get_preview`, `auto_tone`, `auto_color`, `undo_last_batch`(되돌리기·다시 실행), `create_virtual_copies`, `set_labels`, `snapshot`(저장·목록·복원, 자동 `AI 작업 전` 스냅샷 포함), `export_photos`(경로, 기본 폴더 + 하위 폴더, `{film}` 이름, 긴 변 2000), `open_photo`, `get_job`. 아래 두 가지 말고는 정상이다.
+  - 참고(문제 아님): 미리보기가 요청 크기보다 작게 올 때가 있다(컬러 필름의 그레인 때문에 JPEG가 커서 `PREVIEW_BYTES`에 맞춰 870px). 그리고 AI 프로그램은 세션을 시작할 때 도구 목록을 받는다(`listChanged: False`): Grainy가 꺼진 채로 시작한 이 맥의 Claude Code 세션은 업데이트 뒤에도 0.5.97 때의 도구 12개만 보였다. 새 세션은 17개를 본다.
+- 9 튜토리얼: `https://pastorius9.github.io/grainy/learn/`이 열리고, 레슨 이동과 필름 레슨에서 Portra 400 고르기가 화면에 반영된다. 콘솔 오류 없음. Safari가 아니라 앱 내장 브라우저(Chromium)로 봤다.
+
+### 찾은 문제 2건 (공통 코드라 Windows에도 해당, 아직 고치지 않았다)
+
+1. **필름 룩이 걸린 사진은 `get_photo`가 실패한다.** `Grainy could not finish this call: ValueError: could not convert string to float: 'cinestill-800t'`. `photo_service.summary()`가 `FIELDS`의 값을 모두 `fmt()`(float 변환)에 넣는데 `film_look`은 필름 id 문자열이다. 재현: 아무 사진에 `apply_edits`로 `film_look`을 넣고 `get_photo`. 같은 사진이 여러 장 섞여 있으면 그 호출 전체가 실패한다. 제안: `film_look`은 `film_look.entry(id)['name']`(apply_edits가 받는 이름)으로 내보내고 `fmt`를 거치지 않게 한다. 시험은 필름 룩을 건 사진의 `get_photo`로.
+2. **AI의 `import_folder`가 읽을 수 없는 파일을 만나면 Grainy 창에 `읽을 수 없는 사진` 정보 창(모달)이 뜨고, 사람이 닫을 때까지 이후의 쓰기 호출이 모두 `Grainy is busy: a dialog or menu is open in Grainy`로 거절된다.** 결과에는 이미 `failures`가 들어 있다. 경로: `McpService`의 import_folder → `MainWindow.import_paths` → `import_next`의 `QMessageBox.information(self, tr('읽을 수 없는 사진'), …)`(app.py 2394 근처). 제안: AI 작업이 넣은 파일의 오류는 창 없이 결과로만 알린다(`folder_sync`의 `auto`처럼 조용히 둘 키 목록).
+
+### 남은 것 (사람 손이나 다른 환경)
+
+- 외장 디스크·데스크탑·문서 폴더 사진으로 업데이트 뒤 권한 유지(1), 실제 키 입력(2), 패널 스위치·스포이드 클릭·끌기(3·4)의 손 확인, 방화벽이 켜진 맥(8), Safari(9), Claude 데스크톱·Codex 등록(8).
