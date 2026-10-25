@@ -41,7 +41,10 @@ def test_hung_status_times_out_and_ends_children(profile, tmp_path, monkeypatch)
     start = time.monotonic()
     result = auth.check_status(profile, (sys.executable, str(PEER), profile.key, 'status-hung', str(pidfile)), timeout=.7)
     assert result == auth.AuthStatus('timeout') and time.monotonic() - start < 4
-    assert pidfile.is_file() and not alive(int(pidfile.read_text()))
+    assert pidfile.is_file()
+    child = int(pidfile.read_text()); end = time.monotonic() + 5
+    while alive(child) and time.monotonic() < end:time.sleep(.05)     # macOS: a killed child is gone a moment later
+    assert not alive(child)
 
 
 @pytest.mark.parametrize('key,code,output', [

@@ -39,8 +39,7 @@ def test_sdr_preview_is_explicit_and_never_changes_edits(window):
 def test_native_request_visualization_and_error_fallback(window):
     w=window;w.hdr_display.state=Display(active=True,supported=True,white=200,peak=800)
     w.hdr_display.update_ui();w.hdr_button.click()
-    wait(lambda:not w.render_running and not w.refine_timer.isActive())
-    assert w.view.hdr_surface.pixels is not None
+    wait(lambda:not w.render_running and not w.refine_timer.isActive() and w.view.hdr_surface.pixels is not None)
     assert w.histogram.display_stops==2
     w.hdr_visualize.click();wait(lambda:not w.render_running)
     assert w.view.hdr_surface.pixels is None
