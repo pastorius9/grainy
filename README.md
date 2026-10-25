@@ -130,7 +130,7 @@ Learn it hands-on in your browser: **[pastorius9.github.io/grainy/learn](https:/
 
 ## Ask AI
 
-Click **AI** in the header, choose an installed **Claude Code**, **Codex** or **Gemini CLI**, type a request, and press **Send** or **Ctrl+Enter**. The optional model field is empty for the program's default. Missing programs appear disabled with an installation hint. Each program uses its own existing sign-in and subscription; Grainy does not provide an account login.
+Click **AI** in the header, choose an installed **Claude Code**, **Codex** or **Gemini CLI**, type a request, and press **Send** or **Ctrl+Enter**. The optional model field is empty for the program's default. Missing programs can be installed from this window using the vendor’s official installer, with the command shown before it runs. Each program uses its own account and subscription; the window shows each program’s sign-in status and can open its official sign-in, while Grainy never sees passwords or keys.
 
 The non-modal window shows replies and Grainy tool calls while the photos update. **Stop** ends the program and its children; edits already applied remain. **New conversation** clears the conversation, and **Undo Last AI Task** uses the same batch undo as AI Connection. If the AI connection is off, the window offers to turn it on. No separate MCP installation is needed for this window.
 

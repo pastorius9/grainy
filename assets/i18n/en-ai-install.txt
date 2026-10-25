@@ -1,0 +1,16 @@
+설치… => Install…
+설치 확인 => Confirm installation
+설치 => Install
+프로그램이 없으면 설치…를 누르세요. 실행 전에 공식 설치 명령을 보여 줍니다. => If a program is missing, click Install… to review its official installation command before running it.
+설치할 프로그램: {0}\n제공자: {1}\n공식 안내: {2}\n\n실행할 명령:\n{3} => Program to install: {0}\nVendor: {1}\nOfficial instructions: {2}\n\nCommand to run:\n{3}
+새 콘솔/Terminal 창에서 설치 과정을 볼 수 있습니다. 그 창에서 추가 확인을 요청할 수 있습니다. 결과를 읽고 아무 키나 누르면 설치 실행이 끝납니다. => You can watch the installation in a new console/Terminal window. It may ask for confirmation there. Read the result and press any key to finish.
+결과를 확인한 뒤 아무 키나 누르면 이 설치 실행을 마칩니다. => Read the result, then press any key to finish this installation session.
+Node.js가 필요합니다 => Node.js is required
+npm으로 설치하려면 Node.js와 npm이 먼저 필요합니다. 공식 Node.js LTS를 설치한 뒤 다시 확인하고 설치…를 눌러 주세요. AI 프로그램은 자동으로 이어서 설치하지 않습니다. => Installing with npm requires Node.js and npm first. Install the official Node.js LTS, check again, then click Install… for the AI program. It will not be installed automatically afterward.
+Node.js 공식 페이지 열기 => Open official Node.js page
+Node.js 설치… (winget) => Install Node.js… (winget)
+브라우저를 열지 못했습니다. 공식 주소를 직접 열어 주세요: {0} => Could not open the browser. Open the official address yourself: {0}
+설치 창을 열지 못했습니다. 공식 안내에서 설치 방법을 확인해 주세요. => Could not open the installer window. See the official installation instructions.
+열린 설치 창에서 결과를 확인한 뒤 아무 키나 누르세요. 프로그램을 다시 찾습니다. 필요하면 다시 확인을 누르세요. => Read the result in the installer window, then press any key. Grainy will look for the program again. You can also click Check again.
+프로그램을 찾았습니다. 로그인 상태를 확인하고 로그인…을 누르세요. => Program found. Check its sign-in status and click Sign in….
+프로그램을 아직 찾지 못했습니다. 설치 창의 결과를 확인하세요. Node.js만 설치했다면 설치…를 다시 눌러 AI 프로그램을 설치하세요. => Program not found yet. Check the installer result. If you only installed Node.js, click Install… again to install the AI program.

@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.4 — Ask AI: sign-in status, official sign-in and install buttons
+
+- Ask AI shows whether Claude Code, Codex and Gemini CLI are signed in (each program's own status; no emails or keys shown).
+- **Sign in…** opens the program's official sign-in in a new window; Grainy never sees passwords or keys. A run that fails on sign-in says so and points to the button.
+- **Install…** appears for a missing program: it shows the vendor's official install command first and runs it in a new window when you confirm; Node.js is pointed out when needed.
+
 ## 0.6.3 — Ask AI: give Claude Code, Codex or Gemini CLI a task from inside Grainy
 
 - **Ask AI** (top of the window): pick Claude Code, Codex or Gemini CLI installed on this computer, type what you want ("invert this roll, fix the colour and export it for the web"), and it works with Grainy's own AI-connection tools. Progress and tool use stream into the window; Stop, New conversation and Undo last AI task are there.

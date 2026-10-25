@@ -1,4 +1,4 @@
-"""Per-run CLI profiles for Ask AI. No shell command strings or account setup.
+"""CLI profiles for Ask AI. Official account actions live in ai_auth.
 
 The table owns discovery, arguments, event decoding and conversation resumption.
 Only the Grainy settings directory is used for files written by this module.
@@ -8,7 +8,6 @@ import json
 import os
 from pathlib import Path
 import re
-import shutil
 import sys
 import threading
 from typing import Callable
@@ -17,11 +16,14 @@ from PySide6.QtCore import QObject, Signal
 
 from .auth import find_codex
 from .ai_process import ProcessTree
+from .ai_auth import authentication_failed
+from .ai_install import INSTALLERS
+from .ai_paths import find_tool
 
 
 def find_program(name):
     """Prefer executables; execute npm's JS with node, never interpolate a cmd file."""
-    found = shutil.which(name)
+    found = find_tool(name)
     if not found and name == 'claude':
         candidate = Path.home() / '.local' / 'bin' / ('claude.exe' if os.name == 'nt' else 'claude')
         if candidate.is_file():
@@ -31,7 +33,7 @@ def find_program(name):
     path = Path(found)
     if os.name != 'nt' and name == 'gemini':
         entry = path.resolve()
-        node = shutil.which('node')
+        node = find_tool('node')
         if node and entry.suffix == '.js':
             return (node, str(entry))
         return None
@@ -40,7 +42,7 @@ def find_program(name):
                     'claude': ('@anthropic-ai/claude-code', 'cli.js')}
         package, entry = packages[name]
         script = path.parent / 'node_modules' / package / entry
-        node = shutil.which('node')
+        node = find_tool('node')
         return (node, str(script)) if node and script.is_file() else None
     return (str(path),)
 
@@ -224,6 +226,10 @@ class EventParser:
         self.succeeded = False
         self.failed = False
 
+    def error(self, data):
+        self.failed = True
+        return [Event('auth_error' if authentication_failed(data) else 'error')]
+
     def once(self, key, event):
         if key in self.seen:
             return []
@@ -234,6 +240,10 @@ class EventParser:
         kind = data.get('type')
         if kind == 'system' and data.get('session_id'):
             return [Event('session', data['session_id'])]
+        if kind == 'error' or (kind == 'assistant' and data.get('error')):
+            return self.error(data)
+        if kind == 'stream_event' and data.get('event', {}).get('type') == 'error':
+            return self.error(data['event'])
         if kind == 'stream_event':
             event = data.get('event', {})
             if event.get('type') == 'message_start':
@@ -252,9 +262,9 @@ class EventParser:
             self.partial = False
             return out
         if kind == 'result':
-            self.failed = bool(data.get('is_error'))
+            self.failed = self.failed or bool(data.get('is_error'))
             self.succeeded = not self.failed
-            return [Event('error', '\n'.join(data.get('errors') or [data.get('result', '')]))] if self.failed else []
+            return self.error(data) if self.failed else []
         return []
 
     def codex(self, data):
@@ -269,8 +279,7 @@ class EventParser:
                 return [Event('error', 'Unexpected MCP server outside Grainy')]
             return self.once(item.get('id'), tool_event(item.get('tool'), item.get('arguments')))
         if kind in ('error', 'turn.failed'):
-            self.failed = True
-            return [Event('error', data.get('message') or data.get('error', {}).get('message', ''))]
+            return self.error(data)
         if kind == 'turn.completed':
             self.succeeded = True
         return []
@@ -284,13 +293,12 @@ class EventParser:
         if kind == 'tool_use':
             return self.once(data.get('tool_id'), tool_event(data.get('tool_name'), data.get('parameters')))
         if kind == 'error':
-            self.failed = True
-            return [Event('error', data.get('message', ''))]
+            return self.error(data)
         if kind == 'result':
-            self.failed = data.get('status') != 'success'
+            self.failed = self.failed or data.get('status') != 'success'
             self.succeeded = not self.failed
             if self.failed:
-                return [Event('error', data.get('error', {}).get('message', ''))]
+                return self.error(data)
         return []
 
 
@@ -301,18 +309,26 @@ class Profile:
     detect: Callable
     build: Callable
     parse: Callable
-    install: str
+    installers: dict
     resume: str
     persistent: bool = False
+    status_args: tuple | None = None
+    login_args: tuple = ()
+    auth_exit_codes: tuple = ()
+
+    def installer(self, platform=None):
+        return self.installers.get(sys.platform if platform is None else platform)
 
 
 PROFILES = (
     Profile('claude', 'Claude Code', lambda: find_program('claude'), claude_command, EventParser.claude,
-            'https://code.claude.com/docs/en/setup', 'in-memory context (no session persistence)'),
+            INSTALLERS['claude'], 'in-memory context (no session persistence)',
+            status_args=('auth', 'status', '--json'), login_args=('auth', 'login')),
     Profile('codex', 'Codex', codex_program, codex_command, EventParser.codex,
-            'npm install -g @openai/codex', 'in-memory context (--ephemeral)'),
+            INSTALLERS['codex'], 'in-memory context (--ephemeral)',
+            status_args=('login', 'status'), login_args=('login',)),
     Profile('gemini', 'Gemini CLI', lambda: find_program('gemini'), gemini_command, EventParser.gemini,
-            'npm install -g @google/gemini-cli', '--resume <session id>', True),
+            INSTALLERS['gemini'], '--resume <session id>', True, auth_exit_codes=(41,)),
 )
 
 
@@ -355,6 +371,7 @@ class AiRunner(QObject):
         tree = None
         result = 'failed'
         stderr = bytearray()
+        auth_failed = threading.Event()
         timer = None
         try:
             env = dict(os.environ)
@@ -375,7 +392,8 @@ class AiRunner(QObject):
                     # Bounded, in-memory only. Never print raw provider diagnostics.
                     stderr.extend(chunk)
                     del stderr[:-8192]
-                    self.diagnostic = redact(stderr.decode('utf-8', 'replace'), secrets)
+                    if authentication_failed(stderr.decode('utf-8', 'replace')):
+                        auth_failed.set()
             reader = threading.Thread(target=errors, daemon=True)
             reader.start()
             timed_out = threading.Event()
@@ -392,12 +410,17 @@ class AiRunner(QObject):
                         continue
                     events = profile.parse(parser, data)
                 except (ValueError, TypeError, KeyError, AttributeError):
+                    if authentication_failed(line.decode('utf-8', 'replace')):
+                        auth_failed.set()
                     continue
                 for event in events:
                     if event.kind == 'session':
                         self.session_id = event.text
-                    if event.kind == 'error':
+                    if event.kind in ('error', 'auth_error'):
                         parser.failed = True
+                        if event.kind == 'auth_error':
+                            auth_failed.set()
+                        continue  # Emit a single fixed failure after the process exits.
                     self.event.emit(Event(event.kind, redact(event.text, secrets), event.count))
             code = tree.process.wait()
             tree.stop()  # close any bridge/launcher that survived its parent
@@ -406,12 +429,16 @@ class AiRunner(QObject):
                 result = 'stopped'
             elif timed_out.is_set():
                 result = 'timeout'
+            elif (code != 0 or parser.failed or not parser.succeeded) and (auth_failed.is_set() or code in profile.auth_exit_codes):
+                result = 'auth_required'
+                self.diagnostic = 'authentication required'
+                self.event.emit(Event('auth_error'))
             elif code == 0 and parser.succeeded and not parser.failed:
                 result = 'done'
             else:
                 # Diagnostics can contain credentials or entire HTTP requests.
-                # Show a fixed actionable status; parsed provider errors are redacted above.
-                self.diagnostic = redact(stderr.decode('utf-8', 'replace'), secrets)
+                # Neither parsed errors nor raw stderr are stored or displayed.
+                self.diagnostic = 'program failed'
                 self.event.emit(Event('exit', str(code)))
         except (OSError, RuntimeError):
             self.event.emit(Event('launch_error'))

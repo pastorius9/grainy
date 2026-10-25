@@ -1,6 +1,7 @@
 from dataclasses import replace
 from pathlib import Path
 import sys
+from unittest.mock import Mock
 
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtTest import QTest
@@ -8,6 +9,7 @@ import pytest
 
 from luma.ai_dialog import AiDialog, NOTICE
 from luma.ai_programs import PROFILES, Event
+from luma import ai_auth
 from luma.i18n import tr
 from mcp_support import make_session, close_session, add_photos, call
 from test_studio_ui import app, wait
@@ -32,6 +34,11 @@ class Peer(QObject):
     def complete(self):
         self.event.emit(Event('session', 'session-1')); self.event.emit(Event('text', 'Done'))
         self.running = False; self.finished.emit('done')
+
+
+@pytest.fixture(autouse=True)
+def offline_status(monkeypatch):
+    monkeypatch.setattr(ai_auth, 'check_status', lambda *args: ai_auth.AuthStatus())
 
 
 @pytest.fixture
@@ -97,15 +104,17 @@ def test_changed_model_starts_new_conversation(setup):
     assert not dialog.session_id and not dialog.history
 
 
-def test_missing_programs_disabled_with_install_hints(app, tmp_path):
+def test_missing_programs_selectable_but_cannot_send(app, tmp_path):
     session = make_session(app, tmp_path, start=False)
     profiles = tuple(replace(p, detect=lambda: None) for p in PROFILES)
     dialog = AiDialog(session.mcp, session.window, profiles=profiles)
     try:
         dialog.show(); dialog.acknowledge()
-        assert dialog.program.currentIndex() == -1 and not dialog.send_button.isEnabled()
-        assert all(not dialog.program.model().item(i).isEnabled() for i in range(3))
-        assert '@openai/codex' in dialog.hints.text() and '@google/gemini-cli' in dialog.hints.text()
+        assert dialog.program.currentIndex() == 0 and not dialog.send_button.isEnabled()
+        assert all(dialog.program.model().item(i).isEnabled() for i in range(3))
+        assert all(button.isVisible() for button in dialog.install_buttons.values())
+        assert all(button.isVisible() for button in dialog.recheck_buttons.values())
+        assert all(button.isHidden() for button in dialog.login_buttons.values())
     finally:
         dialog.close(); close_session(app, session)
 
@@ -141,7 +150,78 @@ def test_english_ui_and_privacy_details(app, tmp_path):
         assert dialog.windowTitle() == 'Ask AI'
         assert tr(NOTICE).startswith('Sending from this window')
         assert dialog.stop_button.text() == 'Stop'
+        assert dialog.login_buttons['claude'].text() == 'Sign in…'
+        assert dialog.recheck_buttons['claude'].text() == 'Check again'
+        dialog.auth_status_ready('codex', ai_auth.AuthStatus('signed_in', 'ChatGPT'))
+        assert dialog.auth_labels['codex'].text() == 'Codex: Signed in (ChatGPT)'
     finally:
         dialog.close(); close_session(app, session)
         from luma.i18n import set_language
         set_language('ko')
+
+
+def test_status_refreshes_on_show_choice_recheck_and_login_close(setup, monkeypatch):
+    _, dialog, _ = setup
+    wait(lambda: not dialog.auth.active)
+    checks = []
+    monkeypatch.setattr(ai_auth, 'check_status', lambda p, exe: checks.append(p.key) or ai_auth.AuthStatus('signed_out'))
+    dialog.hide(); dialog.show()
+    wait(lambda: len(checks) == 3 and not dialog.auth.active)
+    assert set(checks) == {p.key for p in PROFILES}
+    dialog.program.setCurrentIndex(1)
+    wait(lambda: checks.count('codex') == 2 and not dialog.auth.active)
+    dialog.recheck_buttons['codex'].click()
+    wait(lambda: checks.count('codex') == 3 and not dialog.auth.active)
+    dialog.auth.login_closed.emit('codex')
+    wait(lambda: checks.count('codex') == 4 and not dialog.auth.active)
+    dialog.acknowledge()
+    assert dialog.program.model().item(1).isEnabled() and dialog.send_button.isEnabled()
+    assert tr('로그인되지 않음') in dialog.auth_labels['codex'].text()
+
+
+@pytest.mark.parametrize('index', range(3))
+def test_sign_in_button_launches_official_command_without_real_console(setup, monkeypatch, index):
+    session, dialog, _ = setup
+    popen = Mock(); popen.return_value.poll.return_value = None
+    monkeypatch.setattr(ai_auth.subprocess, 'Popen', popen)
+    monkeypatch.setattr(ai_auth.subprocess, 'CREATE_NEW_CONSOLE', 0x10, raising=False)
+    monkeypatch.setattr(ai_auth.sys, 'platform', 'win32')
+    profile = PROFILES[index]
+    dialog.login_buttons[profile.key].click()
+    assert popen.call_args.args[0] == ['standin', *profile.login_args]
+    assert popen.call_args.kwargs['creationflags'] == 0x10
+    assert 'env' not in popen.call_args.kwargs
+    assert not dialog.login_buttons[profile.key].isEnabled()
+    if profile.key == 'gemini':
+        assert 'Login with Google' in dialog.login_help.text()
+    popen.return_value.poll.return_value = 0
+    wait(lambda: not dialog.auth.logins)
+    assert dialog.login_buttons[profile.key].isEnabled()
+
+
+@pytest.mark.parametrize('index', range(3))
+def test_auth_failure_highlights_right_button_without_raw_diagnostics(setup, index):
+    _, dialog, peer = setup
+    dialog.program.setCurrentIndex(index); dialog.acknowledge()
+    dialog.input.setPlainText('request'); dialog.send()
+    peer.event.emit(Event('auth_error', 'private@example.test opaque-secret-key'))
+    peer.running = False; peer.finished.emit('auth_required')
+    text = dialog.transcript.toPlainText()
+    assert tr("로그인이 필요합니다. '로그인…'을 눌러 {0}에 다시 로그인하세요.", PROFILES[index].name) in text
+    assert 'private@example.test' not in text and 'opaque-secret-key' not in text
+    assert '설치·로그인·사용 한도' not in text
+    assert dialog.login_buttons[PROFILES[index].key].styleSheet()
+    assert all(not b.styleSheet() for key, b in dialog.login_buttons.items() if key != PROFILES[index].key)
+    dialog.input.setPlainText('retry'); dialog.send(); peer.complete()
+    assert not dialog.login_buttons[PROFILES[index].key].styleSheet()
+
+
+def test_unknown_timeout_and_launch_error_never_show_secrets(setup, monkeypatch):
+    _, dialog, peer = setup
+    dialog.auth_status_ready('claude', ai_auth.AuthStatus('timeout', 'private@example.test'))
+    assert tr('응답 없음') in dialog.auth_labels['claude'].text()
+    assert 'private' not in dialog.auth_labels['claude'].text()
+    monkeypatch.setattr(ai_auth, 'launch_sign_in', Mock(side_effect=OSError('opaque-secret-key')))
+    dialog.login_buttons['claude'].click()
+    peer.event.emit(Event('error', 'private@example.test opaque-secret-key'))
+    assert 'opaque-secret-key' not in dialog.login_help.text() + dialog.transcript.toPlainText()

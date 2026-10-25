@@ -99,7 +99,7 @@ def test_npm_detection_bypasses_shell_and_requires_node(tmp_path, monkeypatch):
     script = tmp_path / 'node_modules/@google/gemini-cli/dist/index.js'
     script.parent.mkdir(parents=True); script.touch()
     found = {'gemini': str(tmp_path / 'gemini.cmd'), 'node': 'node.exe'}
-    monkeypatch.setattr(ai.shutil, 'which', found.get)
+    monkeypatch.setattr(ai, 'find_tool', found.get)
     if os.name == 'nt':
         assert ai.find_program('gemini') == ('node.exe', str(script))
         found.pop('node'); assert ai.find_program('gemini') is None
@@ -123,7 +123,7 @@ def test_streaming_peer_and_tool_deduplication(app, tmp_path, profile):
         runner.shutdown()
 
 
-@pytest.mark.parametrize('mode,expected', [('stdin', 'done'), ('malformed', 'done'), ('fail', 'failed')])
+@pytest.mark.parametrize('mode,expected', [('stdin', 'done'), ('malformed', 'done'), ('fail', 'failed'), ('warning-success', 'done')])
 def test_eof_malformed_and_failure(app, tmp_path, mode, expected, monkeypatch):
     monkeypatch.setenv('GEMINI_API_KEY', 'secret-key-in-stderr')
     peer = Path(__file__).with_name('fake_ai.py')
@@ -193,3 +193,34 @@ def test_redaction_and_foreign_tools():
     assert ai.tool_event('Bash').kind == 'error'
     parser = ai.EventParser()
     assert parser.codex({'type': 'item.started', 'item': {'type': 'mcp_tool_call', 'server': 'other'}})[0].kind == 'error'
+
+
+@pytest.mark.parametrize('profile', ai.PROFILES, ids=lambda p: p.key)
+@pytest.mark.parametrize('mode', ['auth-event', 'auth-stderr', 'auth-stdout'])
+def test_auth_failures_from_stream_and_exit_are_private(app, tmp_path, profile, mode):
+    peer = Path(__file__).with_name('fake_ai.py')
+    profile = replace(profile, build=lambda r: [sys.executable, str(peer), profile.key, mode])
+    runner = ai.AiRunner(); events = []; results = []
+    runner.event.connect(events.append); runner.finished.connect(results.append)
+    runner.start(profile, request(tmp_path))
+    try:
+        wait(lambda: bool(results), 15000)
+        assert results == ['auth_required']
+        assert events == [ai.Event('auth_error')]
+        assert runner.diagnostic == 'authentication required'
+        assert all(secret not in repr(events) + runner.diagnostic
+                   for secret in ('private@example.test', 'opaque-secret-key', 'refresh-token-private'))
+    finally:
+        runner.shutdown()
+
+
+def test_gemini_authentication_exit_code_without_diagnostics(app, tmp_path):
+    peer = Path(__file__).with_name('fake_ai.py')
+    profile = replace(ai.PROFILES[2], build=lambda r: [sys.executable, str(peer), 'gemini', 'auth-exit'])
+    runner = ai.AiRunner(); results = []; runner.finished.connect(results.append)
+    runner.start(profile, request(tmp_path))
+    try:
+        wait(lambda: bool(results), 15000)
+        assert results == ['auth_required']
+    finally:
+        runner.shutdown()

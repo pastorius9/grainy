@@ -3,6 +3,8 @@ import os
 import shutil
 from pathlib import Path
 
+from .ai_paths import tool_folders
+
 
 # Where the npm package keeps the native program: vendor/<target>/bin/ since Codex 0.163, vendor/<target>/codex/ before;
 # in a platform package (@openai/codex-win32-x64, codex-darwin-arm64) or in the main package itself.
@@ -18,7 +20,7 @@ def _find_codex_posix(configured=None):
         path=Path(configured)
         return str(path.resolve()) if usable(path) else None
     # Finder gives apps a short PATH; npm's and Homebrew's usual places are checked as well.
-    places=[shutil.which('codex'),'/opt/homebrew/bin/codex','/usr/local/bin/codex',str(Path.home()/'.npm-global'/'bin'/'codex')]
+    places=[shutil.which('codex'),*(str(folder/'codex') for folder in tool_folders('darwin'))]
     for place in dict.fromkeys(p for p in places if p):
         command=Path(place)
         if not command.exists():continue
@@ -51,4 +53,8 @@ def find_codex(configured=None):
             for path in sorted(package.glob(pattern)):
                 if path.is_file():
                     return str(path.resolve())
+    for folder in tool_folders('win32'):
+        native=folder/'codex.exe'
+        if native.is_file():
+            return str(native.resolve())
     return None

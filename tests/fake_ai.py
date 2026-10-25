@@ -7,7 +7,38 @@ import sys
 import time
 
 kind, mode = sys.argv[1:3]
-if mode == 'tree':
+private = 'private@example.test opaque-secret-key refresh-token-private'
+if mode.startswith('status-'):
+    state = mode.removeprefix('status-')
+    if state == 'hung':
+        if len(sys.argv) > 3:
+            child = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(120)'])
+            Path(sys.argv[3]).write_text(str(child.pid))
+        time.sleep(120)
+    if kind == 'claude':
+        print(json.dumps({'loggedIn': state == 'in', 'authMethod': 'claude.ai',
+                          'email': private, 'subscriptionType': private}) if state != 'unknown' else private)
+    elif kind == 'codex':
+        print({'in': 'Logged in using ChatGPT', 'out': 'Not logged in',
+               'key': 'Logged in using an API key - ' + private}.get(state, private), file=sys.stderr)
+    sys.exit(1 if state == 'out' else 0)
+elif mode.startswith('auth-'):
+    message = {'claude': 'OAuth access token is invalid (401)', 'codex': 'Not logged in',
+               'gemini': 'Failed to authenticate: invalid_grant'}[kind] + ' ' + private
+    if mode == 'auth-stderr':
+        print(message, file=sys.stderr, flush=True)
+    elif mode == 'auth-stdout':
+        print(message, flush=True)
+    elif mode != 'auth-exit':
+        event = {'claude': {'type': 'result', 'is_error': True, 'errors': [message]},
+                 'codex': {'type': 'turn.failed', 'error': {'message': message}},
+                 'gemini': {'type': 'result', 'status': 'error', 'error': {'message': message}}}[kind]
+        if kind == 'claude':
+            print(json.dumps({'type': 'assistant', 'error': 'authentication_failed',
+                              'message': {'content': [{'type': 'text', 'text': message}]}}), flush=True)
+        print(json.dumps(event), flush=True)
+    sys.exit(41 if kind == 'gemini' else 1)
+elif mode == 'tree':
     child = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(120)'])
     Path(sys.argv[3]).write_text(str(child.pid))
     time.sleep(120)
@@ -19,6 +50,9 @@ elif mode == 'fail':
     sys.exit(7)
 elif mode == 'malformed':
     print('not-json\n[]\nnull', flush=True)
+    print(json.dumps({'type': 'turn.completed'}), flush=True)
+elif mode == 'warning-success':
+    print('An unrelated provider is not logged in', file=sys.stderr, flush=True)
     print(json.dumps({'type': 'turn.completed'}), flush=True)
 else:
     data = {
