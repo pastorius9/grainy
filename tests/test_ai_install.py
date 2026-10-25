@@ -3,6 +3,7 @@ import base64
 from pathlib import Path
 import os
 import shlex
+import sys
 from unittest.mock import Mock
 
 from PySide6.QtCore import QTimer, Qt
@@ -262,12 +263,12 @@ def test_node_winget_needs_separate_confirmation_and_never_chains(missing, monke
 
 
 def test_launch_error_and_english_translation(missing, monkeypatch):
-    dialog, _ = missing
+    dialog, _ = missing; real_platform = sys.platform
     set_language('en')
     monkeypatch.setattr(ai_dialog.sys, 'platform', 'win32')
     monkeypatch.setattr(install, 'launch_install', Mock(side_effect=OSError('private failure detail')))
     seen = []; answer_box('Install', seen); dialog.install_program(0)
-    assert seen[0].windowTitle() == 'Confirm installation'
+    assert seen[0].windowTitle() == ('' if real_platform == 'darwin' else 'Confirm installation')
     assert 'may ask for confirmation' in seen[0].informativeText()
     assert dialog.login_help.text().startswith('Could not open the installer')
     assert 'private' not in dialog.login_help.text() and not dialog.installs.sessions

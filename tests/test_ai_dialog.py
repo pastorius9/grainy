@@ -152,6 +152,7 @@ def test_english_ui_and_privacy_details(app, tmp_path):
         assert dialog.stop_button.text() == 'Stop'
         assert dialog.login_buttons['claude'].text() == 'Sign in…'
         assert dialog.recheck_buttons['claude'].text() == 'Check again'
+        dialog.executables[next(i for i, p in enumerate(dialog.profiles) if p.key == 'codex')] = ('codex',)  # as if installed
         dialog.auth_status_ready('codex', ai_auth.AuthStatus('signed_in', 'ChatGPT'))
         assert dialog.auth_labels['codex'].text() == 'Codex: Signed in (ChatGPT)'
     finally:
