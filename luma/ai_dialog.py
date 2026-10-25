@@ -312,6 +312,32 @@ class AiDialog(QDialog):
             self.install_buttons[key].setEnabled(not running and not self.installs.sessions and profile.installer() is not None)
             self.recheck_buttons[key].setEnabled(not running)
 
+    def grainy_context(self):
+        """What the person sees in Grainy now, for 'this folder', 'these photos', 'this photo'. English, for the AI."""
+        w = self.w; parts = []
+        try:
+            folder = getattr(w, 'folder_filter', None)
+            if folder:
+                recursive = bool(getattr(w, 'include_subfolders', None) and w.include_subfolders.isChecked())
+                parts.append(f'The folder open in Grainy is {json.dumps(str(folder), ensure_ascii=False)} '
+                             f'(list_photos with where folder={json.dumps(str(folder), ensure_ascii=False)}, '
+                             f'recursive {str(recursive).lower()}); it shows {len(getattr(w, "visible_ids", []) or [])} photos.')
+            selected = list(w.selected_ids()) if hasattr(w, 'selected_ids') else []
+            if selected:
+                shown = ', '.join(map(str, selected[:50])) + (' …' if len(selected) > 50 else '')
+                parts.append(f"{len(selected)} photos are selected (scope 'selection'; ids {shown}).")
+            current = getattr(w, 'current_id', None)
+            if current:
+                photo = w.catalog.photo(current)
+                if photo:
+                    parts.append(f"The photo open in the editor is id {current}, {json.dumps(photo['name'], ensure_ascii=False)} (scope 'current').")
+        except Exception:                                                     # context is a help, never a reason to fail
+            return ''
+        if not parts:
+            return ''
+        return ('What the person sees in Grainy right now (read "this folder", "these photos", "this photo" '
+                'with it): ' + ' '.join(parts))
+
     def send(self):
         if not self.send_button.isEnabled():
             return
@@ -342,7 +368,8 @@ class AiDialog(QDialog):
         server = install_commands(sys.platform == 'win32', self.service.folder)['claude_desktop_json']['mcpServers']['grainy']
         workspace = Path(self.preferences.path).parent / 'ai-workspace' / profile.key / self.run_key
         self.workspaces.add(workspace)
-        request = Request(self.executables[index], workspace, server, sent_prompt, language(), self.model.text().strip(), self.session_id)
+        request = Request(self.executables[index], workspace, server, sent_prompt, language(), self.model.text().strip(),
+                          self.session_id, self.grainy_context())
         try:
             self.preferences.save('ai_program', profile.key)
             self.runner.start(profile, request, secrets=(self.service.token,))

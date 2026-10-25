@@ -38,7 +38,8 @@ def test_commands_are_argument_vectors_with_only_per_run_config(tmp_path, profil
     if profile.key == 'claude':
         assert args[args.index('--tools') + 1] == ''
         assert args[args.index('--permission-mode') + 1] == 'dontAsk'
-        assert '--strict-mcp-config' in args and '--no-session-persistence' in args
+        assert '--strict-mcp-config' in args and '--no-session-persistence' not in args       # its own session: --resume
+        assert args[args.index('--allowedTools') + 1] == 'mcp__grainy'                       # the server, documented form
         config = json.loads((r.workspace / 'claude-mcp.json').read_text())
         assert config == {'mcpServers': {'grainy': r.server}}
     elif profile.key == 'codex':

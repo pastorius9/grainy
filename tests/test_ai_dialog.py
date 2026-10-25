@@ -79,6 +79,7 @@ def test_mcp_off_stays_off_until_enabled_then_creates_bridge(setup):
 
 def test_send_shortcut_stream_tools_followup_new_and_last_program(setup):
     session, dialog, peer = setup
+    dialog.program.setCurrentIndex(1)                                    # Codex: a follow-up carries the text so far
     dialog.acknowledge(); dialog.input.setPlainText('first')
     dialog.input.setFocus(); QTest.keyClick(dialog.input, Qt.Key.Key_Return, Qt.KeyboardModifier.ControlModifier)
     wait(lambda: bool(peer.calls))
@@ -95,6 +96,33 @@ def test_send_shortcut_stream_tools_followup_new_and_last_program(setup):
     dialog.input.setPlainText('native followup'); dialog.send()
     assert peer.calls[-1][1].session_id == 'session-1'
     assert peer.calls[-1][1].prompt == 'native followup'
+
+
+def test_claude_follow_up_resumes_its_own_session(setup):
+    _, dialog, peer = setup
+    dialog.program.setCurrentIndex(0); dialog.acknowledge()
+    dialog.input.setPlainText('first'); dialog.send(); peer.complete()
+    dialog.input.setPlainText('next'); dialog.send()
+    request = peer.calls[-1][1]
+    assert request.prompt == 'next' and request.session_id == 'session-1'
+    assert ['--resume', 'session-1'] == [a for a in PROFILES[0].build(request) if a in ('--resume', 'session-1')]
+
+
+def test_requests_say_what_the_person_sees_in_grainy(setup, tmp_path):
+    session, dialog, peer = setup
+    w = session.window
+    roll = tmp_path / 'roll 12'; roll.mkdir()
+    from PIL import Image
+    ids = []
+    for n in range(2):
+        Image.new('RGB', (40, 30), (90, 100, 110)).save(roll / f'f{n}.png'); ids.append(w.catalog.add(roll / f'f{n}.png'))
+    w.refresh_lists(); w.select_folder(str(roll))
+    wait(lambda: not w.library_loading)
+    dialog.acknowledge(); dialog.input.setPlainText('이 폴더 사진 오토톤'); dialog.send()
+    context = peer.calls[-1][1].context
+    assert str(roll) in context.replace('\\\\', '\\') and 'folder' in context and 'this folder' in context
+    assert peer.calls[-1][1].instruction.endswith(context)
+    peer.complete()
 
 
 def test_changed_model_starts_new_conversation(setup):

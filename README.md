@@ -130,11 +130,11 @@ Learn it hands-on in your browser: **[pastorius9.github.io/grainy/learn](https:/
 
 ## Ask AI
 
-Click **AI** in the header, choose an installed **Claude Code**, **Codex** or **Gemini CLI**, type a request, and press **Send** or **Ctrl+Enter**. The optional model field is empty for the program's default. Missing programs can be installed from this window using the vendor’s official installer, with the command shown before it runs. Each program uses its own account and subscription; the window shows each program’s sign-in status and can open its official sign-in, while Grainy never sees passwords or keys.
+Click **Ask AI** in the header, choose an installed **Claude Code**, **Codex** or **Gemini CLI**, type a request, and press **Send** or **Ctrl+Enter**. The optional model field is empty for the program's default. Missing programs can be installed from this window using the vendor’s official installer, with the command shown before it runs. Each program uses its own account and subscription; the window shows each program’s sign-in status and can open its official sign-in, while Grainy never sees passwords or keys.
 
 The non-modal window shows replies and Grainy tool calls while the photos update. **Stop** ends the program and its children; edits already applied remain. **New conversation** clears the conversation, and **Undo Last AI Task** uses the same batch undo as AI Connection. If the AI connection is off, the window offers to turn it on. No separate MCP installation is needed for this window.
 
-Claude Code and Codex run with session recording disabled: follow-ups receive up to the last three exchanges as text, and the window says when it uses this fallback. Gemini can resume its session, stored under Grainy's settings folder. The window itself keeps its transcript only in memory. Sending a request starts the chosen AI program, which sends what it reads to its own service; the first-use notice and AI Connection details explain the photo information it can read.
+Each request also says which folder is open in Grainy, which photos are selected and which photo is being edited, so "this folder" and "this photo" mean what you see. Claude Code continues its own session on a follow-up; that conversation stays in Claude Code's own history, as when you use Claude Code directly. Codex runs with session recording disabled and follow-ups receive up to the last three exchanges as text (the window says so). Gemini resumes its session, stored under Grainy's settings folder. The window itself keeps its transcript only in memory. Sending a request starts the chosen AI program, which sends what it reads to its own service; the first-use notice and AI Connection details explain the photo information it can read.
 
 ## Privacy
 

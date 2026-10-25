@@ -2,6 +2,12 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.5 — Ask AI: Claude Code really works, and knows "this folder"
+
+- **Fixed:** with Claude Code, Ask AI could answer before Grainy's tools were connected and make up a photo list without changing anything. It now waits for the tools and is told never to invent results.
+- Each request says which folder is open, which photos are selected and which photo is being edited, so "this folder" means what you see.
+- Claude Code continues its own conversation on a follow-up, remembering earlier tool results.
+
 ## 0.6.4 — Ask AI: sign-in status, official sign-in and install buttons
 
 - Ask AI shows whether Claude Code, Codex and Gemini CLI are signed in (each program's own status; no emails or keys shown).

@@ -68,15 +68,18 @@ class Request:
     language: str = 'ko'
     model: str = ''
     session_id: str = ''
+    context: str = ''         # what the person sees in Grainy now (AiDialog.grainy_context)
 
     @property
     def instruction(self):
         language = 'Korean' if self.language == 'ko' else 'English'
-        return (f'You are working inside Grainy, a photo editor, for the person using it. '
+        text = (f'You are working inside Grainy, a photo editor, for the person using it. '
                 f'Use only the grainy MCP tools to inspect and change the photo library. '
                 f'Answer in {language}. Check tool results before reporting success. '
                 'Do not execute commands, edit files, browse the web, or use other services. '
-                'For a job, use get_job until it finishes. Do not invent photo ids.')
+                'For a job, use get_job until it finishes. Never invent photo ids, names or results: if a tool is '
+                'missing or fails, say so.')
+        return text + (' ' + self.context if self.context else '')
 
 
 def claude_command(r):
@@ -84,10 +87,11 @@ def claude_command(r):
     write_json(config, {'mcpServers': {'grainy': r.server}})
     args = [*r.executable, '-p', r.prompt, '--output-format', 'stream-json', '--verbose',
             '--include-partial-messages', '--mcp-config', str(config), '--strict-mcp-config',
-            '--tools', '', '--allowedTools', 'mcp__grainy__*', '--permission-mode', 'dontAsk',
+            '--tools', '', '--allowedTools', 'mcp__grainy', '--permission-mode', 'dontAsk',
             '--append-system-prompt', r.instruction, '--disable-slash-commands', '--no-chrome',
-            '--setting-sources', '', '--settings', '{"disableAllHooks":true,"autoMemoryEnabled":false}',
-            '--no-session-persistence']
+            '--setting-sources', '', '--settings', '{"disableAllHooks":true,"autoMemoryEnabled":false}']
+    if r.session_id:
+        args += ['--resume', r.session_id]
     if r.model:
         args += ['--model', r.model]
     return args
@@ -322,7 +326,7 @@ class Profile:
 
 PROFILES = (
     Profile('claude', 'Claude Code', lambda: find_program('claude'), claude_command, EventParser.claude,
-            INSTALLERS['claude'], 'in-memory context (no session persistence)',
+            INSTALLERS['claude'], 'its own session (--resume)', persistent=True,
             status_args=('auth', 'status', '--json'), login_args=('auth', 'login')),
     Profile('codex', 'Codex', codex_program, codex_command, EventParser.codex,
             INSTALLERS['codex'], 'in-memory context (--ephemeral)',
@@ -379,6 +383,8 @@ class AiRunner(QObject):
                                   if len(value) >= 8 and re.search(r'(API_KEY|TOKEN|SECRET|PASSWORD)$', key, re.I)))
             if profile.key == 'claude':
                 env['CLAUDE_CODE_DEBUG_LOGS_DIR'] = str(request.workspace / 'claude-log')
+                env['MCP_CONNECTION_NONBLOCKING'] = '0'     # wait for Grainy's server before the first turn
+                env.setdefault('MCP_CONNECT_TIMEOUT_MS', '30000')
             if profile.key == 'gemini':
                 # System-scope per-process overlay wins even over a user tools.core list.
                 env['GEMINI_CLI_SYSTEM_SETTINGS_PATH'] = str(request.workspace / '.gemini/settings.json')
