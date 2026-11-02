@@ -28,7 +28,7 @@ from .render_cache import DevelopmentCache
 from .folders import folder_nodes, in_folder, path_key, contains_folder
 from .photo_browser import PhotoModel,PhotoListView
 from .library_query import query as library_query,QueryCancelled
-from . import __version__, file_access
+from . import __version__, file_access, tone_mapping
 from .user_paths import MAC
 from .shortcut_list import key_hint
 
@@ -701,6 +701,25 @@ class MainWindow(QMainWindow):
         self.tone_mapping.setToolTip(tr('부드러운 하이라이트: 밝은 하늘과 조명이 색을 지킨 채 천천히 흰색에 다가가고, 아주 밝은 색은 자연스럽게 흰색으로 빠집니다. 중간 밝기는 기본과 같습니다. 필름을 고르면 필름의 인화가 대신 쓰입니다.'))
         self.tone_mapping.currentIndexChanged.connect(self.change_tone_mapping)
         edits.addWidget(self.tone_mapping)
+        self.drt_panel=QWidget();drt_box=QVBoxLayout(self.drt_panel);drt_box.setContentsMargins(0,0,0,0)
+        look_row=QHBoxLayout();look_row.addWidget(QLabel(tr('DRT 룩')))
+        self.drt_look=QComboBox();self.drt_look.setAccessibleName(tr('DRT 룩'))
+        for name in tone_mapping.LOOKS:self.drt_look.addItem(tr(name),name)
+        self.drt_look.addItem(tr('사용자 정의'),'')
+        self.drt_look.setToolTip(tr('부드러운 하이라이트의 미리 정한 룩입니다. 고급 설정에서 값을 바꾸면 사용자 정의가 됩니다.'))
+        self.drt_look.currentIndexChanged.connect(self.change_drt_look);look_row.addWidget(self.drt_look,1)
+        self.drt_advanced=button(tr('고급 설정'),self.toggle_drt_advanced,True);look_row.addWidget(self.drt_advanced)
+        drt_box.addLayout(look_row)
+        self.drt_sliders=QWidget();sliders=QVBoxLayout(self.drt_sliders);sliders.setContentsMargins(0,0,0,0)
+        for key,label,tip in [('drt_contrast','DRT 대비','톤 곡선의 기울기입니다. 중간 회색은 그대로 두고 어두운 곳과 밝은 곳이 함께 벌어지거나 모입니다.'),
+                ('drt_toe','토 (어두운 끝)','오른쪽은 검정을 더 깊게 가라앉히고, 왼쪽은 검정을 살짝 띄웁니다(플레어). 중간 회색은 그대로입니다.'),
+                ('drt_shoulder','숄더 (밝은 끝)','오른쪽은 가장 밝은 곳이 더 일찍 흰색에 닿고, 왼쪽은 하이라이트가 더 길게 남아 천천히 흰색에 다가갑니다.'),
+                ('drt_white','흰색 전환 시작','밝은 색이 흰색 쪽으로 옅어지기 시작하는 밝기입니다. 왼쪽은 더 일찍, 오른쪽은 더 늦게 옅어집니다.')]:
+            self.add_adjustment(sliders,key,label)
+            self.adjustments[key].setToolTip(tr(tip));self.adjustments[key].committed.connect(self.sync_drt)
+        self.drt_sliders.setVisible(bool(self.catalog.preference('drt_advanced',False)));self.drt_advanced.setChecked(self.drt_sliders.isVisibleTo(self.drt_panel))
+        drt_box.addWidget(self.drt_sliders)
+        edits.addWidget(self.drt_panel);self.drt_panel.hide()
         for key,label,low,high,scale in [('exposure','노출',-5,5,100),('contrast','대비',-100,100,1),('highlights','하이라이트',-100,100,1),('shadows','그림자',-100,100,1),('whites','흰색 계열',-200,200,1),('blacks','검정 계열',-200,200,1)]:
             self.add_adjustment(edits,key,label,low,high,scale)
         self.hdr_panel=QWidget();hdr_layout=QVBoxLayout(self.hdr_panel);hdr_layout.setContentsMargins(0,0,0,0)
@@ -1378,6 +1397,7 @@ class MainWindow(QMainWindow):
         self.tone_mapping.blockSignals(True)
         self.tone_mapping.setCurrentIndex(max(0,self.tone_mapping.findData(self.settings.get('tone_mapping','classic'))))
         self.tone_mapping.blockSignals(False)
+        self.sync_drt()
         self.sync_hdr_controls()
         self.curve.set_points(self.settings['curve'])
         self.update_hsl()
@@ -2211,7 +2231,27 @@ class MainWindow(QMainWindow):
     def change_tone_mapping(self,_=None):
         value=self.tone_mapping.currentData()
         if self.source is None or self.settings.get('tone_mapping')==value:return
-        self.commit();self.set_setting('tone_mapping',value);self.commit('톤 매핑');self.render()
+        self.commit();self.set_setting('tone_mapping',value);self.commit('톤 매핑');self.render();self.sync_drt()
+
+    def sync_drt(self):
+        """The DRT's look and sliders: shown while the DRT is chosen; the look names the values or says custom."""
+        self.drt_panel.setVisible(self.settings.get('tone_mapping')=='drt')
+        self.drt_look.blockSignals(True)
+        self.drt_look.setCurrentIndex(max(0,self.drt_look.findData(tone_mapping.look_of(self.settings))))
+        self.drt_look.blockSignals(False)
+
+    def change_drt_look(self,_=None):
+        name=self.drt_look.currentData()
+        if self.source is None or not name:
+            self.sync_drt();return
+        values=dict(zip(tone_mapping.KEYS,tone_mapping.LOOKS[name]))
+        if all(self.settings.get(key)==value for key,value in values.items()):return
+        self.commit()
+        for key,value in values.items():self.set_setting(key,value)
+        self.commit('DRT 룩');self.load_controls();self.render()
+
+    def toggle_drt_advanced(self,checked):
+        self.drt_sliders.setVisible(checked);self.catalog.save_preference('drt_advanced',bool(checked))
 
     def apply_preset(self,name):
         if self.source is None:

@@ -34,12 +34,13 @@ def test_related_controls_grouped_once_and_advanced_controls_reachable(window):
     expected={'exposure':'basic','negative_density':'basic','negative_range':'basic','temperature':'basic','texture':'basic','clarity':'basic','dehaze':'basic',
               'sharpen':'detail','noise_luma':'detail','distortion':'lens','perspective_v':'transform',
               'vignette':'effects','grain':'effects','photo_filter_density':'photo_filter','film_strength':'film','grading_balance':'grading',
-              'vignette_midpoint':'effects','vignette_highlights':'effects','grain_size':'effects','grain_roughness':'effects'}
+              'vignette_midpoint':'effects','vignette_highlights':'effects','grain_size':'effects','grain_roughness':'effects',
+              'drt_contrast':'basic','drt_toe':'basic','drt_shoulder':'basic','drt_white':'basic'}
     assert all(owner(w.adjustments[key])==panel for key,panel in expected.items())
     assert owner(w.curve)=='curve' and owner(s.channel_curve)=='curve'
     assert owner(s.points)=='mixer' and owner(s.working)=='calibration'
     assert owner(w.keywords)=='metadata' and owner(w.auto_level_button)=='crop'
-    assert len(w.adjustments)==54 and all(owner(c) for c in w.adjustments.values())
+    assert len(w.adjustments)==58 and all(owner(c) for c in w.adjustments.values())
     assert not s.raw_mode.isVisible() and not w.adjustments['raw_kelvin'].isVisible()
     p.currentWidget().ensureWidgetVisible(w.adjustments['distortion']);QApplication.processEvents()
     assert p.is_open('lens') and w.adjustments['distortion'].isVisible()

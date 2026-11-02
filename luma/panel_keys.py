@@ -10,7 +10,7 @@ from copy import deepcopy
 PANEL_KEYS={
     'basic':('temperature','tint','kelvin','wb_reference','kelvin_enabled','exposure','contrast','highlights',
              'shadows','whites','blacks','texture','clarity','dehaze','vibrance','saturation','monochrome',
-             'hdr_limit','hdr_brightness','sdr_exposure','sdr_compression','tone_mapping'),
+             'hdr_limit','hdr_brightness','sdr_exposure','sdr_compression','tone_mapping','drt_contrast','drt_toe','drt_shoulder','drt_white'),
     'film':('film_look','film_strength'),
     'curve':('curve','parametric','rgb_curves'),
     'mixer':('mixer_mode','hsl','point_colors'),

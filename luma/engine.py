@@ -49,7 +49,7 @@ DEFAULTS.update(deepcopy(negative.DEFAULTS))
 DEFAULTS.update(film_look='', film_strength=100.)
 # Display rendering after exposure and white balance: 'classic' (roll-off above half of white) or 'drt'
 # (luma/tone_mapping.py). A film look renders its own print instead of either.
-DEFAULTS.update(tone_mapping='classic')
+DEFAULTS.update(tone_mapping='classic', drt_contrast=0., drt_toe=0., drt_shoulder=0., drt_white=0.)   # the DRT's look
 # Develop panels switched off with their header switch (luma/panel_keys.py): their values stay, unrendered.
 DEFAULTS.update(panels_off=[])
 SHOULDER_KNEE = .5   # linear light; values below are never changed by the highlight roll-off
@@ -438,7 +438,7 @@ def _tone_encoded(a, s):
         return film
     from . import tone_mapping
     if tone_mapping.active(s):
-        a = tone_mapping.render(a)
+        a = tone_mapping.render(a, s)
     elif s.get('tone_version',1) >= 2 and not s['hdr']:
         a = highlight_rolloff(a, rolloff_white(s))
     plain = to_srgb(a)
@@ -693,7 +693,7 @@ GEOMETRY_KEYS=('retouch','rotation','straighten','flip','crop','distortion',
                'upright','upright_crop')
 TONE_KEYS=('exposure','temperature','tint','kelvin','wb_reference','kelvin_enabled',
            'lens_vignette','shadows','highlights','blacks','whites','contrast','curve','hdr','tone_version',
-           'film_look','film_strength','working_space','tone_mapping')
+           'film_look','film_strength','working_space','tone_mapping','drt_contrast','drt_toe','drt_shoulder','drt_white')
 COLOR_KEYS=('saturation','vibrance','mixer_mode','hsl','rgb_curves','parametric',
             'calibration','point_colors','grading','grading_balance','camera_matrix',
             'photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity','monochrome')

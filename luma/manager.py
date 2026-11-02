@@ -20,7 +20,7 @@ from .shortcut_list import key_hint,LABELS
 
 EDIT_GROUPS={
  '작업 색공간':('working_space',),
- '빛':('exposure','contrast','highlights','shadows','whites','blacks','tone_mapping'),
+ '빛':('exposure','contrast','highlights','shadows','whites','blacks','tone_mapping','drt_contrast','drt_toe','drt_shoulder','drt_white'),
  'HDR':('hdr','hdr_limit','hdr_brightness','sdr_exposure','sdr_compression'),
  '화이트 밸런스':('temperature','tint','kelvin','wb_reference','kelvin_enabled','raw_mode','raw_kelvin','raw_tint','raw_neutral'),
  'RAW 프로파일':('dcp_profile','dcp_huesat','dcp_look','dcp_tone','dcp_exposure'),

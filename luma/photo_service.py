@@ -316,7 +316,7 @@ GROUPS={
     'negative':('negative','negative_base','negative_peak'),
     'photo_filter':('photo_filter','photo_filter_enabled','photo_filter_density','photo_filter_luminosity'),
     'film':('film_look','film_strength'),
-    'tone_mapping':('tone_mapping',),
+    'tone_mapping':('tone_mapping','drt_contrast','drt_toe','drt_shoulder','drt_white'),
 }
 COUNTED=('masks','retouch')
 IGNORED=('tone_version','detail_version','video_color','video_time','hdr','hdr_limit','hdr_brightness',

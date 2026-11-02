@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.6 — Looks, toe and shoulder for Smooth highlights (DRT)
+
+- With tone mapping set to **Smooth highlights (DRT)** in Basic, a **DRT look** menu appears (Standard, Soft, Punchy, Film-like) and **Advanced** opens four sliders: **DRT contrast**, **Toe** (deeper or lifted blacks), **Shoulder** (highlights reach white sooner, or keep more range) and **White fade** (where bright colours start turning white).
+- Mid grey stays put at every setting, and all zeros is the original rendering, so photos already using the DRT do not change.
+
 ## 0.6.5 — Ask AI: Claude Code really works, and knows "this folder"
 
 - **Fixed:** with Claude Code, Ask AI could answer before Grainy's tools were connected and make up a photo list without changing anything. It now waits for the tools and is told never to invent results.
