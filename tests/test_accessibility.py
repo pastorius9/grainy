@@ -84,14 +84,18 @@ def test_photos_open_while_an_assistive_program_reads_selections(whole,window,tm
     w.refresh_lists();wait(lambda:not w.library_loading)
     asked=[];listed=[]
     def ask():
-        for widget in QApplication.allWidgets():
+        # Selected items of the window's lists and tab bars, a few times per frame: as often as an assistive program
+        # asks, without taking the event loop from the photo being opened (a slow macOS runner needs that time).
+        for widget in [*w.findChildren(QAbstractItemView),*w.findChildren(QTabBar)]:
             if not widget.isVisible():continue
             iface=QAccessible.queryAccessibleInterface(widget)
             if iface is None or not iface.isValid():continue
-            asked.append(1)
-            selection=iface.selectionInterface()
-            if selection is not None and isinstance(widget,QAbstractItemView):listed.append(type(widget).__name__)
-    timer=QTimer();timer.timeout.connect(ask);QAccessible.setActive(True);timer.start(5)
+            selection=iface.selectionInterface();asked.append(1)
+            if selection is None:continue
+            if isinstance(widget,QAbstractItemView):listed.append(type(widget).__name__)
+            for item in selection.selectedItems():
+                if item is not None:item.isValid()
+    timer=QTimer();timer.timeout.connect(ask);QAccessible.setActive(True);timer.start(50)
     try:
         for ident in ids[1:]+ids[:1]:
             w.set_mode(1);QApplication.processEvents()
