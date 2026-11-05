@@ -463,4 +463,4 @@ LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
 - 사람이 맥에서 확인할 것(빌드 서버로는 충돌 자체를 재현할 수 없다. 바깥 보조 프로그램이 창을 읽어야 한다):
   1. `시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용`에서 AI 조작 앱을 켠 채로 Grainy를 열고 사진을 여러 번 열기. 맥북에서 시작하자마자 꺼지지 않는지.
   2. VoiceOver를 켜고 같은 동작.
-- 0.6.7로 배포했다(2026-11-05, 소유자 지시). `main`과 `mac`은 같은 커밋이다. **Windows 작업 폴더는 다음 작업 전에 `main`을 받아야 한다**(`git fetch origin` 뒤 `git merge --ff-only origin/main`). 올리지 않은 작업이 있으면 받은 `main` 위에 다시 얹는다.
+- 소유자 지시로 `main`과 `mac`에 합치고 0.6.7 버전 커밋(`d1d3b9d`)까지 했다(2026-11-05). `main`과 `mac`은 같은 커밋이다. 릴리스는 이 클라우드 세션에서 만들 수 없었다(태그 push, 태그·릴리스를 만드는 API가 모두 막혀 있음). 릴리스와 Windows zip은 평소처럼 Windows 쪽에서 만든다. **Windows 작업 폴더는 다음 작업 전에 `main`을 받아야 한다**(`git fetch origin` 뒤 `git merge --ff-only origin/main`). 올리지 않은 작업이 있으면 받은 `main` 위에 다시 얹는다.
