@@ -132,6 +132,7 @@ def test_removing_a_folder_inside_a_registered_one(window):
 def test_header_button_removes_the_selected_registered_folder(window):
     w,root,ids,answers=window
     assert w.remove_folder_button.isEnabled() and w.removable_folder()==str(root)
+    wait(lambda:not w.folder_sync.running)          # the check 4 s after start can still run when setup was slow
     photo(root/'new.jpg')
     assert w.folder_sync.scan()                                              # still running: it will list new.jpg
     w.remove_folder_button.click()
