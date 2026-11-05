@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.7 — macOS: no more quitting when an assistive app reads the window
+
+- **Fixed:** on macOS, Grainy quit when a photo was opened, and right at start on a Mac that reopens the last photo. It happened while a program that reads the screen was running, such as VoiceOver or an AI assistant that operates the Mac. A bug in Qt, the toolkit Grainy is built on, could read a list entry it had already deleted. Grainy now stays off that path until Qt's fix is released.
+- Such programs now see the photo grid, filmstrip and folder lists as one list each rather than item by item. Buttons, sliders, fields and tabs are unchanged, and so is using Grainy with the mouse and keyboard.
+
 ## 0.6.6 — Looks, toe and shoulder for Smooth highlights (DRT)
 
 - With tone mapping set to **Smooth highlights (DRT)** in Basic, a **DRT look** menu appears (Standard, Soft, Punchy, Film-like) and **Advanced** opens four sliders: **DRT contrast**, **Toe** (deeper or lifted blacks), **Shoulder** (highlights reach white sooner, or keep more range) and **White fade** (where bright colours start turning white).
