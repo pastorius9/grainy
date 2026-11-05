@@ -37,7 +37,9 @@ def test_sdr_preview_is_explicit_and_never_changes_edits(window):
     np.testing.assert_array_equal(w.view.hdr_pixels,extended)
 
 def test_native_request_visualization_and_error_fallback(window):
-    w=window;w.hdr_display.state=Display(active=True,supported=True,white=200,peak=800)
+    # The display is simulated: the 3 s check of the real screen would put its own state back (and clear the
+    # failure) on a runner slow enough for this test to take longer than that.
+    w=window;w.hdr_display.timer.stop();w.hdr_display.state=Display(active=True,supported=True,white=200,peak=800)
     w.hdr_display.update_ui();w.hdr_button.click()
     wait(lambda:not w.render_running and not w.refine_timer.isActive() and w.view.hdr_surface.pixels is not None)
     assert w.histogram.display_stops==2
