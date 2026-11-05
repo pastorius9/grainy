@@ -459,8 +459,8 @@ LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
   - 번들 Qt에 위 수정이 들어오면 이 모듈을 지운다.
 - 자가 점검에 `accessibility_item_views`를 넣었다. macOS에서는 창의 모든 item view가 선택·표 인터페이스 없이 설명되는지 확인하고 아니면 실패한다(`whole (N views)`, 리눅스에서 강제로 켜서 34개). 다른 OS는 `qt`.
 - 시험: `tests/test_accessibility.py`. macOS 동작을 모든 OS에서 흉내 내서 돈다. 수정을 끄면 둘이 실패한다. 리눅스에서는 이 Qt 버그 자체를 재현할 수 없다(재진입은 macOS 플러그인에서만 일어난다).
-- 맥에서 확인할 것(이 수정은 리눅스 클라우드 세션에서 만들어 맥에서 실행해 보지 못했다):
+- GitHub의 macOS 빌드 서버(macos-14, `fix/macos-accessibility-crash`의 Build #80, `macos_tests` 켬): 앱 빌드·서명·자가 점검(135개 항목, `accessibility_item_views` 포함)과 `tools/check.py`(병렬 1,887개, 조작 47개)가 모두 통과했다. 그 전 두 번의 실행에서는 느린 빌드 서버의 타이밍에 걸린 시험 셋이 실패했다. 새 접근성 시험(가짜 보조 프로그램이 5 ms마다 모든 위젯을 물어 이벤트 루프를 막음 → 목록·탭만 50 ms마다), HDR 대체 시험(3초마다 화면을 다시 확인하며 흉내 낸 상태와 실패를 지움 → 시험 동안 확인을 멈춤), 폴더 제거 버튼 시험(창을 연 4초 뒤의 폴더 확인이 아직 도는 중 → 끝나길 기다림)이다. 셋 다 경합을 일부러 만들어 고치기 전에는 실패하고 고친 뒤에는 통과함을 확인했다.
+- 사람이 맥에서 확인할 것(빌드 서버로는 충돌 자체를 재현할 수 없다. 바깥 보조 프로그램이 창을 읽어야 한다):
   1. `시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용`에서 AI 조작 앱을 켠 채로 Grainy를 열고 사진을 여러 번 열기. 맥북에서 시작하자마자 꺼지지 않는지.
   2. VoiceOver를 켜고 같은 동작.
-  3. `tools/check.py`, 빌드한 앱의 자가 점검에 `accessibility_item_views: whole (…)`.
 - 다음 릴리스의 변경 기록에 넣을 것.
