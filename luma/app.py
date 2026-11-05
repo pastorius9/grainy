@@ -116,6 +116,10 @@ def configure_application(app):
     # Reapplying a global stylesheet repolishes every retained Qt widget and
     # registers duplicate font faces when embedded tests reuse QApplication.
     if app.property('lumaConfigured'):return
+    # Before any window: on macOS, lists and tables are described whole to assistive programs (a Qt bug in
+    # their per-cell description quits Grainy, luma/accessibility.py).
+    from . import accessibility
+    accessibility.install()
     # Explicit loading also gives headless QA the same Korean font as the desktop.
     fonts=Path(os.environ.get('WINDIR','C:/Windows'))/'Fonts'
     for filename in ('malgun.ttf','malgunbd.ttf'):

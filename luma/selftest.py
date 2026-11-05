@@ -131,6 +131,8 @@ def run():
             report.update(lens_profiles=len(lens_records()),camera_profiles=len(cameras()),lens_correction=True,auto_level_degrees=alignment['rotation'])
             report.update(single_horizon_auto_level=single_horizon['algorithm']=='lines-horizon-v2')
             report.update(sparse_library=True,shared_selection=window.grid.selectionModel() is window.filmstrip.selectionModel())
+            from . import accessibility
+            report.update(accessibility_item_views=accessibility.verify(window))
             from .rawcolor import CameraSource,temperature_xyz,xyz_temperature
             from .dcp import load_profile
             dcp_path=Path(__file__).resolve().parents[1]/'assets'/'test-camera.dcp'

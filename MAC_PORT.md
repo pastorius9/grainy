@@ -446,3 +446,21 @@ LUMA_SELF_TEST_REPORT=/tmp/self.json .venv/bin/python main.py --self-test
 - 원인: `McpService`의 import_folder가 `MainWindow.import_paths(...)`(`luma/mcp_service.py` 633행)로 앱의 가져오기를 그대로 쓰고, `MainWindow.import_next`가 끝에서 `import_errors`가 있으면 `QMessageBox.information(self,tr('읽을 수 없는 사진'),...)`(`luma/app.py` 2395행)을 띄운다. 오류는 2422행에서 쌓인다. 자동 가져오기는 `folder_sync.import_failed()`로 이미 조용히 넘긴다.
 - 고칠 방향: AI 작업이 넣은 파일(그 job의 키)의 실패는 `import_errors`에 넣지 않고 job 결과로만 알린다. `folder_sync.auto`와 같은 방식. 사람이 직접 시작한 가져오기의 오류 창은 지금처럼 둔다(둘이 섞여 돌 때도 사람 쪽 파일만 창에 나오게).
 - 시험: 읽을 수 없는 파일이 든 폴더로 `import_folder` → 끝난 뒤 `QApplication.activeModalWidget()`이 없고, 바로 다음 `apply_edits`가 busy가 아니며, 결과의 `failures`에 그 파일이 있다. 사람이 같은 폴더를 가져오면 오류 창은 여전히 뜬다.
+
+## 2026-11-05 — 사진을 열면(맥북은 시작하자마자) 꺼지던 문제: Qt 접근성 버그 우회 (클라우드 세션에서, 아직 배포 전)
+
+- 증상: 소유자의 맥북(Mac17,2, macOS 26.4.1, Grainy 0.6.5)은 Grainy를 열면 바로 꺼지고 macOS가 `다시 열기`를 계속 묻는다. 맥 미니는 사진을 누르면 꺼진다. Windows는 문제없다. 맥북은 시작할 때 마지막 사진을 다시 열기 때문에 시작하자마자 꺼진다.
+- 충돌 보고서: 주 스레드, `EXC_BAD_ACCESS (SIGSEGV)`, `libqcocoa.dylib` + 0x87400. 0.6.6 앱의 같은 파일(UUID `f2e95bb5-d6a7-3098-8ae3-89a4387c7f4e`, 보고서와 같음, PySide6 6.11.2)을 디스어셈블하면 이 위치는 `-[QMacAccessibilityElement accessibilitySelectedChildren]` 안에서 `selectedItems()`가 돌려준 목록을 돌며 `isValid()`를 부르는 곳이다. 지워진 인터페이스의 vtable을 읽다가 죽었다. 이 호출은 다른 프로세스의 접근성 요청(`_AXXMIGCopyMultipleAttributeValues`)에서 왔고, 보고서의 voucher 이름은 `SkyComputerUseService`다(이름으로 보아 AI가 맥 화면을 읽고 조작하는 서비스). GPU(Metal) 모듈과 사진 계산 코드는 이 충돌에 나오지 않는다.
+- 원인(Qt 버그): `QAccessibleCache::deleteInterface`가 `idToInterface`의 반복자를 쥔 채 `ObjectDestroyed` 이벤트를 보낸다. macOS 플러그인은 이 이벤트를 처리하면서 요소를 만들어 캐시에 다시 들어오고(재진입), 그동안 해시가 바뀌면 다른 항목을 지우고 지운 인터페이스의 항목은 남는다. 이 일은 주인 객체가 없는 인터페이스(목록·트리·표의 셀)를 유효한 상태에서 지울 때 일어나며, macOS 플러그인이 표를 행·열 요소로 비추다가 그 요소를 정리할 때(`removeElementsFromCache`) 그렇게 지운다. 다음 `선택된 항목` 요청이 남은 항목을 읽고 죽는다.
+  - Qt 개발 브랜치의 `1d3a303`(2026-10-16, "Accessibility: make the element cache safe against re-entrancy", QTBUG-149629)이 고쳤다. 6.12·6.8로 가져갈 예정이지만 2026-10-23의 6.12 브랜치에도 아직 없고, 6.11은 대상이 아니다. 그래서 PySide6를 올려서는 고칠 수 없다.
+- 고친 것: `luma/accessibility.py`. macOS에서만 QListView·QTreeView·QTableView와 그 하위 클래스(사진 목록·필름 스트립, 폴더 목록, QListWidget·QTreeWidget·QTableWidget, 콤보 상자의 목록)의 접근성 인터페이스를 Qt의 일반 위젯 설명(`QAccessibleWidget`, 역할 List/Tree/Table)으로 바꾼다(`QAccessible.installFactory`). 행·셀·선택 항목을 내놓지 않으므로 Qt가 셀 인터페이스를 만들거나 지우지 않고, 버그 경로에 들어가지 않는다. 다른 컨트롤(버튼, 슬라이더, 입력칸, 탭)은 Qt 그대로다. `configure_application`에서 창을 만들기 전에 설치한다. Windows와 다른 OS는 바뀌지 않는다.
+  - 대가: 보조 프로그램(VoiceOver, AI 조작 도구)은 목록을 요소 하나로 보고, 사진과 폴더를 하나씩 읽지 못한다. 포인터와 키보드로는 그대로 쓸 수 있다.
+  - PySide6의 `installFactory`는 돌려받은 파이썬 객체를 앱이 끝날 때까지 붙잡아 두고, Qt가 인터페이스를 지우면 파이썬 쪽도 무효가 된다(이중 해제 없음). 리눅스에서 지운 메모리를 덮어쓰는 설정(`MALLOC_PERTURB_`)으로 목록 화면 생성·삭제와 GC를 200번 반복하고 종료해도 문제가 없었다.
+  - 번들 Qt에 위 수정이 들어오면 이 모듈을 지운다.
+- 자가 점검에 `accessibility_item_views`를 넣었다. macOS에서는 창의 모든 item view가 선택·표 인터페이스 없이 설명되는지 확인하고 아니면 실패한다(`whole (N views)`, 리눅스에서 강제로 켜서 34개). 다른 OS는 `qt`.
+- 시험: `tests/test_accessibility.py`. macOS 동작을 모든 OS에서 흉내 내서 돈다. 수정을 끄면 둘이 실패한다. 리눅스에서는 이 Qt 버그 자체를 재현할 수 없다(재진입은 macOS 플러그인에서만 일어난다).
+- 맥에서 확인할 것(이 수정은 리눅스 클라우드 세션에서 만들어 맥에서 실행해 보지 못했다):
+  1. `시스템 설정 › 개인정보 보호 및 보안 › 손쉬운 사용`에서 AI 조작 앱을 켠 채로 Grainy를 열고 사진을 여러 번 열기. 맥북에서 시작하자마자 꺼지지 않는지.
+  2. VoiceOver를 켜고 같은 동작.
+  3. `tools/check.py`, 빌드한 앱의 자가 점검에 `accessibility_item_views: whole (…)`.
+- 다음 릴리스의 변경 기록에 넣을 것.
