@@ -227,7 +227,8 @@ def test_wide_gamut_editor_thumbnail_and_compare_match_tagged_reference(window,t
     wait(lambda:current(w,'manual') and w.source is not None and not w.library_loading)
     actual=w.view.photo_item.pixmap().toImage().pixelColor(60,40).getRgb()[:3]
     np.testing.assert_allclose(actual,[240,8,5],atol=1)
-    wait(lambda:not preview_store.inspect(w.catalog.directory,ident)['rebuild'])
+    # Under load the import's first (sRGB) preview can still be the stored one; wait for the rebuilt one.
+    wait(lambda:(lambda p:not p['rebuild'] and p['color_space']=='ProPhoto RGB')(preview_store.inspect(w.catalog.directory,ident)))
     packet=preview_store.inspect(w.catalog.directory,ident);assert packet['color_space']=='ProPhoto RGB'
     with Image.open(preview_store.files(w.catalog.directory,ident)[0]) as jpeg:
         import imagecodecs

@@ -2,6 +2,10 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.8 — Safe start: after a crash, update before any photo opens
+
+- If Grainy did not close normally last time (a crash or a forced quit), the next start opens no photo by itself and offers a newer version first, so a fix can arrive even when the old version quits as soon as it opens a photo. With automatic update checks on it checks at once; otherwise it asks first. The folder still comes back, and the status bar says why no photo was opened.
+
 ## 0.6.7 — macOS: no more quitting when an assistive app reads the window
 
 - **Fixed:** on macOS, Grainy quit when a photo was opened, and right at start on a Mac that reopens the last photo. It happened while a program that reads the screen was running, such as VoiceOver or an AI assistant that operates the Mac. A bug in Qt, the toolkit Grainy is built on, could read a list entry it had already deleted. Grainy now stays off that path until Qt's fix is released.

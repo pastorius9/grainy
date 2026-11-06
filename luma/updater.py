@@ -402,6 +402,23 @@ class UpdateController:
         last = self.preferences.values.get('update_checked')
         if self.preferences.values.get('update_check') is True and (type(last) not in (int, float) or time.time()-last >= INTERVAL):self.check(False)
 
+    def after_crash(self):
+        """The run before ended without closing (luma/safe_start.py). No photo was opened; offer a newer version
+        first, as it may fix what ended that run. With automatic checks on, check at once; otherwise ask, since
+        checking reaches GitHub."""
+        from PySide6.QtWidgets import QMessageBox
+        self.w.statusBar().showMessage(tr('지난번에 Grainy가 정상적으로 닫히지 않아 사진을 자동으로 열지 않았습니다.'), 30000)
+        if not self.packaged or not SUPPORTED:return
+        cleanup()
+        if self.preferences.values.get('update_check') is not True:
+            box = QMessageBox(self.w); box.setWindowTitle(tr('업데이트')); box.setIcon(QMessageBox.Icon.Question)
+            box.setText(tr('지난번에 Grainy가 정상적으로 닫히지 않았습니다.'))
+            box.setInformativeText(tr('새 버전에서 고쳐졌을 수 있습니다. GitHub에서 최신 버전 번호를 확인할까요? 사진이나 사용 정보는 보내지 않습니다.'))
+            yes = box.addButton(tr('새 버전 확인'), QMessageBox.ButtonRole.AcceptRole); box.addButton(tr('계속'), QMessageBox.ButtonRole.RejectRole)
+            box.exec()
+            if box.clickedButton() is not yes:return
+        self.check(True)
+
     def check(self, manual):
         if self.thread is not None:return
         self.manual = manual; box = {}

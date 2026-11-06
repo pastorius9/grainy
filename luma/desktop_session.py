@@ -48,13 +48,21 @@ class DesktopSession:
                 QMessageBox.warning(None, 'Grainy', 'Could not save the language setting.\n언어 설정을 저장하지 못했습니다.')
                 return False
         self.apply_language(selected)
-        from . import native_gpu
+        from . import native_gpu, safe_start
         native_gpu.set_enabled(self.preferences.use_gpu)
-        self.open_window()
+        folder = self.preferences.path.parent
+        crashed = safe_start.begin(folder) is not None
+        self.app.aboutToQuit.connect(lambda: safe_start.end(folder))
+        self.open_window(safe=crashed)
         self.mcp.start_if_enabled()      # quiet: a failure shows only in Settings › AI Connection, never a dialog
         from PySide6.QtCore import QTimer
-        # After the window is up; the folder check follows those dialogs so its message does not cover them.
-        QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.check_folders()))
+        if crashed:
+            # Before anything else, while no photo is open: a newer version may fix what ended the last run.
+            QTimer.singleShot(300, self.updates.after_crash)
+            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.check_folders()))
+        else:
+            # After the window is up; the folder check follows those dialogs so its message does not cover them.
+            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.check_folders()))
         return True
 
     def check_folders(self):
@@ -73,8 +81,10 @@ class DesktopSession:
         whats_new.remember(self.preferences); whats_new.thank(self.preferences, refs)
         if entries or refs:whats_new.show(self.window, entries, refs)
 
-    def open_window(self, geometry=None, photo=None, mode=None):
+    def open_window(self, geometry=None, photo=None, mode=None, safe=False):
+        """safe: the run before did not close (luma/safe_start.py): the window opens no photo by itself."""
         self.window = self.window_factory(self.data_dir)
+        if safe:self.window.safe_start = True
         self.window.languageChangeRequested.connect(self.choose_language)
         self.window.gpuPreferenceChanged.connect(self.save_gpu)
         from .updater import UpdateController

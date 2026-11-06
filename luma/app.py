@@ -1211,8 +1211,9 @@ class MainWindow(QMainWindow):
             'expanded':sorted(self.expanded_folders),'current_photo':self.current_id})
 
     def restore_folder_selection(self):
-        self.restore_photo_id=self.folder_preferences.get('current_photo')
-        self.refresh_lists(ensure_current=True)
+        safe=getattr(self,'safe_start',False)       # the run before did not close: open no photo by itself
+        self.restore_photo_id=None if safe else self.folder_preferences.get('current_photo')
+        self.refresh_lists(ensure_current=not safe)
         if self.folder_filter:
             self.set_mode(1)
 
