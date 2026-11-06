@@ -168,7 +168,7 @@ def test_closing_the_window_while_sending_still_records_the_reference(app, monke
     from PySide6.QtWidgets import QApplication, QPlainTextEdit, QPushButton
     monkeypatch.setattr(feedback, 'reference', lambda: 'CL5SE')
     going, sent = threading.Event(), []
-    def sender(message, system):going.wait(5); sent.append(system); return ''
+    def sender(message, system):going.wait(60); sent.append(system); return ''   # released by the test; a slow runner may take >5 s
     monkeypatch.setattr(feedback, 'send', sender)
     def close_while_sending():
         d = QApplication.activeModalWidget(); d.findChild(QPlainTextEdit).setPlainText('닫아도 보내져요')
