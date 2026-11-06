@@ -117,7 +117,10 @@ jobs:
   # repository secrets (no Apple developer identity): the same identity in every release, so macOS keeps
   # the folder and disk permissions it gave Grainy across updates. Without the secrets it is signed ad hoc.
   macos:
-    runs-on: macos-14
+    # macos-14 runners were retired on 2026-11-06 ("configuration 'macos-14-arm64-us-default' is not supported").
+    # The app still runs on macOS 14: the native libraries target 11.0 and build_macos.minimum_system() declares
+    # the newest system a bundled wheel or Python asks for.
+    runs-on: macos-15
     timeout-minutes: 45
     outputs:
       version: ${{ steps.version.outputs.version }}
