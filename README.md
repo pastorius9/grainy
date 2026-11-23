@@ -1,3 +1,5 @@
+> **Grainy now continues as [Grainy RS](https://github.com/pastorius9/grainy-rs).** This Python version gets no more updates; new features and fixes come only in Grainy RS. On its first start Grainy RS brings your library over (photos, edits, collections) and leaves this one untouched. Get it at <https://pastorius9.github.io/grainy/>.
+
 <p align="center">
   <img alt="Grainy" src="assets/brand/grainy-icon-256.png" width="96">
 </p>

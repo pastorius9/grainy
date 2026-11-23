@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Grainy — free photo editor for film scans</title>
-<meta name="description" content="Grainy: a free photo editor and library made for film scans. Negative conversion, Auto tone and Auto colour, dust detection, masks. Windows and macOS, MIT licence. Your photos never leave your computer.">
-<meta property="og:title" content="Grainy — free photo editor for film scans">
-<meta property="og:description" content="Negative conversion, Auto tone and Auto colour, dust detection, masks. Windows and macOS, MIT licence.">
+<title>Grainy RS — free photo editor for film scans</title>
+<meta name="description" content="Grainy RS, the new Grainy: a free photo editor and library made for film scans. Negative conversion, Auto tone and Auto colour, 82 film looks, dust detection, masks. Windows and macOS, MIT licence. Your photos never leave your computer.">
+<meta property="og:title" content="Grainy RS — free photo editor for film scans">
+<meta property="og:description" content="Negative conversion, Auto tone and Auto colour, 82 film looks, dust detection, masks. Windows and macOS, MIT licence.">
 <meta property="og:image" content="https://pastorius9.github.io/grainy/site/og.jpg">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -23,21 +23,25 @@ a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
 img{max-width:100%;display:block;height:auto}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 html[data-lang="ko"] [lang="en"], html[data-lang="en"] [lang="ko"]{display:none !important}
+section[id], #download{scroll-margin-top:72px}
 
 /* header */
 header{position:sticky;top:0;z-index:5;background:rgba(16,18,21,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .bar{display:flex;align-items:center;gap:22px;height:60px}
-.brand{display:flex;align-items:center;gap:10px;color:#f4e7d4;font-weight:600;letter-spacing:3px;font-size:20px}
+.brand{display:flex;align-items:center;gap:10px;color:#f4e7d4;font-weight:600;letter-spacing:3px;font-size:20px;white-space:nowrap}
 .brand img{width:28px;height:28px}
+.brand b{color:var(--accent);font-weight:600;letter-spacing:1px}
 nav{display:flex;gap:18px;margin-left:auto;font-size:14px}
 nav a{color:var(--muted)} nav a:hover{color:var(--text);text-decoration:none}
 .lang{display:flex;border:1px solid var(--line)}
 .lang button{background:none;border:0;color:var(--muted);padding:5px 10px;font:inherit;font-size:13px;cursor:pointer}
 .lang button[aria-pressed="true"]{background:var(--panel2);color:var(--text)}
-@media (max-width:760px){nav{display:none}.bar{gap:12px}.lang{margin-left:auto}}
+@media (max-width:900px){nav{display:none}.bar{gap:12px}.lang{margin-left:auto}}
 
 /* hero */
-.hero{padding:72px 0 40px;text-align:center}
+.hero{padding:64px 0 40px;text-align:center}
+.tag{display:inline-block;border:1px solid var(--teal-line);background:#14252a;color:#cfe9ea;font-size:14px;padding:6px 14px;margin:0 0 22px}
+.tag:hover{text-decoration:none;border-color:var(--teal)}
 .hero h1{font-size:clamp(30px,5vw,50px);line-height:1.18;margin:0 0 16px;color:#f4e7d4;font-weight:650;letter-spacing:-.5px}
 .hero p.lead{font-size:clamp(16px,2.2vw,19px);color:var(--muted);max-width:720px;margin:0 auto 28px}
 .buttons{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
@@ -46,7 +50,8 @@ nav a{color:var(--muted)} nav a:hover{color:var(--text);text-decoration:none}
 .btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .btn.primary:hover{background:#f0d8b5}
 .btn small{font-weight:400;opacity:.75}
-.meta{margin-top:14px;color:var(--muted);font-size:13px}
+.meta{margin:14px auto 0;color:var(--muted);font-size:13px;max-width:760px}
+.meta + .meta{margin-top:6px}
 .shot{margin:44px auto 0;border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.45)}
 
 /* sections */
@@ -70,12 +75,20 @@ section p.sub{color:var(--muted);margin:0 0 34px;max-width:760px}
 .pair.negative img{height:100%;object-fit:cover}
 @media (max-width:820px){.feature{grid-template-columns:1fr;gap:18px}.feature.flip .text{order:0}}
 
+/* moving from the Python Grainy */
+.points{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.points li{background:var(--panel);border:1px solid var(--line);padding:14px 18px;color:var(--muted);font-size:15px}
+.points b{display:block;color:#f4e7d4;font-size:16px;margin-bottom:2px}
+.move{align-items:start}
+.move figure img{box-shadow:0 20px 50px rgba(0,0,0,.4)}
+
 /* AI section */
 .steps{counter-reset:step;display:grid;gap:14px;margin:0 0 30px}
 .step{background:var(--panel);border:1px solid var(--line);padding:18px 20px 18px 62px;position:relative}
 .step::before{counter-increment:step;content:counter(step);position:absolute;left:20px;top:17px;width:28px;height:28px;border:1px solid var(--teal-line);color:var(--teal);display:grid;place-items:center;font-weight:600;font-size:14px}
 .step h3{margin:0 0 4px;font-size:16px;color:#f4e7d4}
 .step p{margin:0;color:var(--muted);font-size:15px}
+.step p + p{margin-top:8px}
 .tabs{display:flex;flex-wrap:wrap;gap:6px;margin:16px 0 0}
 .tabs button{background:var(--panel2);color:var(--muted);border:1px solid var(--line);padding:7px 14px;font:inherit;font-size:14px;cursor:pointer}
 .tabs button[aria-selected="true"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
@@ -86,6 +99,7 @@ section p.sub{color:var(--muted);margin:0 0 34px;max-width:760px}
 .examples{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:14px}
 .examples div{border-left:2px solid var(--teal-line);padding:6px 12px;color:var(--text);font-size:15px;background:var(--panel)}
 .privacy{border:1px solid var(--teal-line);background:#14252a;padding:16px 18px;margin-top:26px;font-size:15px;color:#cfe9ea}
+@media (max-width:560px){.os{margin-left:0;flex-basis:100%;height:0}}
 
 /* faq + footer */
 details{background:var(--panel);border:1px solid var(--line);padding:14px 18px;margin-bottom:10px}
@@ -99,13 +113,14 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
 <body>
 <header>
   <div class="wrap bar">
-    <a class="brand" href="#top"><img src="site/grainy-icon-256.png" alt="">Grainy</a>
+    <a class="brand" href="#top"><img src="site/grainy-icon-256.png" alt="">Grainy <b>RS</b></a>
     <nav>
       <a href="#features"><span lang="ko">기능</span><span lang="en">Features</span></a>
       <a href="learn/"><span lang="ko">배우기</span><span lang="en">Learn</span></a>
       <a href="#ai"><span lang="ko">AI로 보정하기</span><span lang="en">Edit with AI</span></a>
+      <a href="#python"><span lang="ko">파이썬판에서 옮기기</span><span lang="en">From the Python Grainy</span></a>
       <a href="#download"><span lang="ko">내려받기</span><span lang="en">Download</span></a>
-      <a href="https://github.com/pastorius9/grainy">GitHub</a>
+      <a href="https://github.com/pastorius9/grainy-rs">GitHub</a>
     </nav>
     <div class="lang" role="group" aria-label="Language">
       <button type="button" data-set-lang="ko" aria-pressed="true">한국어</button>
@@ -116,19 +131,21 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
 
 <main id="top">
   <div class="wrap hero">
+    <a class="tag" href="#python"><span lang="ko">Grainy는 이제 Grainy RS로 이어집니다 · 파이썬판을 쓰던 분은 여기를 먼저 보세요</span><span lang="en">Grainy continues as Grainy RS · using the Python Grainy? Read this first</span></a>
     <h1><span lang="ko">필름 스캔을 위해 만든<br>무료 사진 프로그램</span><span lang="en">A free photo editor<br>made for film scans</span></h1>
     <p class="lead">
-      <span lang="ko">네거티브 반전, 자동 톤과 자동 색, 필름 룩 82종, 먼지 감지, 마스크, 사진 보관함까지. 설치 없이 바로 실행하고, 사진은 내 컴퓨터 밖으로 나가지 않습니다.</span>
-      <span lang="en">Negative conversion, Auto tone and Auto colour, 82 film looks, dust detection, masks and a photo library. No installer, and your photos never leave your computer.</span>
+      <span lang="ko">네거티브 반전, 자동 톤과 자동 색, 필름 룩 82종, 먼지 감지, 마스크, 사진 보관함까지. 사진은 내 컴퓨터 밖으로 나가지 않습니다.</span>
+      <span lang="en">Negative conversion, Auto tone and Auto colour, 82 film looks, dust detection, masks and a photo library. Your photos never leave your computer.</span>
     </p>
     <div class="buttons" id="download">
-      <a class="btn primary" data-asset="windows" href="https://github.com/pastorius9/grainy/releases/latest"><span lang="ko">Windows용 내려받기</span><span lang="en">Download for Windows</span> <small data-version></small></a>
-      <a class="btn" data-asset="macos" href="https://github.com/pastorius9/grainy/releases/latest"><span lang="ko">macOS용 내려받기</span><span lang="en">Download for macOS</span> <small data-version></small></a>
+      <a class="btn primary" data-asset="windows" href="https://github.com/pastorius9/grainy-rs/releases/latest"><span lang="ko">Windows용 내려받기</span><span lang="en">Download for Windows</span> <small data-version></small></a>
+      <a class="btn" data-asset="macos" href="https://github.com/pastorius9/grainy-rs/releases/latest"><span lang="ko">macOS용 내려받기</span><span lang="en">Download for macOS</span> <small data-version></small></a>
     </div>
-    <p class="meta"><span lang="ko">Windows 10/11 64비트 · macOS 14 이상 (Apple Silicon) · MIT 라이선스 · 무료</span><span lang="en">Windows 10/11 64-bit · macOS 14 or later (Apple Silicon) · MIT licence · free</span></p>
+    <p class="meta"><span lang="ko">Windows 10/11 64비트 · macOS 11 이상 (Apple Silicon·Intel) · MIT 라이선스 · 무료</span><span lang="en">Windows 10/11 64-bit · macOS 11 or later (Apple Silicon and Intel) · MIT licence · free</span></p>
+    <p class="meta"><span lang="ko">Windows: 압축을 풀고 GrainyRS.exe 실행 · macOS: Grainy RS를 응용 프로그램 폴더로 끌어다 놓기 · <a href="#faq">처음 실행할 때 경고가 뜨면</a></span><span lang="en">Windows: unzip and run GrainyRS.exe · macOS: drag Grainy RS to Applications · <a href="#faq">Warning on first start?</a></span></p>
     <p class="meta"><a href="learn/"><span lang="ko">처음이라면: 브라우저에서 따라 하며 배우기 →</span><span lang="en">New to Grainy? Learn it hands-on in your browser →</span></a></p>
-    <img class="shot" lang="ko" src="screenshots/ko/develop.jpg" alt="Grainy 현상 화면" width="1680" height="1000">
-    <img class="shot" lang="en" src="screenshots/en/develop.jpg" alt="Grainy develop view" width="1680" height="1000">
+    <img class="shot" lang="ko" src="site/develop-ko.jpg" alt="Grainy RS 현상 화면" width="1680" height="1000">
+    <img class="shot" lang="en" src="site/develop-en.jpg" alt="Grainy RS develop view" width="1680" height="1000">
   </div>
 
   <section id="features">
@@ -152,6 +169,7 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
         <div class="text">
           <h3><span lang="ko">자동 톤과 자동 색</span><span lang="en">Auto tone and Auto colour</span></h3>
           <p><span lang="ko">스캔마다 다른 노출과 색 틀어짐을 버튼 하나로 잡습니다. 어두운 곳·중간·밝은 곳의 색 틀어짐을 따로 재서 되돌리기 때문에, 필름 특유의 밝기에 따라 달라지는 색 틀어짐에도 맞습니다.</span><span lang="en">One button each for exposure and for the colour cast of a scan. Shadows, midtones and highlights are measured separately, so the cast that changes with brightness — typical of film — is removed too.</span></p>
+          <p><span lang="ko">자동 색은 세기를 0–100%로 조절할 수 있습니다.</span><span lang="en">Auto colour has a strength slider, 0–100%.</span></p>
         </div>
         <figure>
           <img src="screenshots/film-auto.jpg" alt="" width="1922" height="1415" loading="lazy">
@@ -167,6 +185,7 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
         </div>
         <figure>
           <img src="site/compare.jpg" alt="" width="1680" height="1000" loading="lazy">
+          <figcaption><span lang="ko">Grainy RS의 비교 보기: 왼쪽 원본, 오른쪽 자동 톤 + 자동 색</span><span lang="en">Compare view in Grainy RS: the original left, Auto tone + Auto colour right</span></figcaption>
         </figure>
       </div>
 
@@ -184,11 +203,33 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
 
       <div class="grid">
         <div class="card"><h3><span lang="ko">먼지·흠집 감지</span><span lang="en">Dust and scratches</span></h3><p><span lang="ko">스캔의 먼지와 흠집 후보를 자동으로 찾고, 확인한 것만 지웁니다. 여러 장을 한꺼번에 검사할 수도 있습니다.</span><span lang="en">Finds dust and scratch candidates in a scan and removes only the ones you confirm, also across many photos at once.</span></p></div>
-        <div class="card"><h3><span lang="ko">마스크와 닷지·번</span><span lang="en">Masks, dodge and burn</span></h3><p><span lang="ko">브러시, 선형·방사형 그레이디언트, 색상·광도 범위. 브러시는 어두운 곳·중간·밝은 곳만 고르도록 제한할 수 있습니다.</span><span lang="en">Brush, linear and radial gradients, colour and luminance ranges. A brush can be limited to shadows, midtones or highlights.</span></p></div>
+        <div class="card"><h3><span lang="ko">마스크와 닷지·번</span><span lang="en">Masks, dodge and burn</span></h3><p><span lang="ko">브러시, 선형·방사형 그레이디언트, 색상·광도 범위, 피사체·배경·하늘 선택. 선택은 모두 이 컴퓨터 안에서 계산합니다.</span><span lang="en">Brush, linear and radial gradients, colour and luminance ranges, subject, background and sky selection, all computed on this computer.</span></p></div>
         <div class="card"><h3><span lang="ko">스캔 테두리 자르기</span><span lang="en">Scan border cropping</span></h3><p><span lang="ko">필름 가장자리와 홀더를 찾아 자동으로 잘라냅니다. 수평과 원근도 자동으로 맞춥니다.</span><span lang="en">Finds the film edge and holder and crops them away; levels and straightens perspective automatically.</span></p></div>
         <div class="card"><h3><span lang="ko">사진 보관함</span><span lang="en">Photo library</span></h3><p><span lang="ko">모든 롤을 한 곳에서 폴더, 별점, 선택 표시, 색 라벨, 키워드, 컬렉션으로 정리합니다. 원본 파일은 절대 바꾸지 않습니다.</span><span lang="en">Every roll in one place: folders, ratings, flags, colour labels, keywords and collections. Original files are never changed.</span></p></div>
+        <div class="card"><h3><span lang="ko">Lightroom에서 옮기기</span><span lang="en">Coming from Lightroom</span></h3><p><span lang="ko">Lightroom 카탈로그의 별점·선택 표시·색 라벨·키워드·컬렉션을 가져옵니다. 카탈로그와 원본은 바꾸지 않습니다.</span><span lang="en">Brings in ratings, flags, colour labels, keywords and collections from a Lightroom catalog. The catalog and the originals are not changed.</span></p></div>
+        <div class="card"><h3><span lang="ko">HDR·파노라마 합치기</span><span lang="en">HDR and panorama merge</span></h3><p><span lang="ko">노출을 달리 찍은 여러 장은 HDR로, 겹치게 찍은 여러 장은 파노라마로 합쳐 새 32비트 TIFF로 저장합니다.</span><span lang="en">Merge a bracket into HDR, or overlapping frames into a panorama, saved as a new 32-bit TIFF.</span></p></div>
         <div class="card"><h3><span lang="ko">그레인과 비네팅</span><span lang="en">Grain and vignette</span></h3><p><span lang="ko">양·크기·거칠기를 고르는 필름 그레인과 비네팅을 더합니다.</span><span lang="en">Film grain with amount, size and roughness, and a vignette.</span></p></div>
-        <div class="card"><h3><span lang="ko">빠르고 가볍게</span><span lang="en">Fast</span></h3><p><span lang="ko">그래픽카드를 써서 보정이 바로 보입니다. 설치 과정 없이 압축을 풀고 실행하면 됩니다.</span><span lang="en">Edits show at once, using the graphics card. No installer: unzip and run.</span></p></div>
+        <div class="card"><h3><span lang="ko">바로 보이는 보정</span><span lang="en">Edits at once</span></h3><p><span lang="ko">그래픽카드를 써서 보정이 바로 보입니다. Windows판은 설치 과정 없이 압축을 풀고 실행하면 됩니다.</span><span lang="en">Edits show at once, using the graphics card. On Windows there is no installer: unzip and run.</span></p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="python">
+    <div class="wrap">
+      <h2><span lang="ko">파이썬판 Grainy를 쓰던 분</span><span lang="en">Coming from the Python Grainy</span></h2>
+      <p class="sub"><span lang="ko">Grainy RS는 Grainy를 Rust로 새로 만든 프로그램입니다. 파이썬판 옆에 따로 설치되고 데이터 폴더도 따로 써서, 파이썬판 Grainy는 그대로 남습니다.</span><span lang="en">Grainy RS is Grainy rebuilt in Rust. It is installed beside the Python Grainy with its own data folder, and does not change or replace it.</span></p>
+      <div class="feature move">
+        <ul class="points">
+          <li><b><span lang="ko">처음 열 때 라이브러리를 가져올지 묻습니다</span><span lang="en">On first start it offers to bring your library over</span></b><span lang="ko">라이브러리가 빈 채로 Grainy RS를 열면 파이썬판 라이브러리를 가져올지 한 번 묻습니다. 사진, 보정, 보정 기록, 컬렉션, 썸네일, 카메라 프로필이 함께 옵니다. 파이썬판 Grainy는 먼저 닫아 주세요.</span><span lang="en">When Grainy RS starts with an empty library, it asks once whether to bring over the Python Grainy's library: photos, edits, history, collections, thumbnails and camera profiles. Close the Python Grainy first.</span></li>
+          <li><b><span lang="ko">파이썬판 라이브러리는 읽기만 합니다</span><span lang="en">The Python library is only read</span></b><span lang="ko">복사본을 만들어 읽으므로 파이썬판의 라이브러리와 원본 사진은 그대로입니다. 가져온 뒤 파이썬판에서 고친 내용은 옮겨지지 않습니다.</span><span lang="en">It is read from a copy, so the Python Grainy's library and your originals stay as they are. Changes made in the Python Grainy after the import do not come over.</span></li>
+          <li><b><span lang="ko">나중에 가져와도 됩니다</span><span lang="en">Import it later</span></b><span lang="ko">파일 관리 메뉴 › "파이썬 Grainy 라이브러리 가져오기…". Grainy RS 라이브러리에 이미 사진이 있으면 먼저 묻고, 지금 라이브러리를 백업한 뒤 바꿉니다. 백업은 파일 관리 › 카탈로그 복원으로 되돌립니다.</span><span lang="en">File management › "Import the Python Grainy Library…". If the Grainy RS library already has photos, it asks first and backs that library up before replacing it; File management › Restore catalog brings the backup back.</span></li>
+          <li><b><span lang="ko">AI 연결은 한 번 다시 등록합니다</span><span lang="en">Register the AI connection once more</span></b><span lang="ko">Grainy RS의 설정 › AI 연결 (MCP)… 창이나 <a href="#ai">아래</a>의 명령을 한 번 실행하면, 예전 "grainy" 연결이 Grainy RS로 바뀝니다.</span><span lang="en">Run the line from Settings › AI Connection (MCP)… in Grainy RS, or the one <a href="#ai">below</a>, once: it replaces the earlier "grainy" entry with Grainy RS.</span></li>
+          <li><b><span lang="ko">파이썬판은 더 이상 업데이트되지 않습니다</span><span lang="en">The Python Grainy gets no more updates</span></b><span lang="ko">마지막 버전 0.6.9는 이 페이지를 안내합니다. 예전 버전 파일은 <a href="https://github.com/pastorius9/grainy/releases">GitHub</a>에 그대로 있습니다.</span><span lang="en">Its last version, 0.6.9, points here. Earlier downloads stay on <a href="https://github.com/pastorius9/grainy/releases">GitHub</a>.</span></li>
+        </ul>
+        <figure>
+          <img src="site/python-import.jpg" alt="" width="524" height="226" loading="lazy">
+          <figcaption><span lang="ko">빈 라이브러리로 처음 열 때 나오는 질문. 라이브러리 가져오기는 Grainy RS 0.5.2부터 있습니다.</span><span lang="en">The question on first start with an empty library (Korean interface shown). The library import needs Grainy RS 0.5.2 or newer.</span></figcaption>
+        </figure>
       </div>
     </div>
   </section>
@@ -196,12 +237,12 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
   <section id="ai">
     <div class="wrap">
       <h2><span lang="ko">AI에게 말로 보정 시키기</span><span lang="en">Tell an AI to edit for you</span></h2>
-      <p class="sub"><span lang="ko">Claude Code, Codex, Gemini CLI, Claude 데스크톱에 Grainy MCP를 한 번 등록하면, "이 롤 네거티브 반전하고 색 맞춰서 내보내줘"처럼 말로 일을 시킬 수 있습니다. AI는 Grainy의 기능을 직접 쓰고, 결과는 Grainy 화면에 바로 보이며, 한 번에 되돌릴 수 있습니다.</span><span lang="en">Register Grainy's MCP once in Claude Code, Codex, Gemini CLI or Claude Desktop, then just ask: "convert this roll from negatives, fix the colours and export it". The AI uses Grainy's own tools, you see the result in Grainy at once, and each AI task can be undone.</span></p>
+      <p class="sub"><span lang="ko">Claude Code, Codex, Gemini CLI, Claude 데스크톱에 Grainy RS를 한 번 등록하면, "이 롤 네거티브 반전하고 색 맞춰서 내보내줘"처럼 말로 일을 시킬 수 있습니다. AI는 Grainy의 기능을 직접 쓰고, 결과는 Grainy 화면에 바로 보이며, 한 번에 되돌릴 수 있습니다.</span><span lang="en">Register Grainy RS once in Claude Code, Codex, Gemini CLI or Claude Desktop, then just ask: "convert this roll from negatives, fix the colours and export it". The AI uses Grainy's own tools, you see the result in Grainy at once, and each AI task can be undone.</span></p>
 
       <div class="steps">
-        <div class="step"><h3><span lang="ko">Grainy를 실행합니다</span><span lang="en">Open Grainy</span></h3><p><span lang="ko">따로 켤 설정은 없습니다. Grainy가 열려 있는 동안 AI 프로그램이 연결할 수 있습니다.</span><span lang="en">Nothing to switch on: while Grainy is open, your AI program can connect to it.</span></p></div>
-        <div class="step"><h3><span lang="ko">AI 프로그램에 Grainy MCP를 등록합니다 (한 번만)</span><span lang="en">Register Grainy's MCP in your AI program (once)</span></h3>
-          <p><span lang="ko">쓰는 프로그램과 운영체제를 고르고, 명령을 복사해 실행하세요.</span><span lang="en">Pick your program and system, then copy and run the command.</span></p>
+        <div class="step"><h3><span lang="ko">Grainy RS를 실행합니다</span><span lang="en">Open Grainy RS</span></h3><p><span lang="ko">AI 연결은 처음부터 켜져 있습니다. Grainy RS가 열려 있는 동안 AI 프로그램이 연결할 수 있습니다.</span><span lang="en">The AI connection is on from the start: while Grainy RS is open, your AI program can connect to it.</span></p></div>
+        <div class="step"><h3><span lang="ko">AI 프로그램에 Grainy RS를 등록합니다 (한 번만)</span><span lang="en">Register Grainy RS in your AI program (once)</span></h3>
+          <p><span lang="ko">쓰는 프로그램과 운영체제를 고르고, 명령을 복사해 실행하세요. 파이썬판 Grainy를 등록해 둔 적이 있어도 이 명령이 그 연결을 Grainy RS로 바꿉니다.</span><span lang="en">Pick your program and system, then copy and run the command. If the Python Grainy was registered before, this command moves that connection to Grainy RS.</span></p>
           <div class="tabs" role="tablist" id="clients">
             <button type="button" role="tab" data-client="claude_code" aria-selected="true">Claude Code</button>
             <button type="button" role="tab" data-client="codex" aria-selected="false">Codex</button>
@@ -221,12 +262,13 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
             <div><span lang="ko">"별점 4개 이상만 JPEG로 Instagram 폴더에 내보내줘"</span><span lang="en">"Export the four-star and better photos as JPEG to an Instagram folder"</span></div>
             <div><span lang="ko">"방금 한 작업 되돌려줘"</span><span lang="en">"Undo what you just did"</span></div>
           </div>
+          <p class="note"><span lang="ko">Grainy RS 위쪽의 "AI에게 시키기" 버튼으로 프로그램 안에서 바로 시킬 수도 있습니다. 이 컴퓨터에 설치하고 로그인한 Claude Code, Codex, Gemini CLI를 씁니다.</span><span lang="en">Or use the "Ask AI" button at the top of Grainy RS to ask from inside the program; it uses Claude Code, Codex or Gemini CLI installed and signed in on this computer.</span></p>
         </div>
       </div>
 
       <div class="privacy">
-        <span lang="ko">Grainy 자체는 이 기능으로 인터넷에 아무것도 보내지 않습니다. 연결은 이 컴퓨터 안에서만 열리고, 등록한 AI 프로그램만 쓸 수 있습니다. 그 AI 프로그램이 읽은 사진 목록·보정값·작은 미리보기는 그 AI 서비스로 전송됩니다. 원본 파일은 바뀌지 않고, AI가 한 보정은 되돌릴 수 있습니다. 쓰지 않으려면 Grainy의 설정 › AI 연결에서 끌 수 있습니다.</span>
-        <span lang="en">Grainy itself sends nothing over the internet for this. The connection opens only inside this computer and only the AI programs you register can use it. What such a program reads — the photo list, edit values, small previews — is sent to that AI service. Originals are never changed and AI edits can be undone. Switch it off under Settings › AI Connection if you do not use it.</span>
+        <span lang="ko">Grainy RS 자체는 이 기능으로 인터넷에 아무것도 보내지 않습니다. 연결은 이 컴퓨터 안에서만 열리고, 등록한 AI 프로그램만 쓸 수 있습니다. 그 AI 프로그램이 읽은 사진 목록·보정값·작은 미리보기는 그 AI 서비스로 전송됩니다. 원본 파일은 바뀌지 않고, AI가 한 보정은 되돌릴 수 있습니다. 쓰지 않으려면 Grainy RS의 설정 › AI 연결 (MCP)에서 끌 수 있습니다.</span>
+        <span lang="en">Grainy RS itself sends nothing over the internet for this. The connection opens only inside this computer and only the AI programs you register can use it. What such a program reads — the photo list, edit values, small previews — is sent to that AI service. Originals are never changed and AI edits can be undone. Switch it off under Settings › AI Connection (MCP) if you do not use it.</span>
       </div>
     </div>
   </section>
@@ -234,70 +276,57 @@ footer .fine{flex-basis:100%;font-size:12px;opacity:.75}
   <section id="faq">
     <div class="wrap">
       <h2><span lang="ko">처음 실행할 때</span><span lang="en">First start</span></h2>
-      <details open><summary><span lang="ko">Windows: "Windows의 PC 보호" 경고가 떠요</span><span lang="en">Windows: "Windows protected your PC"</span></summary><p><span lang="ko">개인이 만든 무료 프로그램이라 유료 코드 서명이 없어서 뜨는 경고입니다. "추가 정보" → "실행"을 누르면 됩니다.</span><span lang="en">Grainy has no paid code-signing certificate yet. Choose "More info" → "Run anyway".</span></p></details>
-      <details><summary><span lang="ko">macOS: "확인되지 않은 개발자"라며 열리지 않아요</span><span lang="en">macOS: "unidentified developer"</span></summary><p><span lang="ko">시스템 설정 › 개인정보 보호 및 보안에서 "그래도 열기"를 한 번 누르면 됩니다. 사진 폴더나 외장 디스크 접근을 물으면 허용해 주세요.</span><span lang="en">Open System Settings › Privacy &amp; Security and click "Open Anyway" once. Allow access when macOS asks about your photo folders or external disks.</span></p></details>
-      <details><summary><span lang="ko">업데이트는 어떻게 하나요?</span><span lang="en">How do I update?</span></summary><p><span lang="ko">새 버전이 나오면 Grainy 왼쪽 위에 알림 버튼이 뜹니다. 누르고 "지금 업데이트"를 고르면 사진과 보정 기록은 그대로 두고 새 버전으로 다시 열립니다.</span><span lang="en">When a new version is out, a button appears at the top left of Grainy. Choose "Update now"; your photos and edit history stay as they are.</span></p></details>
-      <details><summary><span lang="ko">문제나 아이디어는 어디에 알리나요?</span><span lang="en">Where do I report a problem or an idea?</span></summary><p><span lang="ko">Grainy 위쪽의 피드백 버튼을 눌러 주세요. 보내면 접수 번호가 나오고, 반영된 버전으로 업데이트하면 Grainy가 알려 줍니다. GitHub에서도 받습니다.</span><span lang="en">Use the Feedback button at the top of Grainy. You get a reference number, and Grainy tells you after the update that addresses it. GitHub works too.</span></p></details>
+      <details open><summary><span lang="ko">Windows: "Windows의 PC 보호" 경고가 떠요</span><span lang="en">Windows: "Windows protected your PC"</span></summary><p><span lang="ko">개인이 만든 무료 프로그램이라 유료 코드 서명이 없어서 뜨는 경고입니다. "추가 정보" → "실행"을 누르면 됩니다. 압축을 푼 GrainyRS 폴더의 파일은 함께 두세요.</span><span lang="en">Grainy RS has no paid code-signing certificate yet. Choose "More info" → "Run anyway". Keep the files of the unzipped GrainyRS folder together.</span></p></details>
+      <details><summary><span lang="ko">macOS: 앱이 열리지 않아요</span><span lang="en">macOS: the app does not open</span></summary><p><span lang="ko">Apple 공증을 받지 않은 앱이라 처음 한 번 막힙니다. 응용 프로그램 폴더에서 Grainy RS를 우클릭(또는 Control-클릭) › 열기 › 열기를 누르세요. 또는 한 번 열어 본 뒤 시스템 설정 › 개인정보 보호 및 보안에서 "그래도 열기"를 누르면 됩니다. 사진 폴더나 외장 디스크 접근을 물으면 허용해 주세요.</span><span lang="en">The app is not notarized by Apple, so macOS blocks it once. Right-click (or Control-click) Grainy RS in Applications and choose Open, then Open again. Or try to open it, then press "Open Anyway" in System Settings › Privacy &amp; Security. Allow access when macOS asks about your photo folders or external disks.</span></p></details>
+      <details><summary><span lang="ko">업데이트는 어떻게 하나요?</span><span lang="en">How do I update?</span></summary><p><span lang="ko">새 버전이 나오면 Grainy RS 위쪽에 새 버전 버튼이 뜹니다. 누르고 "지금 업데이트"를 고르면 됩니다. 사진과 보정 기록은 그대로입니다. 설정 › 업데이트 확인…으로 직접 확인할 수도 있습니다.</span><span lang="en">When a new version is out, a button with its number appears at the top of Grainy RS. Choose "Update now"; your photos and edit history stay as they are. You can also check under Settings at any time.</span></p></details>
+      <details><summary><span lang="ko">문제나 아이디어는 어디에 알리나요?</span><span lang="en">Where do I report a problem or an idea?</span></summary><p><span lang="ko">Grainy RS 위쪽의 피드백 버튼을 눌러 주세요. 보내면 접수 번호가 나오고, 반영된 버전으로 업데이트하면 Grainy가 알려 줍니다. <a href="https://github.com/pastorius9/grainy-rs/issues">GitHub</a>에서도 받습니다.</span><span lang="en">Use the Feedback button at the top of Grainy RS. You get a reference number, and Grainy tells you after the update that addresses it. <a href="https://github.com/pastorius9/grainy-rs/issues">GitHub</a> works too.</span></p></details>
     </div>
   </section>
 </main>
 
 <footer>
   <div class="wrap">
-    <div><span lang="ko">Grainy는 MIT 라이선스의 무료 프로그램입니다.</span><span lang="en">Grainy is free software under the MIT licence.</span> <a href="https://github.com/pastorius9/grainy">GitHub</a> · <a href="https://github.com/pastorius9/grainy/releases"><span lang="ko">모든 버전</span><span lang="en">All releases</span></a></div>
+    <div><span lang="ko">Grainy RS는 MIT 라이선스의 무료 프로그램입니다.</span><span lang="en">Grainy RS is free software under the MIT licence.</span> <a href="https://github.com/pastorius9/grainy-rs">GitHub</a> · <a href="https://github.com/pastorius9/grainy-rs/releases"><span lang="ko">모든 버전</span><span lang="en">All releases</span></a> · <a href="https://github.com/pastorius9/grainy/releases"><span lang="ko">파이썬판 예전 버전</span><span lang="en">Python Grainy releases</span></a></div>
     <div><span lang="ko">이 페이지는 쿠키를 쓰지 않습니다.</span><span lang="en">This page uses no cookies.</span></div>
-    <div class="fine"><span lang="ko">필름 이름은 Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert, CineStill 등 각 소유자의 상표이며, Grainy는 이들과 관련이 없습니다. 필름 룩은 공개된 기술 자료로 계산한 시뮬레이션입니다.</span><span lang="en">Film names are trademarks of their owners, among them Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert and CineStill. Grainy is not affiliated with any of them; its film looks are simulations computed from published technical data.</span></div>
+    <div class="fine"><span lang="ko">필름 이름은 Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert, CineStill 등 각 소유자의 상표이며, Grainy는 이들과 관련이 없습니다. 필름 룩은 공개된 기술 자료로 계산한 시뮬레이션입니다. Lightroom은 Adobe의 상표입니다.</span><span lang="en">Film names are trademarks of their owners, among them Eastman Kodak Company, Kodak Alaris, FUJIFILM Corporation, Harman Technology, FOMA BOHEMIA, Agfa-Gevaert and CineStill. Grainy is not affiliated with any of them; its film looks are simulations computed from published technical data. Lightroom is a trademark of Adobe.</span></div>
   </div>
 </footer>
 
 <script>
-// Install commands, verified against the current Claude Code and Codex command lines (see docs/mcp-install.json).
-const INSTALL = {
-  "windows": {
-    "claude_code": {
-      "cmd": "claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
-      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
-    },
-    "codex": {
-      "cmd": "codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
-      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
-    },
-    "gemini": {
-      "cmd": "gemini mcp add --scope user grainy powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\Grainy\\mcp\\grainy-mcp-bridge.ps1\"",
-      "ko": "PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in PowerShell (not cmd), after opening Grainy once."
-    },
-    "claude_desktop": {
-      "cmd": "{\n  \"mcpServers\": {\n    \"grainy\": {\n      \"command\": \"powershell\",\n      \"args\": [\n        \"-NoProfile\",\n        \"-ExecutionPolicy\",\n        \"Bypass\",\n        \"-Command\",\n        \"& (Join-Path $env:LOCALAPPDATA 'Grainy\\\\mcp\\\\grainy-mcp-bridge.ps1')\"\n      ]\n    }\n  }\n}",
-      "ko": "Claude 데스크톱의 설정 › 개발자 › 설정 편집에서 claude_desktop_config.json에 넣고 Claude를 다시 여세요. 이미 다른 서버가 있으면 \"grainy\" 항목만 mcpServers 안에 더합니다. Cursor, VS Code, Cherry Studio, LM Studio처럼 MCP를 지원하는 다른 프로그램도 같은 내용을 그 프로그램의 MCP 설정에 넣으면 됩니다.",
-      "en": "Add it to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config) and restart Claude. If other servers are listed, add only the \"grainy\" entry inside mcpServers. Other MCP programs such as Cursor, VS Code, Cherry Studio or LM Studio take the same entry in their MCP settings."
-    }
+// Install commands for Grainy RS. Claude Code, Codex and Claude Desktop are docs/mcp-install-rs.json (the lines of
+// Grainy RS's Settings › AI Connection (MCP) on a normal install), read from that file when the page loads; the copy
+// here is used until then or when it cannot be read. Gemini CLI's "mcp add" replaces an entry of the same name.
+const WIN_BRIDGE = '"$env:LOCALAPPDATA\\GrainyRS\\mcp\\grainy-mcp-bridge.ps1"';
+const MAC_BRIDGE = '"$HOME/Library/Application Support/GrainyRS/mcp/grainy-mcp-bridge.sh"';
+const NOTE = {
+  windows: {
+    ko: p => `PowerShell에서 실행하세요(명령 프롬프트 cmd에서는 안 됩니다). Grainy RS를 한 번 연 뒤에 실행하고, ${p}를 다시 시작하세요. 예전 grainy 연결(파이썬판 등)이 있으면 이 연결로 바뀝니다.`,
+    en: p => `Run it in PowerShell (not cmd), after opening Grainy RS once, then restart ${p}. An earlier grainy entry (such as the Python Grainy's) is replaced.`
   },
-  "macos": {
-    "claude_code": {
-      "cmd": "claude mcp add --scope user grainy -- sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
-      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in Terminal, after opening Grainy once."
-    },
-    "codex": {
-      "cmd": "codex mcp add grainy -- sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
-      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in Terminal, after opening Grainy once."
-    },
-    "gemini": {
-      "cmd": "gemini mcp add --scope user grainy sh \"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\"",
-      "ko": "터미널에서 실행하세요. Grainy를 한 번 연 뒤에 등록해야 합니다.",
-      "en": "Run it in Terminal, after opening Grainy once."
-    },
-    "claude_desktop": {
-      "cmd": "{\n  \"mcpServers\": {\n    \"grainy\": {\n      \"command\": \"/bin/sh\",\n      \"args\": [\n        \"-c\",\n        \"exec /bin/sh \\\"$HOME/Library/Application Support/Grainy/mcp/grainy-mcp-bridge.sh\\\"\"\n      ]\n    }\n  }\n}",
-      "ko": "Claude 데스크톱의 설정 › 개발자 › 설정 편집에서 claude_desktop_config.json에 넣고 Claude를 다시 여세요. 이미 다른 서버가 있으면 \"grainy\" 항목만 mcpServers 안에 더합니다. Cursor, VS Code, Cherry Studio, LM Studio처럼 MCP를 지원하는 다른 프로그램도 같은 내용을 그 프로그램의 MCP 설정에 넣으면 됩니다.",
-      "en": "Add it to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config) and restart Claude. If other servers are listed, add only the \"grainy\" entry inside mcpServers. Other MCP programs such as Cursor, VS Code, Cherry Studio or LM Studio take the same entry in their MCP settings."
-    }
+  macos: {
+    ko: p => `터미널에서 실행하세요. Grainy RS를 한 번 연 뒤에 실행하고, ${p}를 다시 시작하세요. 예전 grainy 연결(파이썬판 등)이 있으면 이 연결로 바뀝니다.`,
+    en: p => `Run it in Terminal, after opening Grainy RS once, then restart ${p}. An earlier grainy entry (such as the Python Grainy's) is replaced.`
   }
 };
+const DESKTOP = {
+  ko: 'Claude 데스크톱의 설정 › 개발자 › 구성 편집에서 claude_desktop_config.json을 열고, "mcpServers" 안에 이 "grainy" 항목을 넣은 뒤(파일이 비어 있으면 그대로 붙여 넣기) Claude를 다시 여세요. 예전 "grainy" 항목이 있으면 이것으로 바꿉니다. Cursor, VS Code, Cherry Studio, LM Studio처럼 MCP를 지원하는 다른 프로그램도 같은 내용을 그 프로그램의 MCP 설정에 넣으면 됩니다.',
+  en: 'Add it to claude_desktop_config.json (Claude Desktop › Settings › Developer › Edit Config; paste it as it is into an empty file) and restart Claude. If a "grainy" entry is there already, replace it. Other MCP programs such as Cursor, VS Code, Cherry Studio or LM Studio take the same entry in their MCP settings.'
+};
+const INSTALL = {
+  windows: {
+    claude_code: "claude mcp remove --scope user grainy 2>$null; claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File " + WIN_BRIDGE,
+    codex: "codex mcp remove grainy 2>$null; codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File " + WIN_BRIDGE,
+    gemini: "gemini mcp add --scope user grainy powershell -NoProfile -ExecutionPolicy Bypass -File " + WIN_BRIDGE,
+    claude_desktop_json: {mcpServers: {grainy: {command: 'powershell', args: ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', "& (Join-Path $env:LOCALAPPDATA 'GrainyRS\\mcp\\grainy-mcp-bridge.ps1')"]}}}
+  },
+  macos: {
+    claude_code: 'claude mcp remove --scope user grainy 2>/dev/null; claude mcp add --scope user grainy -- sh ' + MAC_BRIDGE,
+    codex: 'codex mcp remove grainy 2>/dev/null; codex mcp add grainy -- sh ' + MAC_BRIDGE,
+    gemini: 'gemini mcp add --scope user grainy sh ' + MAC_BRIDGE,
+    claude_desktop_json: {mcpServers: {grainy: {command: '/bin/sh', args: ['-c', 'exec /bin/sh ' + MAC_BRIDGE]}}}
+  }
+};
+const PROGRAMS = {claude_code: 'Claude Code', codex: 'Codex', gemini: 'Gemini CLI'};
 
 const state = {lang: 'ko', client: 'claude_code', os: /Mac/i.test(navigator.platform || navigator.userAgent) ? 'macos' : 'windows'};
 function setLang(lang){
@@ -307,9 +336,10 @@ function setLang(lang){
   showCommand();
 }
 function showCommand(){
-  const entry = INSTALL[state.os][state.client];
-  document.getElementById('command-text').textContent = entry.cmd;
-  document.getElementById('command-note').textContent = entry[state.lang];
+  const entries = INSTALL[state.os], desktop = state.client === 'claude_desktop';
+  const value = desktop ? entries.claude_desktop_json : entries[state.client];
+  document.getElementById('command-text').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  document.getElementById('command-note').textContent = desktop ? DESKTOP[state.lang] : NOTE[state.os][state.lang](PROGRAMS[state.client]);
   document.querySelectorAll('[data-client]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.client === state.client)));
   document.querySelectorAll('[data-os]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.os === state.os)));
 }
@@ -324,11 +354,20 @@ document.getElementById('copy').addEventListener('click', async () => {
 let saved = null; try { saved = localStorage.getItem('grainy-lang'); } catch (e) {}
 setLang(saved || (/^ko/i.test(navigator.language || '') ? 'ko' : 'en'));
 
-// Download buttons point straight at the files of the latest release when GitHub answers; otherwise at the release page.
-fetch('https://api.github.com/repos/pastorius9/grainy/releases/latest').then(r => r.ok ? r.json() : null).then(release => {
+fetch('mcp-install-rs.json').then(r => r.ok ? r.json() : null).then(documented => {
+  if (!documented) return;
+  for (const os of ['windows', 'macos']) for (const key of ['claude_code', 'codex', 'claude_desktop_json']) {
+    if (documented[os] && documented[os][key]) INSTALL[os][key] = documented[os][key];
+  }
+  showCommand();
+}).catch(() => {});
+
+// Download buttons point straight at the files of the latest Grainy RS release when GitHub answers; otherwise at
+// its release page. endsWith: each file has a .sha256 file beside it.
+fetch('https://api.github.com/repos/pastorius9/grainy-rs/releases/latest').then(r => r.ok ? r.json() : null).then(release => {
   if (!release) return;
-  const find = part => (release.assets || []).find(a => a.name.includes(part));
-  const files = {windows: find('windows-x64.zip'), macos: find('macos-arm64.dmg')};
+  const find = end => (release.assets || []).find(a => a.name.endsWith(end));
+  const files = {windows: find('-windows-x64.zip'), macos: find('-macos-universal.dmg')};
   document.querySelectorAll('[data-asset]').forEach(a => { const f = files[a.dataset.asset]; if (f) a.href = f.browser_download_url; });
   document.querySelectorAll('[data-version]').forEach(s => s.textContent = release.tag_name || '');
 }).catch(() => {});

@@ -59,10 +59,10 @@ class DesktopSession:
         if crashed:
             # Before anything else, while no photo is open: a newer version may fix what ended the last run.
             QTimer.singleShot(300, self.updates.after_crash)
-            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.check_folders()))
+            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.rs_notice(), self.check_folders()))
         else:
             # After the window is up; the folder check follows those dialogs so its message does not cover them.
-            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.check_folders()))
+            QTimer.singleShot(1500, lambda: (self.whats_new(first_run), self.updates.startup(), self.rs_notice(), self.check_folders()))
         return True
 
     def check_folders(self):
@@ -81,6 +81,11 @@ class DesktopSession:
         whats_new.remember(self.preferences); whats_new.thank(self.preferences, refs)
         if entries or refs:whats_new.show(self.window, entries, refs)
 
+    def rs_notice(self, packaged=None):
+        """Once, after the other start dialogs: Grainy continues as Grainy RS (luma/grainy_rs.py)."""
+        from . import grainy_rs
+        return grainy_rs.notice(self.window, self.preferences, packaged)
+
     def open_window(self, geometry=None, photo=None, mode=None, safe=False):
         """safe: the run before did not close (luma/safe_start.py): the window opens no photo by itself."""
         self.window = self.window_factory(self.data_dir)
@@ -94,6 +99,8 @@ class DesktopSession:
         menu = self.window.findChild(QMenu, 'settingsMenu'); menu.addSeparator()
         from . import whats_new
         menu.addAction(tr('이번 버전의 달라진 점…'), lambda: whats_new.show(self.window))
+        from . import grainy_rs
+        menu.addAction(tr('Grainy RS 받기…'), grainy_rs.open_page)
         menu.addAction(tr('Grainy 정보…'), self.window.show_about)
         if sys.platform == 'darwin':
             # macOS moves a command whose name starts with "Settings", "About", "Quit" (or their

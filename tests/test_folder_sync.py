@@ -77,3 +77,34 @@ def test_registered_folder_imports_new_photos_but_not_removed_or_exported_ones(a
         assert not errors
     finally:
         wait(lambda: not w.render_running); w.close()
+
+
+def test_new_files_never_reads_grainys_own_folders(tmp_path):
+    home = tmp_path/'home'; library = home/'app'/'Library'
+    new = photo(home/'roll'/'a.jpg'); photo(library/'thumbnails'/'1.jpg'); photo(library/'previews'/'x'/'1.jpg')
+    assert new_files([str(home)], set(), own=[str(library)]) == [str(new)]
+    assert new_files([str(library/'thumbnails'), str(library), str(home)], set(), own=[str(library)]) == [str(new)]   # nor as a root
+
+
+def test_the_library_inside_a_registered_folder_is_not_imported(app, tmp_path, monkeypatch):
+    """A registered folder that holds the library (a home folder): the library's thumbnails are not photos. Each one
+    imported would get a thumbnail of its own, imported at the next check, without end."""
+    from luma.app import MainWindow
+    home = tmp_path/'home'
+    w = MainWindow(home/'Library'); errors = []
+    monkeypatch.setattr(w, 'show_error', errors.append)                       # a modal error box would hang the test
+    try:
+        w.catalog.add(photo(home/'1.jpg')); w.refresh_lists()
+        photo(w.catalog.thumbs/'99.jpg')                                      # as old as one from an earlier session
+        names = lambda: sorted(Path(p).name for p in w.catalog.paths())
+        idle = lambda: not w.folder_sync.running and not w.import_busy and not w.import_scans
+        photo(home/'roll'/'2.jpg')
+        assert w.folder_sync.scan()                                           # the automatic check
+        wait(lambda: idle() and '2.jpg' in names())
+        assert names() == ['1.jpg', '2.jpg']
+        photo(home/'roll'/'3.jpg')
+        w.import_paths([str(home)])                                           # the same folder, imported by hand
+        wait(lambda: idle() and '3.jpg' in names())
+        assert names() == ['1.jpg', '2.jpg', '3.jpg'] and not errors
+    finally:
+        wait(lambda: not w.render_running); w.close()

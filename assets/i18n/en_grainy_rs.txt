@@ -1,0 +1,5 @@
+Grainy RS로 옮겨 주세요 => Please move to Grainy RS
+Grainy는 이제 Grainy RS로 이어집니다. 새 기능과 고침은 Grainy RS에만 나옵니다. => Grainy now continues as Grainy RS. New features and fixes come only there.
+Grainy RS를 처음 켜면 이 라이브러리(사진, 보정, 컬렉션)를 가져올지 묻습니다. 이 라이브러리는 그대로 남습니다. AI 연결을 쓰셨다면 Grainy RS의 AI 연결 창에서 다시 설정해 주세요. => The first time you start Grainy RS, it offers to bring over this library (photos, edits, collections). This library stays as it is. If you used the AI connection, set it up again in Grainy RS's AI Connection window.
+Grainy RS 받기 => Get Grainy RS
+Grainy RS 받기… => Get Grainy RS…

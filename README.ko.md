@@ -1,3 +1,5 @@
+> **Grainy는 이제 [Grainy RS](https://github.com/pastorius9/grainy-rs)로 이어집니다.** 이 Python 버전은 더 업데이트되지 않고, 새 기능과 고침은 Grainy RS에만 나옵니다. Grainy RS를 처음 켜면 이 라이브러리(사진, 보정, 컬렉션)를 가져오며, 이 라이브러리는 그대로 남습니다. 받기: <https://pastorius9.github.io/grainy/>
+
 <p align="center">
   <img alt="Grainy" src="assets/brand/grainy-icon-256.png" width="96">
 </p>

@@ -1,0 +1,35 @@
+{
+  "windows": {
+    "claude_code": "claude mcp remove --scope user grainy 2>$null; claude mcp add --scope user grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\GrainyRS\\mcp\\grainy-mcp-bridge.ps1\"",
+    "codex": "codex mcp remove grainy 2>$null; codex mcp add grainy '--' powershell -NoProfile -ExecutionPolicy Bypass -File \"$env:LOCALAPPDATA\\GrainyRS\\mcp\\grainy-mcp-bridge.ps1\"",
+    "claude_desktop_json": {
+      "mcpServers": {
+        "grainy": {
+          "command": "powershell",
+          "args": [
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-Command",
+            "& (Join-Path $env:LOCALAPPDATA 'GrainyRS\\mcp\\grainy-mcp-bridge.ps1')"
+          ]
+        }
+      }
+    }
+  },
+  "macos": {
+    "claude_code": "claude mcp remove --scope user grainy 2>/dev/null; claude mcp add --scope user grainy -- sh \"$HOME/Library/Application Support/GrainyRS/mcp/grainy-mcp-bridge.sh\"",
+    "codex": "codex mcp remove grainy 2>/dev/null; codex mcp add grainy -- sh \"$HOME/Library/Application Support/GrainyRS/mcp/grainy-mcp-bridge.sh\"",
+    "claude_desktop_json": {
+      "mcpServers": {
+        "grainy": {
+          "command": "/bin/sh",
+          "args": [
+            "-c",
+            "exec /bin/sh \"$HOME/Library/Application Support/GrainyRS/mcp/grainy-mcp-bridge.sh\""
+          ]
+        }
+      }
+    }
+  }
+}

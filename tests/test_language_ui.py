@@ -62,8 +62,12 @@ def test_switch_reopens_preserves_edits_keywords_user_names_and_blocks_busy(app,
     session=DesktopSession(app,tmp_path/'library',preferences)
     try:
         assert session.start();w=session.window
-        path=tmp_path/'현상.png';Image.new('RGB',(180,120),(123,130,145)).save(path)
+        # The photo's folder becomes a registered folder, which each window reads for new photos 4 s after it
+        # opens. In a folder of its own, not next to the library: there that check took the library's thumbnail
+        # (older than 5 s on a slow runner) for a new photo, and its import refused the switch back to Korean.
+        path=tmp_path/'photos'/'현상.png';path.parent.mkdir();Image.new('RGB',(180,120),(123,130,145)).save(path)
         ident=w.catalog.add(path)
+        busy=lambda:[k for k in ('command_running','maintenance_running','export_running','import_busy','import_scans') if getattr(session.window,k,0)]
         w.catalog.save_preset('현상',{'exposure':.3})
         collection=w.catalog.add_collection('현상')
         w.refresh_lists();w.activate(ident)
@@ -78,7 +82,7 @@ def test_switch_reopens_preserves_edits_keywords_user_names_and_blocks_busy(app,
             return QDialog.DialogCode.Accepted
         monkeypatch.setattr(LanguageDialog,'exec',accept_english)
         w.language_action.trigger()
-        assert language()=='en'
+        assert language()=='en',busy()
         w=session.window
         wait(lambda:w.source is not None and not w.render_running and not w.library_loading)
         assert w.library_button.text()=='Library' and w.edit_button.text()=='Develop'
@@ -104,7 +108,7 @@ def test_switch_reopens_preserves_edits_keywords_user_names_and_blocks_busy(app,
         assert red.text()=='Red';red.trigger()
         assert w.catalog.photo(ident)['label']=='빨강'
         assert w.catalog.photo(ident)['settings']==before
-        assert session.change_language('ko')
+        assert session.change_language('ko'),busy()
         assert session.window.library_button.text()=='라이브러리'
         assert Preferences(preferences.path).language=='ko'
     finally:

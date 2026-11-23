@@ -7,7 +7,7 @@ import os
 import time
 from pathlib import Path
 from threading import Event
-from .folders import path_key
+from .folders import contains_folder, path_key
 from .i18n import tr
 
 PREFERENCE = 'auto_sync_folders'
@@ -23,20 +23,22 @@ def note_output(path):
     OUTPUTS.add(path_key(str(Path(path).resolve())))
 
 
-def new_files(roots, known, skipped=None, cancel=None, settle=SETTLE, now=None, removed=()):
+def new_files(roots, known, skipped=None, cancel=None, settle=SETTLE, now=None, removed=(), own=()):
     """Image files under roots whose path_key is not in known, oldest first. skipped maps a key to the
     (mtime, size) of a file that failed to import; it is offered again only after it changes.
     removed lists folders taken out of the catalog: they are not entered. A root inside one of them
-    was registered after the removal and is read like any other root."""
+    was registered after the removal and is read like any other root.
+    own lists folders whose files Grainy makes itself (its library): never read, below a root or as one.
+    Their thumbnails are not photos, and each one imported would get a thumbnail to import next time."""
     from .engine import IMAGE_EXTENSIONS
     skipped = skipped or {}; now = time.time() if now is None else now
-    removed = {path_key(p) for p in removed}
+    closed = {path_key(p) for p in removed} | {path_key(p) for p in own}
     found = {}
     for root in roots:
-        if not os.path.isdir(root):continue
+        if not os.path.isdir(root) or any(contains_folder(folder, root) for folder in own):continue
         for folder, below, names in os.walk(root):
             if cancel is not None and cancel.is_set():return []
-            if removed:below[:] = [name for name in below if path_key(os.path.join(folder, name)) not in removed]
+            if closed:below[:] = [name for name in below if path_key(os.path.join(folder, name)) not in closed]
             for name in names:
                 if os.path.splitext(name)[1].lower() not in IMAGE_EXTENSIONS:continue
                 path = os.path.join(folder, name)
@@ -88,8 +90,9 @@ class FolderSync:
         roots = w.catalog.folder_roots(); removed = w.catalog.removed_folders()
         known = {path_key(p) for p in w.catalog.paths()} | self.excluded
         skipped = dict(self.skipped); cancel = self.cancel; revision = self.revision
+        own = [str(Path(w.catalog.directory).resolve())]
         self.running = True; self.last = time.monotonic()
-        w.spawn(lambda: new_files(roots, known, skipped, cancel, removed=removed),
+        w.spawn(lambda: new_files(roots, known, skipped, cancel, removed=removed, own=own),
                 lambda files: self.found(files, revision), self.failed, self.pool)
         return True
 

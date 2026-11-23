@@ -2,6 +2,11 @@
 
 Short English notes shown in the app after an update. The full change log is CHANGELOG.md (Korean).
 
+## 0.6.9 — Grainy now continues as Grainy RS (the last Python version)
+
+- Grainy continues as Grainy RS, a new version written in Rust. This is the last Python version; new features and fixes come only in Grainy RS. On its first start Grainy RS offers to bring over this library (photos, edits, collections) and leaves it untouched. A one-time notice after start and Settings > Get Grainy RS… open the download page. If you used the AI connection, set it up again in Grainy RS.
+- Fixed: a registered folder that holds the library no longer has the library's thumbnails imported as photos.
+
 ## 0.6.8 — Safe start: after a crash, update before any photo opens
 
 - If Grainy did not close normally last time (a crash or a forced quit), the next start opens no photo by itself and offers a newer version first, so a fix can arrive even when the old version quits as soon as it opens a photo. With automatic update checks on it checks at once; otherwise it asks first. The folder still comes back, and the status bar says why no photo was opened.

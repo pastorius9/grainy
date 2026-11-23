@@ -2373,6 +2373,8 @@ class MainWindow(QMainWindow):
             self.import_cancel=Event()
         cancelled=self.import_cancel
         skipped=() if restore else tuple(path_key(folder)+os.sep for folder in self.catalog.removed_folders() if any(contains_folder(p,folder) for p in paths))
+        # Inside a chosen folder, the library is not read: its thumbnails are Grainy's files, not photos.
+        skipped+=(path_key(Path(self.catalog.directory).resolve())+os.sep,)
         def scan():
             result=[]
             roots=[]
